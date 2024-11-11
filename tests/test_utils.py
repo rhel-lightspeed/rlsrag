@@ -110,4 +110,5 @@ This is the first line of the content.
     result = read_plaintext_files(d)
     assert len(result) == 1
     assert result[0].metadata["title"] == "Test"
-    assert result[0].text == "This is the first line of the content."
+    assert "This is the first line of the content." in result[0].text
+    assert "# Introduction" in result[0].text
