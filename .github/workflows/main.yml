@@ -94,8 +94,6 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           tls-verify: true
-          extra-args: |
-            --squash
           containerfiles: |
             Dockerfile
 
