@@ -5,7 +5,6 @@ RUN pip3 install --upgrade --quiet pip pdm
 ENV PDM_CHECK_UPDATE=false
 
 COPY pyproject.toml pdm.lock README.md /project/
-COPY packages/ /project/packages
 COPY rlsrag/ /project/rlsrag
 RUN pdm install --check --prod --no-editable
 
