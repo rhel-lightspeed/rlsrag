@@ -6,6 +6,7 @@ ENV PDM_CHECK_UPDATE=false
 
 COPY pyproject.toml pdm.lock README.md /project/
 COPY rlsrag/ /project/rlsrag
+COPY packages/ /project/packages
 RUN ls -al .
 RUN pdm install --check --prod --no-editable
 

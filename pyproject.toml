@@ -114,3 +114,15 @@ dev = ["mypy>=0.981", "pre-commit>=2.20.0", "tox>=3.25.1", "types-dateparser>=1.
 
 [tool.pdm.scripts]
 download-model = {call = "rlsrag.download_model:main"}
+
+[tool.pdm.resolution]
+respect-source-order = true
+
+[[tool.pdm.source]]
+name = "local"
+url = "file:///${PROJECT_ROOT}/packages"
+type = "find_links"
+
+[[tool.pdm.source]]
+name = "pypi"
+url = "https://pypi.org/simple"
