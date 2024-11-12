@@ -166,3 +166,6 @@ cython_debug/
 
 # Ignore .whl packages in the repo.
 packages/*.whl
+
+# Ignore embedding models
+embedding_model/
