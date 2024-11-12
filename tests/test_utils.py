@@ -75,8 +75,7 @@ title = "Test"
 This is the first line of the content.
 """
     result = process_markdown(raw_markdown)
-    assert result.text == ""
-    assert result.metadata == {}
+    assert not result
 
     raw_markdown = """+++
 +++
@@ -86,8 +85,7 @@ extra = {document_kind = "test", update_date = "1996-12-31"}
 This is the first line of the content.
 """
     result = process_markdown(raw_markdown)
-    assert result.text == ""
-    assert result.metadata == {}
+    assert not result
 
 
 def test_read_plaintext_files(tmp_path):
@@ -101,7 +99,6 @@ extra = {document_kind = "test", update_date = "2023-12-31"}
 This is the first line of the content.
 """
 
-    # Use pytest's built in temporary file manager.
     d = tmp_path / "articles"
     d.mkdir()
     p = d / "00001.md"
@@ -112,3 +109,22 @@ This is the first line of the content.
     assert result[0].metadata["title"] == "Test"
     assert "This is the first line of the content." in result[0].text
     assert "# Introduction" in result[0].text
+
+
+def test_read_plaintext_files_with_very_old_doc(tmp_path):
+    from rlsrag.utils import read_plaintext_files
+
+    very_old_doc = """+++
+title = "Test"
+path = "/test"
+extra = {document_kind = "test", update_date = "1896-12-31"}
++++
+Back in my day...
+"""
+
+    d = tmp_path / "articles"
+    d.mkdir()
+    p = d / "00001.md"
+    p.write_text(very_old_doc, encoding="utf-8")
+    result = read_plaintext_files(d)
+    assert result == []

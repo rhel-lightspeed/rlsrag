@@ -3,10 +3,12 @@
 import logging
 from datetime import datetime
 from glob import glob
+from typing import Optional
 
 import dateparser
 import tomllib
 from llama_index.core import Document
+from yaspin import yaspin
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +39,7 @@ def recently_updated(metadata: dict, years_old: int = 5) -> bool:
     return parsed_update_date.year >= current_year - years_old
 
 
-def process_markdown(raw_markdown: str) -> Document:
+def process_markdown(raw_markdown: str) -> Optional[Document]:
     """Process a markdown file that might have TOML frontmatter at the top."""
     # Our markdown has TOML-formatted frontmatter at the top.
     frontmatter, content = raw_markdown.split("\n+++\n", 1)
@@ -51,7 +53,7 @@ def process_markdown(raw_markdown: str) -> Document:
     # Skip this document if it is missing an 'extra' key.
     # Skip this document if it was not updated recently.
     if "extra" not in metadata or not recently_updated(metadata):
-        return Document()
+        return None
 
     # Add some basic data from the metadata to the page content.
     text = update_content_with_metadata(content, metadata)
@@ -65,15 +67,14 @@ def read_plaintext_files(plaintext_dir: str) -> list:
     logging.info("Reading plain text files...")
     plaintext_files = glob(f"{plaintext_dir}/**/[0-9]*.md", recursive=True)
 
-    markdown_docs = []
-    for counter, plaintext_file in enumerate(plaintext_files):
-        with open(plaintext_file) as fileh:
-            parsed_document = process_markdown(fileh.read())
-            if parsed_document:
-                markdown_docs.append(parsed_document)
-
-        if (counter + 1) % 5000 == 0:
-            logging.info(f"Processed {counter + 1} documents.")
+    with yaspin() as spinner:
+        markdown_docs = []
+        for plaintext_file in plaintext_files:
+            spinner.text = f"Reading {plaintext_file}"
+            with open(plaintext_file) as fileh:
+                parsed_document = process_markdown(fileh.read())
+                if parsed_document:
+                    markdown_docs.append(parsed_document)
 
     logging.info(f"Loaded {len(markdown_docs)} documents.")
     logging.info(f"Excluded {len(plaintext_files) - len(markdown_docs)} documents.")
