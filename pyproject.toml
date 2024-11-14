@@ -10,7 +10,7 @@ packages = [
   {include = "rlsrag"}
 ]
 requires-python = "==3.12.*"
-dependencies = ["llama-index>=0.11.22", "llama-index-embeddings-huggingface>=0.3.1", "llama-index-readers-file>=0.2.2", "llama-index-vector-stores-postgres>=0.2.6", "llama-index-storage-docstore-postgres>=0.2.0", "dateparser>=1.2.0", "einops>=0.8.0", "datasets>=3.1.0", "yaspin>=3.1.0"]
+dependencies = ["langchain-postgres>=0.0.12", "langchain-huggingface>=0.1.2", "langchain-community>=0.3.7", "unstructured[md]>=0.16.5", "langchain-text-splitters>=0.3.2", "fastapi[standard]>=0.115.5"]
 license = {text = "Apache Software License 2.0"}
 keywords = ['python']
 
@@ -114,14 +114,15 @@ dev = ["mypy>=0.981", "pre-commit>=2.20.0", "tox>=3.25.1", "types-dateparser>=1.
 
 [tool.pdm.scripts]
 download-model = {call = "rlsrag.download_model:main"}
+run-embed = {call = "rlsrag.embed:run_embed_pipeline"}
 
 [tool.pdm.resolution]
 respect-source-order = true
 
 [[tool.pdm.source]]
-name = "local"
-url = "file:///${PROJECT_ROOT}/packages"
-type = "find_links"
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cpu"
+include_packages = ["torch*"]
 
 [[tool.pdm.source]]
 name = "pypi"

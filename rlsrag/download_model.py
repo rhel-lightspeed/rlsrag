@@ -2,9 +2,7 @@
 
 import logging
 
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-
-from rlsrag.config import EMBED_MODEL, EMBED_MODEL_DIR
+from rlsrag.embed import get_embedding_model
 
 logger = logging.getLogger(__name__)
 
@@ -12,10 +10,8 @@ logger = logging.getLogger(__name__)
 def main() -> None:
     """Download the embedding model from Hugging Face."""
     logger.info("Downloading the embedding model from Hugging Face.")
-    HuggingFaceEmbedding(
-        model_name=EMBED_MODEL,
-        cache_folder=EMBED_MODEL_DIR,
-    )
+    get_embedding_model()
+    return None
 
 
 if __name__ == "__main__":
