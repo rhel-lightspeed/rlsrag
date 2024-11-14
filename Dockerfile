@@ -16,4 +16,6 @@ COPY --from=builder /project/.venv/ /project/.venv
 COPY --from=builder /project/embedding_model/ /project/embedding_model
 ENV PATH="/project/.venv/bin:$PATH"
 COPY rlsrag /project/rlsrag
-CMD ["fastapi", "rlsrag/query_api.py"]
+
+COPY scripts/startup.sh /project/
+CMD ["/project/startup.sh"]

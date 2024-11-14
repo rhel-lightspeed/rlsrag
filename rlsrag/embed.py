@@ -132,3 +132,7 @@ def run_embed_pipeline() -> None:
     logger.info("Finished embedding pipeline.")
 
     return None
+
+
+if __name__ == "__main__":
+    run_embed_pipeline()
