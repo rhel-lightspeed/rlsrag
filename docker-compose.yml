@@ -1,0 +1,40 @@
+name: rls
+
+services:
+
+  rlsrag:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 8000:8000
+    environment:
+      POSTGRES_HOST: db
+      PLAINTEXT_DIR: /plaintext
+      GENERATE_RAG_DB: 1
+      WATSONX_PROJECT_ID: ABC123
+      WATSONX_APIKEY: ABC123
+    volumes:
+      - ./plaintext:/plaintext:ro,Z
+    restart: always
+
+  db:
+    image: docker.io/pgvector/pgvector:pg17
+    restart: unless-stopped
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: vectorsandthings
+      POSTGRES_PASSWORD: secrete
+
+  adminer:
+    image: docker.io/library/adminer:latest
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+
+volumes:
+  postgres:

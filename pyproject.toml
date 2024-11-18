@@ -10,7 +10,7 @@ packages = [
   {include = "rlsrag"}
 ]
 requires-python = "==3.12.*"
-dependencies = ["langchain-postgres>=0.0.12", "langchain-huggingface>=0.1.2", "langchain-community>=0.3.7", "unstructured[md]>=0.16.5", "langchain-text-splitters>=0.3.2", "fastapi[standard]>=0.115.5"]
+dependencies = ["langchain-postgres>=0.0.12", "langchain-community>=0.3.7", "unstructured[md]>=0.16.5", "fastapi[standard]>=0.115.5", "langchain-experimental>=0.3.3", "langchain-ibm>=0.3.3", "langchain-unstructured>=0.1.5", "pyarrow>=18.0.0", "nltk>=3.9.1", "types-requests>=2.32.0.20241016"]
 license = {text = "Apache Software License 2.0"}
 keywords = ['python']
 
@@ -24,7 +24,7 @@ requires = ["pdm-backend"]
 build-backend = "pdm.backend"
 
 [tool.black]
-line-length = 120
+line-length = 80
 target-version = ['py37']
 preview = true
 
@@ -40,7 +40,7 @@ show_error_codes = "True"
 
 [tool.ruff]
 target-version = "py37"
-line-length = 120
+line-length = 80
 fix = true
 select = [
     # flake8-2020
@@ -113,17 +113,4 @@ includes = ["rlsrag"]
 dev = ["mypy>=0.981", "pre-commit>=2.20.0", "tox>=3.25.1", "types-dateparser>=1.2.0.20240420", "pytest-sugar>=1.0.0", "pytest-randomly>=3.16.0"]
 
 [tool.pdm.scripts]
-download-model = {call = "rlsrag.download_model:main"}
 run-embed = {call = "rlsrag.embed:run_embed_pipeline"}
-
-[tool.pdm.resolution]
-respect-source-order = true
-
-[[tool.pdm.source]]
-name = "pytorch"
-url = "https://download.pytorch.org/whl/cpu"
-include_packages = ["torch*"]
-
-[[tool.pdm.source]]
-name = "pypi"
-url = "https://pypi.org/simple"

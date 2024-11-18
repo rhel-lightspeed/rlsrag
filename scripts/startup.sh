@@ -2,9 +2,9 @@
 set -euxo pipefail
 
 if [[ -z "${GENERATE_RAG_DB+x}" ]]; then
-  echo "Skipping RAG generation. Set GENERATE_RAG_DB=1 to generate the database and make your computer very warm for an extended period. 😜"
+  echo "Skipping RAG generation. Set GENERATE_RAG_DB=1 to generate the database."
 else
-  echo "Generating RAG database. This will take time and warm up your cpumputer. 🔥"
+  echo "Generating RAG database. This will take time. 🔥"
   /project/.venv/bin/python rlsrag/embed.py
 fi
 

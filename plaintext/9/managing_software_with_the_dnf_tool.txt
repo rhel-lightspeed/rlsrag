@@ -1,0 +1,804 @@
+Abstract
+Find, install, and utilize content distributed through the RPM repositories by using the DNF tool. Learn how to work with packages, modules, streams, and profiles.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 1. Software management tools in Red Hat Enterprise Linux 9
+In Red Hat Enterprise Linux (RHEL) 9, use the DNF utility to manage software. For compatibility reasons with previous major RHEL versions, you can still use the yum command. However, in RHEL 9, yum is an alias for dnf which provides a certain level of compatibility with yum.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 2. Distribution of content in RHEL 9
+In the following sections, learn how the software is distributed in Red Hat Enterprise Linux 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.1. Repositories
+Red Hat Enterprise Linux (RHEL) distributes content through different repositories, for example:
+Additional resources
+Package manifest
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.2. Application Streams
+Red Hat provides multiple versions of user-space components as Application Streams, and they are updated more frequently than the core operating system packages. This provides more flexibility to customize Red Hat Enterprise Linux (RHEL) without impacting the underlying stability of the platform or specific deployments.
+Application Streams are available in the following formats:
+RPM format
+Modules, which are an extension to the RPM format
+Software Collections
+RHEL 9 improves Application Streams experience by providing initial Application Stream versions as RPMs, which you can install by using the dnf install command.
+Starting with RHEL 9.1, Red Hat provides additional Application Stream versions as modules with a shorter life cycle.
+Additional resources
+Red Hat Enterprise Linux 9: Application Compatibility Guide
+Package manifest
+Red Hat Enterprise Linux Application Streams Life Cycle
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.3. Modules
+A module is a set of RPM packages that represent a component. A typical module contains the following package types:
+Packages with an application
+Packages with the application-specific dependency libraries
+Packages with documentation for the application
+Packages with helper utilities
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.4. Module streams
+Module streams are filters that can be imagined as virtual repositories in the AppStream physical repository. Module streams versions of the AppStream components. Each of the streams receives updates independently, and they can depend on other module streams.
+Module streams can be active or inactive. Active streams give the system access to the RPM packages within the particular module stream, allowing the installation of the respective component version.
+A stream is active in the following cases:
+If an administrator explicitly enables it.
+If the stream is a dependency of an enabled module.
+If the stream is the default stream. Each module can have a default stream but in Red Hat Enterprise Linux 9, no default streams are defined. If required, you can configure default streams as described in Defining custom default module streams and profiles.
+Only one stream of a particular module can be active at a given point in time. Therefore, only packages from a particular stream are available.
+Prior to selecting a particular stream for a runtime user application or a developer application, consider the following:
+Required functionality and which component versions support that functionality
+Compatibility with your application or use case
+The life cycle of the Application Stream and your update plan
+For a list of all available modules and streams, see the Package manifest. For per-component changes, see the Release Notes.
+Additional resources
+Modular dependencies and stream changes
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.5. Module profiles
+A module profile is a list of recommended packages to be installed together for a particular use case such as for a server, client, development, minimal install, or other. These package lists can contain packages outside the module stream, usually from the BaseOS repository or the dependencies of the stream.
+Installing packages by using a profile is a one-time action provided for the user’s convenience. It is also possible to install packages by using multiple profiles of the same module stream without any further preparatory steps.
+Each module stream can have any number of profiles, including none. For any given module stream, some of its profiles can be marked as default and are then used for profile installation actions if you did not explicitly specify a profile. However, the existence of a default profile for a module stream is not required.
+Example 2.1. nodejs module profiles
+The nodejs module, which provides the Node.js runtime environment, offers the following profiles for installation:
+# dnf module list nodejs
+Name 	   Stream	Profiles                                Summary
+nodejs   18    	common [d], development, minimal, s2i   Javascript runtime
+Hint: [d]efault, [e]nabled, [x]disabled, [i]nstalled
+In this example, the following profiles are available:
+common: The production-ready packages. This is the default profile ([d]).
+development: The production-ready packages, including the Node.js development headers.
+minimal: The smallest set of packages that provides the Node.js runtime environment.
+s2i: Packages necessary for creating Node.js Source-to-Image (S2I) Linux containers.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 3. Configuring DNF
+The configuration of DNF and related utilities is stored in the [main] section of the /etc/dnf/dnf.conf file.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.1. Viewing the current DNF configurations
+The [main] section in the /etc/dnf/dnf.conf file contains only the settings that have been explicitly set. However, you can display all settings of the [main] section, including the ones that have not been set and which, therefore, use their default values.
+Procedure
+Display the global DNF configuration:
+# dnf config-manager --dump
+Additional resources
+dnf.conf(5) man page on your system
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.2. Setting DNF main options
+The /etc/dnf/dnf.conf file contains one [main] section. The key-value pairs in this section affect how DNF operates and treats repositories.
+Procedure
+Edit the /etc/dnf/dnf.conf file.
+Update the [main] section according to your requirements.
+Save the changes.
+Additional resources
+The [main] OPTIONS and OPTIONS FOR BOTH [main] AND REPO sections in the dnf.conf(5) man page on your system.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.3. Managing DNF plug-ins
+Every installed plug-in can have its own configuration file in the /etc/dnf/plugins/ directory. Name plug-in configuration files in this directory <plug-in_name>.conf. By default, plug-ins are typically enabled. To disable a plug-in in one of these configuration files, add the following to the file:
+[main]
+enabled=False
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.4. Enabling and disabling DNF plug-ins
+In the DNF tool, plug-ins are loaded by default. However, you can influence which plug-ins DNF loads.
+Procedure
+Use one of the following methods to influence how DNF uses plug-ins:
+To enable or disable loading of DNF plug-ins globally, add the plugins parameter to the [main] section of the /etc/dnf/dnf.conf file.
+Set plugins=1 (default) to enable loading of all DNF plug-ins.
+Set plugins=0 to disable loading of all DNF plug-ins.
+To disable a particular plug-in, add enabled=False to the [main] section in the /etc/dnf/plugins/<plug-in_name>.conf file.
+To disable all DNF plug-ins for a particular command, append the --noplugins option to the command. For example, to disable DNF plug-ins for a single update command, enter:
+# dnf --noplugins update
+To disable certain DNF plug-ins for a single command, append the --disableplugin=plugin-name option to the command. For example, to disable a certain DNF plug-in for a single update command, enter:
+# dnf update --disableplugin=<plugin_name>
+To enable certain DNF plug-ins for a single command, append the --enableplugin=plugin-name option to the command. For example, to enable a certain DNF plug-in for a single update command, enter:
+# dnf update --enableplugin=<plugin_name>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.5. Excluding packages from DNF operations
+You can configure DNF to exclude packages from any DNF operation by using the excludepkgs option. You can define excludepkgs in the [main] or the repository section of the /etc/dnf/dnf.conf file.
+Procedure
+Exclude packages from the DNF operation by adding the following line to the /etc/dnf/dnf.conf file:
+excludepkgs=<package_name_1>,<package_name_2> ...
+Alternatively, use global expressions instead of package names to define packages you want to exclude. For more information, see Specifying global expressions in DNF input.
+Additional resources
+dnf.conf(5) man page on your system
+Specifying global expressions in DNF input
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 4. Searching for RHEL 9 content
+In the following sections, learn how to locate and examine content in the AppStream and BaseOS repositories in Red Hat Enterprise Linux 9 by using DNF.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.1. Searching for software packages
+To identify which package provides the software you require, you can use DNF to search the repositories.
+Procedure
+Depending on your scenario, use one of the following options to search the repository:
+To search for a term in the name or summary of packages, enter:
+$ dnf search <term>
+To search for a term in the name, summary, or description of packages, enter:
+$ dnf search --all <term>
+Note that searching additionally in the description by using the --all option is slower than a normal search operation.
+To search for a package name and list the package name and its version in the output, enter:
+$ dnf repoquery <package_name>
+To search for which package provides a file, specify the file name or the path to the file:
+$ dnf provides <file_name>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.2. Listing software packages
+You can use DNF to display a list of packages and their versions that are available in the repositories. If required, you can filter this list and, for example, only list packages for which updates are available.
+Procedure
+List the latest versions of all available packages, including architectures, version numbers, and the repository they where installed from:
+$ dnf list --all
+...
+zlib.x86_64         1.2.11-39.el9   @rhel-9-for-x86_64-baseos-rpms
+zlib.i686           1.2.11-39.el9   rhel-9-for-x86_64-baseos-rpms
+zlib-devel.i686     2.11-39.el9     rhel-9-for-x86_64-appstream-rpms
+zlib-devel.x86_64   1.2.11-39.el9   rhel-9-for-x86_64-appstream-rpms
+...
+The @ sign in front of a repository indicates that the package in this line is currently installed.
+Alternatively, to display all available packages, including version numbers and architectures, enter:
+$ dnf repoquery
+...
+zlib-0:1.2.11-35.el9_1.i686
+zlib-0:1.2.11-35.el9_1.x86_64
+zlib-0:1.2.11-39.el9.i686
+zlib-0:1.2.11-39.el9.x86_64
+zlib-devel-0:1.2.11-39.el9.i686
+zlib-devel-0:1.2.11-39.el9.x86_64
+...
+Optionally, you can filter the output by using other options instead of --all, for example:
+Use --installed to list only installed packages.
+Use --available to list all available packages.
+Use --upgrades to list packages for which newer versions are available.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.3. Listing repositories
+To get an overview of repositories that are enabled and disabled on your system, you can list them.
+Procedure
+List all enabled repositories on your system:
+$ dnf repolist
+To display only certain repositories, append one of the following options to the command:
+Append --disabled to list only disabled repositories.
+Append --all to list both enabled and disabled repositories.
+Optional: List additional information about the repositories:
+$ dnf repoinfo <repository_name>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.4. Displaying package information
+You can query DNF repositories to display further details about a package, such as the following:
+Version
+Release
+Architecture
+Package size
+Description
+Procedure
+Display information about one or more available packages:
+$ dnf info <package_name>
+This command displays the information for the currently installed package and, if available, its newer versions that are in the repository. Alternatively, use the following command to display the information for all packages with the specified name in the repository:
+$ dnf repoquery --info <package_name>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.5. Listing package groups and packages they provide
+Package groups bundle multiple packages, and you can use package groups to install all packages assigned to a group in a single step. However, before the installation, you must identify the name of the required package group.
+Procedure
+List both installed and available groups:
+$ dnf group list
+Note that you can filter the results by appending the --installed and --available option to the dnf group list command. By using the --hidden option, you can display hidden groups in the output.
+List mandatory, optional, and default packages contained in a particular group:
+$ dnf group info "<group_name>"
+Optional: View the number of installed and available groups:
+$ dnf group summary
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.6. Listing available modules and their contents
+By searching for modules and displaying information about them with DNF, you can identify which modules are available in the repositories and select the appropriate stream before you install a module.
+Procedure
+List the module information in one of the following ways:
+List all available modules:
+$ dnf module list
+Name        Stream   Profiles                               Summary
+...
+nodejs      18       common [d], development, minimal, s2i  Javascript runtime
+postgresql  15       client, server                         PostgreSQL server and client module
+...
+Hint: [d]efault, [e]nabled, [x]disabled, [i]nstalled
+Use the dnf module list <module_name> command to list the same information but only for a specific module.
+Search for which module provides a certain package:
+$ dnf module provides <package_name>
+For example, to display which module and profiles provide the npm package, enter:
+# dnf module provides npm
+npm-1:8.19.2-1.18.10.0.3.module+el9.1.0+16866+0fab0697.x86_64
+Module   : nodejs:18:9010020221009220316:rhel9:x86_64
+Profiles : common development s2i
+Repo     : rhel-9-for-x86_64-appstream-rpms
+Summary  : Javascript runtime
+...
+Use one of these methods to list module details:
+List all details about a module, including a description, list of all profiles, and a list of all packages the module provides:
+$ dnf module info <module_name>
+For example, to display details about the nodejs package, enter:
+$ dnf module info nodejs
+Name             : nodejs
+Stream           : 18
+Version          : 9010020221009220316
+Context          : rhel9
+Architecture     : x86_64
+Profiles         : common [d], development, minimal, s2i
+Default profiles : common
+Repo             : rhel-9-for-x86_64-appstream-rpms
+Summary          : Javascript runtime
+Description      : Node.js is a platform built on Chrome's JavaScript runtime...
+Requires         : platform:[el9]
+Artifacts        : nodejs-1:18.10.0-3.module+el9.1.0+16866+0fab0697.src
+                 : nodejs-1:18.10.0-3.module+el9.1.0+16866+0fab0697.x86_64
+                 : npm-1:8.19.2-1.18.10.0.3.module+el9.1.0+16866+0fab0697.x86_64
+...
+List which packages each module profile installs:
+$ dnf module info --profile <module_name>
+For example, to display this information for the nodejs module, enter:
+$ dnf module info --profile nodejs
+Name        : nodejs:18:9010020221009220316:rhel9:x86_64
+common      : nodejs
+            : npm
+development : nodejs
+            : nodejs-devel
+            : npm
+minimal     : nodejs
+s2i         : nodejs
+            : nodejs-nodemon
+            : npm
+...
+Additional resources
+Modules
+Module streams
+Module profiles
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.7. Specifying global expressions in DNF input
+You can filter the results of dnf commands by appending one or more global expressions as arguments.
+Procedure
+Use one of the following methods if you use global expressions in dnf commands:
+Enclose the entire global expression in single or double quotation marks:
+# dnf provides "*/<file_name>"
+Note that you must precede <file_name> either by / for an absolute path or */ to use a wildcard if the full path is unknown.
+Escape the wildcard characters by preceding them with a backslash (\) character:
+# dnf provides \*/<file_name>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.8. Additional resources
+Commands for listing content in RHEL 9
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 5. Installing RHEL 9 content
+In the following sections, learn how to install content in Red Hat Enterprise Linux 9 by using DNF.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.1. Installing packages
+If a software is not part of the default installation, you can manually install it. DNF automatically resolves and installs dependencies.
+Prerequisites
+Optional: You know the name of the package you want to install.
+If the package you want to install is provided by a module stream, the respective module stream is enabled.
+Procedure
+Use one of the following methods to install packages:
+To install packages from the repositories, enter:
+# dnf install <package_name_1> <package_name_2> ...
+If you install packages on a system that supports multiple architectures, such as i686 and x86_64, you can specify the architecture of the package by appending it to the package name:
+# dnf install <package_name>.<architecture>
+To install a package if you only know the path to the file the package provides but not the package name, you can use this path to install the corresponding package:
+# dnf install <path_to_file>
+To install a local RPM file, enter:
+# dnf install <path_to_RPM_file>
+If the package has dependencies, specify the paths to these RPM files as well. Otherwise, DNF downloads the dependencies from the repositories or fails if they are not available in the repositories.
+Additional resources
+Installing modular content
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.2. Installing package groups
+Package groups bundle multiple packages, and you can use package groups to install all packages assigned to a group in a single step.
+Prerequisites
+You know the name or ID of the group you want to install.
+Procedure
+Install a package group:
+# dnf group install <group_name_or_ID>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.3. Installing modular content
+For certain software, Red Hat provides modules. You can use modules to install a specific version (stream) and set of packages (profiles).
+Procedure
+List modules that provide the package you want to install:
+# dnf module list <module_name>
+For example, to list the details about the nodejs module, enter:
+# dnf module list nodejs
+Name     Stream   Profiles                                Summary
+nodejs   18       common [d], development, minimal, s2i   Javascript runtime
+nodejs   ...      common [d], development, minimal, s2i   Javascript runtime
+
+Hint: [d]efault, [e]nabled, [x]disabled, [i]nstalled
+Install a module:
+# dnf module install <module_name>:<stream>/<profile>
+If a default profile for a stream is defined, you can omit /<profile> in the command to install this default profile of the stream.
+For example, to install the default profile (common) from stream 18 of the nodejs module, enter:
+# dnf module install nodejs:18
+=====================================================================================================
+ Package                            Architecture   Version   Repository                          Size
+=====================================================================================================
+Installing group/module packages:
+ nodejs                             x86_64         ...       rhel-9-for-x86_64-appstream-rpms    12 M
+ npm                                x86_64         ...       rhel-9-for-x86_64-appstream-rpms   2.5 M
+Installing weak dependencies:
+ nodejs-docs                        noarch         ..        rhel-9-for-x86_64-appstream-rpms   7.6 M
+ nodejs-full-i18n                   x86_64         ..        rhel-9-for-x86_64-appstream-rpms   8.4 M
+Installing module profiles:
+ nodejs/common
+Enabling module streams:
+ nodejs                                            18
+Verification
+Verify that the correct module stream is enabled ([e]) and the required profile was installed ([i]):
+# dnf module list nodejs
+Updating Subscription Management repositories.
+Last metadata expiration check: 0:33:24 ago on Mon 24 Jul 2023 04:59:01 PM CEST.
+Red Hat Enterprise Linux 9 for x86_64 - AppStream (RPMs)
+Name     Stream   Profiles                                    Summary
+nodejs   18 [e]   common [d] [i], development, minimal, s2i   Javascript runtime
+...
+
+Hint: [d]efault, [e]nabled, [x]disabled, [i]nstalled
+Additional resources
+Modules
+Module streams
+Module profiles
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.4. Defining custom default module streams and profiles
+Red Hat Enterprise Linux 9 does not define default streams in the AppStream repository. However, you can configure a default module stream and default module profile. In this case, you can omit this information when you install the default stream and profile of a module.
+Procedure
+Use the dnf module list <module_name> command to display the available streams and their profiles, for example:
+# dnf module list nodejs
+Name     Stream   Profiles                                Summary
+nodejs   18       common [d], development, minimal, s2i   Javascript runtime
+In this example, nodejs:18 is not set as the default stream, and the default profile in this stream is common.
+Create a YAML file in the /etc/dnf/modules.defaults.d/ directory to define the default stream and profile for a module.
+For example, create the /etc/dnf/modules.defaults.d/nodejs.yaml file with the following content to define 18 as the default stream and minimal as the default profile for the nodejs module:
+document: modulemd-defaults
+version: 1
+data:
+  module: nodejs
+  stream: "18"
+  profiles:
+      '18': [minimal]
+Verification
+Use the dnf module list <module_name> command to verify the new default stream and profile settings, for example:
+# dnf module list nodejs
+Name     Stream   Profiles                                Summary
+nodejs   18 [d]   common, development, minimal [d], s2i   Javascript runtime
+Additional resources
+Modules
+Module streams
+Module profiles
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.5. Additional resources
+Commands for installing content in RHEL 9
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 6. Updating RHEL 9 content
+With DNF, you can check if your system has any pending updates. You can list packages that need updating and choose to update a single package, multiple packages, or all packages at once. If any of the packages you choose to update have dependencies, these dependencies are updated as well.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.1. Checking for updates
+To identify which packages installed on your system have available updates, you can list them.
+Procedure
+Check the available updates for installed packages:
+# dnf check-update
+The output returns the list of packages and their dependencies that have an update available.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.2. Updating packages
+You can use DNF to update a single package, a package group, or all packages and their dependencies at once.
+Procedure
+Depending on your scenario, use one of the following options to apply updates:
+To update all packages and their dependencies, enter:
+# dnf upgrade
+To update a single package, enter:
+# dnf upgrade <package_name>
+To update packages only from a specific package group, enter:
+# dnf group upgrade <group_name>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.3. Updating security-related packages
+You can use DNF to update security-related packages.
+Procedure
+Depending on your scenario, use one of the following options to apply updates:
+To upgrade to the latest available packages that have security errata, enter:
+# dnf upgrade --security
+To upgrade to the last security errata packages, enter:
+# dnf upgrade-minimal --security
+Additional resources
+Managing and monitoring security updates
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 7. Automating software updates in RHEL 9
+DNF Automatic is an alternative command-line interface to DNF that is suited for automatic and regular execution by using systemd timers, cron jobs, and other such tools.
+DNF Automatic synchronizes package metadata as needed, checks for updates available, and then performs one of the following actions depending on how you configure the tool:
+Exit
+Download updated packages
+Download and apply the updates
+The outcome of the operation is then reported by a selected mechanism, such as the standard output or email.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.1. Installing DNF Automatic
+To check and download package updates automatically and regularly, you can use the DNF Automatic tool that is provided by the dnf-automatic package.
+Procedure
+Install the dnf-automatic package:
+# dnf install dnf-automatic
+Verification
+Verify the successful installation by confirming the presence of the dnf-automatic package:
+# rpm -qi dnf-automatic
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.2. DNF Automatic configuration file
+By default, DNF Automatic uses /etc/dnf/automatic.conf as its configuration file to define its behavior.
+The configuration file is separated into the following topical sections:
+[commands]
+Sets the mode of operation of DNF Automatic.
+[emitters]
+Defines how the results of DNF Automatic are reported.
+[command]
+Defines the command emitter configuration.
+[command_email]
+Provides the email emitter configuration for an external command used to send email.
+[email]
+Provides the email emitter configuration.
+[base]
+Overrides settings from the main configuration file of DNF.
+With the default settings of the /etc/dnf/automatic.conf file, DNF Automatic checks for available updates, downloads them, and reports the results to standard output.
+Additional resources
+dnf-automatic(8) man page on your system
+Overview of the systemd timer units included in the dnf-automatic package
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.3. Enabling DNF Automatic
+To run DNF Automatic once, you must start a systemd timer unit. However, if you want to run DNF Automatic periodically, you must enable the timer unit. You can use one of the timer units provided in the dnf-automatic package, or you can create a drop-in file for the timer unit to adjust the execution time.
+Prerequisites
+You specified the behavior of DNF Automatic by modifying the /etc/dnf/automatic.conf configuration file.
+Procedure
+To enable and execute a systemd timer unit immediately, enter:
+# systemctl enable --now <timer_name>
+If you want to only enable the timer without executing it immediately, omit the --now option.
+You can use the following timers:
+dnf-automatic-download.timer: Downloads available updates.
+dnf-automatic-install.timer: Downloads and installs available updates.
+dnf-automatic-notifyonly.timer: Reports available updates.
+dnf-automatic.timer: Downloads, downloads and installs, or reports available updates.
+Verification
+Verify that the timer is enabled:
+# systemctl status <systemd timer unit>
+Optional: Check when each of the timers on your system ran the last time:
+# systemctl list-timers --all
+Additional resources
+dnf-automatic(8) man page on your system
+Overview of the systemd timer units included in the dnf-automatic package
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.4. Overview of the systemd timer units included in the dnf-automatic package
+The systemd timer units take precedence and override the settings in the /etc/dnf/automatic.conf configuration file when downloading and applying updates.
+For example if you set download_updates = yes in the /etc/dnf/automatic.conf configuration file, but you have activated the dnf-automatic-notifyonly.timer unit, the packages will not be downloaded.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 8. Removing RHEL 9 content
+In the following sections, learn how to remove content in Red Hat Enterprise Linux 9 by using DNF.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.1. Removing installed packages
+You can use DNF to remove a single package or multiple packages installed on your system. If any of the packages you choose to remove have unused dependencies, DNF uninstalls these dependencies as well.
+Procedure
+Remove particular packages:
+# dnf remove <package_name_1> <package_name_2> ...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.2. Removing package groups
+Package groups bundle multiple packages. You can use package groups to remove all packages assigned to a group in a single step.
+Procedure
+Remove package groups by the group name or group ID:
+# dnf group remove <group_name> <group_id>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.3. Removing installed modular content
+When removing installed modular content, you can remove packages from either a selected profile or the whole stream.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.3.1. Removing packages from an installed profile
+When you remove packages installed with a profile, all packages with a name corresponding to the packages installed by the profile are removed. This includes their dependencies, with the exception of packages required by a different profile.
+To remove all packages from a selected stream, complete the steps in Removing all packages from a module stream.
+Prerequisites
+The selected profile is installed by using the dnf module install <module-name:stream/profile> command or as a default profile by using the dnf install <module-name:stream command>.
+Procedure
+Uninstall packages that belong to the selected profile:
+# dnf module remove <module-name:stream/profile>
+For example, to remove packages and their dependencies from the development profile of the nodejs:18 module stream, enter:
+# dnf module remove nodejs:18/development
+(...)
+Dependencies resolved.
+========================================================================
+Package          Architecture   Version
+  Repository       Size
+========================================================================
+Removing:
+nodejs-devel     x86_64         1:18.7.0-1.module+el9.1.0+16284+4fdefb2f
+  @rhel-AppStream  950 k
+Removing unused dependencies:
+brotli           x86_64         1.0.9-6.el9
+  @rhel-AppStream  754 k
+brotli-devel     x86_64         1.0.9-6.el9
+  @rhel-AppStream  55 k
+...
+Disabling module profiles:
+nodejs/development
+
+Transaction Summary
+========================================================================
+Remove  26 Packages
+
+Freed space: 8.3 M
+Is this ok [y/N]: y
+Alternatively, uninstall packages from all installed profiles within a stream:
+# dnf module remove module-name:stream
+Verification
+Verify that the correct profile was removed:
+$ dnf module info nodejs
+...
+Name             : nodejs
+Stream           : 18 [e] [a]
+Version          : 9010020221009220316
+Context          : rhel9
+Architecture     : x86_64
+Profiles         : common [d] [i], development, minimal [i], s2i [i]
+Default profiles : common
+Repo             : rhel-AppStream
+Summary          : Javascript runtime
+...
+Hint: [d]efault, [e]nabled, [x]disabled, [i]nstalled, [a]ctive
+All profiles except development are currently installed ([i]).
+Additional resources
+Modular dependencies and stream changes
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.3.2. Removing all packages from a module stream
+When you remove packages installed with a module stream, all packages with a name corresponding to the packages installed by the stream are removed. This includes their dependencies, with the exception of packages required by other modules.
+To remove only packages from a selected profile, complete the steps in Removing packages from an installed profile.
+Prerequisites
+The module stream is enabled and at least some packages from the stream have been installed.
+Procedure
+Remove all packages from a selected stream:
+# dnf module remove --all <module_name:stream>
+For example, to remove all packages from the nodejs:18 module stream, enter:
+# dnf module remove --all nodejs:18
+(...)
+Dependencies resolved.
+===================================================================================
+Package          Architecture   Version
+  Repository       Size
+===================================================================================
+Removing:
+nodejs           x86_64         1:18.10.0-3.module+el9.1.0+16866+0fab0697
+  @rhel-AppStream  43 M
+nodejs-devel     x86_64         1:18.10.0-3.module+el9.1.0+16866+0fab0697
+  @rhel-AppStream  953 k
+nodejs-docs      noarch         1:18.10.0-3.module+el9.1.0+16866+0fab0697
+  @rhel-AppStream  78 M
+nodejs-full-i18n x86_64         1:18.10.0-3.module+el9.1.0+16866+0fab0697
+  @rhel-AppStream  29 M
+nodejs-nodemon   noarch         2.0.15-1.module+el9.1.0+15718+e52ec601
+  @rhel-AppStream  2.0 M
+nodejs-packaging noarch         2021.06-4.module+el9.1.0+15718+e52ec601
+  @rhel-AppStream  41 k
+npm              x86_64         1:8.19.2-1.18.10.0.3.module+el9.1.0+16866+0fab0697
+  @rhel-AppStream  6.9 M
+Removing unused dependencies:
+brotli           x86_64         1.0.9-6.el9
+  @rhel-AppStream  754 k
+brotli-devel     x86_64         1.0.9-6.el9
+  @rhel-AppStream  55 k
+...
+Disabling module profiles:
+nodejs/common
+nodejs/development
+nodejs/minimal
+nodejs/s2i
+
+
+Transaction Summary
+===================================================================================
+Remove  31 Packages
+
+Freed space: 167 M
+Is this ok [y/N]: y
+Optional: Reset or disable the stream by entering one of the following commands:
+# dnf module reset <module_name>
+# dnf module disable <module_name>
+Verification
+Verify that all packages from the selected module stream were removed:
+$ dnf module info nodejs
+...
+Name             : nodejs
+Stream           : 18 [e] [a]
+Version          : 9010020221009220316
+Context          : rhel9
+Architecture     : x86_64
+Profiles         : common [d], development, minimal, s2i
+Default profiles : common
+...
+Hint: [d]efault, [e]nabled, [x]disabled, [i]nstalled, [a]ctive
+Additional resources
+Modular dependencies and stream changes
+Resetting module streams
+Disabling all streams of a module
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.4. Additional resources
+Commands for removing content in RHEL 9
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 9. Handling package management history
+With the dnf history command, you can review the following information:
+Timeline of DNF transactions.
+Dates and times the transactions occurred.
+Number of packages affected by the transactions.
+Whether the transactions succeeded or were aborted.
+If the RPM database was changed between the transactions.
+You can also use the dnf history command to undo the transactions.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.1. Listing transactions
+You can use DNF to perform the following tasks:
+List the latest transactions.
+List the latest operations for a selected package.
+Display details of a particular transaction.
+Procedure
+Depending on your scenario, use one of the following options to display transaction information:
+To display a list of all the latest DNF transactions, enter:
+# dnf history
+The output contains the following information:
+The Action(s) column displays which type of action was performed during a transaction, for example, Install (I), Upgrade (U), Remove (E), and other actions.
+The Altered column displays the number of actions performed during the transaction. The number of actions can also be followed by the result of the transaction.
+For more information about the values of the Action(s) and Altered columns, see the dnf(8) man page on your system.
+To display a list of all the latest operations for a selected package, enter:
+# dnf history list <package_name>
+To display details of a particular transaction, enter:
+# dnf history info <transaction_id>
+Additional resources
+dnf(8) man page on your system
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.2. Reverting DNF transactions
+Reverting a DNF transaction can be useful if you want to undo operations performed during the transaction. For example, if you installed several packages by using the dnf install command, you can uninstall these packages at once by reverting an installation transaction.
+You can revert DNF transactions the following ways:
+Revert a single DNF transaction by using the dnf history undo command.
+Revert all DNF transactions performed between the specified transaction and the last transaction by using the dnf history rollback command.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.2.1. Reverting a single DNF transaction
+You can revert steps performed within a single transaction by using the dnf history undo command:
+If the transaction installed a new package, dnf history undo uninstalls the package.
+If the transaction uninstalled a package, dnf history undo reinstalls the package.
+The dnf history undo command also attempts to downgrade all updated packages to their previous versions if the older packages are still available.
+Procedure
+Identify the ID of a transaction you want to revert:
+# dnf history
+ID | Command line     | Date and time     | Action(s)      | Altered
+--------------------------------------------------------------------
+13 | install zip      | 2022-11-03 10:49  | Install        |    1
+12 | install unzip    | 2022-11-03 10:49  | Install        |    1
+Optional: Verify that this is the transaction you want to revert by displaying its details:
+# dnf history info <transaction_id>
+Revert the transaction:
+# dnf history undo <transaction_id>
+For example, if you want to uninstall the previously installed unzip package, enter:
+# dnf history undo 12
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.2.2. Reverting multiple DNF transactions
+You can revert all DNF transactions performed between a specified transaction and the last transaction by using the dnf history rollback command. Note that the transaction specified by the transaction ID remains unchanged.
+Procedure
+Identify the transaction ID of the state you want to revert to:
+# dnf history
+ID | Command line     | Date and time     | Action(s)   | Altered
+------------------------------------------------------------------
+14 | install wget     | 2022-11-03 10:49  | Install     |    1
+13 | install unzip    | 2022-11-03 10:49  | Install     |    1
+12 | install vim-X11  | 2022-11-03 10:20  | Install     |  171 EE
+Revert specified transactions:
+# dnf history rollback <transaction_id>
+For example, to revert to the state before the wget and unzip packages were installed, enter:
+# dnf history rollback 12
+Alternatively, to revert all transactions in the transaction history, use the transaction ID 1:
+# dnf history rollback 1
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 10. Managing custom software repositories
+You can configure a repository in the /etc/dnf/dnf.conf file or in a .repo file in the /etc/yum.repos.d/ directory.
+The /etc/dnf/dnf.conf file contains the [main] section and can contain one or more repository sections ([<repository-ID>]) that you can use to set repository-specific options. The values you define in individual repository sections of the /etc/dnf/dnf.conf file override values set in the [main] section.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10.1. DNF repository options
+The /etc/dnf/dnf.conf configuration file contains repository sections with a unique repository ID in brackets ([]). You can use such sections to define individual DNF repositories.
+For a complete list of available repository ID options, see the [<repository-ID>] OPTIONS section of the dnf.conf(5) man page on your system.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10.2. Adding a DNF repository
+You can add a DNF repository to your system by using the dnf config-manager --add-repo command.
+Procedure
+Add a repository to your system:
+# dnf config-manager --add-repo <repository_URL>
+Note that repositories added by this command are enabled by default.
+Review and, optionally, update the repository settings that the previous command has created in the /etc/yum.repos.d/<repository_URL>.repo file:
+# cat /etc/yum.repos.d/<repository_URL>.repo
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10.3. Enabling a DNF repository
+You can enable a DNF repository added to your system by using the dnf config-manager command.
+Procedure
+Enable a repository:
+# dnf config-manager --enable <repository_id>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10.4. Disabling a DNF repository
+You can disable a DNF repository added to your system by using the dnf config-manager command.
+Procedure
+Disable a repository:
+# dnf config-manager --disable <repository_id>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 11. Managing versions of application stream content
+Content in the AppStream repository can be available in multiple versions, corresponding to module streams.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11.1. Modular dependencies and stream changes
+Traditionally, packages providing content depend on further packages, and usually specify the desired dependency versions. For packages contained in modules, this mechanism applies as well, but the grouping of packages and their particular versions into modules and streams provides further constraints. Additionally, module streams can declare dependencies on streams of other modules, independent of the packages contained and provided by them.
+After any operations with packages or modules, the whole dependency tree of all underlying installed packages must satisfy all the conditions that the packages declare. Additionally, all module stream dependencies must be satisfied. For example, disabling a module stream can require disabling other module streams. No packages will be removed automatically.
+Note that the following actions can cause subsequent automatic operations:
+Enabling a module stream can result in enabling further module streams.
+Installing a module stream profile or installing packages from a stream can result in enabling further module streams and installing further packages.
+Removing a package can result in removing further packages. If these packages were provided by modules, the module streams remain enabled in preparation for further installation, even if no packages from these streams are installed any more. This mirrors the behavior of an unused DNF repository.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11.2. Interaction of modular and non-modular dependencies
+Modular dependencies are an additional layer on top of regular RPM dependencies. Modular dependencies behave similarly to hypothetical dependencies between repositories. This means that installing different packages requires resolution of both the RPM dependencies and the modular dependencies.
+The system will always retain the module and stream choices, unless explicitly instructed to change them. A modular package will receive updates contained in the currently enabled stream of the module that provides this package, but will not upgrade to a version contained in a different stream.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11.3. Resetting module streams
+Resetting a module is an action that returns this module to its initial state - neither enabled nor disabled. If the module has a configured default stream, this stream becomes active as a result of resetting the module.
+Resetting the module is useful, for example, if you want to only extract the RPM content from the module without keeping the module enabled. You can use the dnf module reset command after enabling the module and extracting its contents to reset this module to its initial state.
+Procedure
+Reset the module state:
+# dnf module reset <module-name>
+The module is returned to the initial state. Information about an enabled stream and installed profiles is erased but no installed content is removed.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11.4. Disabling all streams of a module
+Modules that have a default stream will always have one stream active. If you want to make the content from all module streams of the module inaccessible, you can disable the whole module.
+Prerequisites
+You understand the concept of an active module stream.
+Procedure
+Disable the module:
+# dnf module disable <module-name>
+The dnf command asks for confirmation and then disables the module with all its streams. All of the module streams become inactive. No installed content is removed.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11.5. Switching to a later stream
+When you switch to a later module stream, all respective packages are replaced with their later versions.
+Prerequisites
+The system is fully updated.
+Procedure
+Switch the installed component to the new version and select the module (component) and stream (version):
+# dnf module switch-to <module:stream>
+For example, to switch from the nodejs:18 module stream to the nodejs:20 stream, enter:
+# dnf module switch-to nodejs:20
+...
+Dependencies resolved.
+========================================================================================
+ Package          Arch   Version                                   Repository      Size
+========================================================================================
+Upgrading:
+ nodejs           x86_64 1:20.5.1-1.module+el9.3.0+19646+9a702805  rhel-AppStream  14 M
+ nodejs-docs      noarch 1:20.5.1-1.module+el9.3.0+19646+9a702805  rhel-AppStream 8.0 M
+ nodejs-full-i18n x86_64 1:20.5.1-1.module+el9.3.0+19646+9a702805  rhel-AppStream 8.5 M
+ npm              x86_64 1:9.8.0-1.20.5.1.1.module+el9.3.0+19646+9a702805
+                                                                   rhel-AppStream 2.6 M
+Switching module streams:
+ nodejs                  18 -> 20
+You can also switch from non-modular content to a module stream. For example, to switch from non-modular PHP 8.0 to modular PHP 8.1, enter:
+# dnf module switch-to php:8.1
+...
+Dependencies resolved.
+========================================================================================
+ Package      Arch     Version                                   Repository        Size
+========================================================================================
+Upgrading:
+ php-common   x86_64   8.1.14-1.module+el9.2.0+17911+b059dfc2    rhel-AppStream   687 k
+Enabling module streams:
+ php                   8.1
+Optional: Switch the installed component to the new version and select also the profile to be installed or updated:
+# dnf module switch-to <module:stream/profile>
+Verification
+Verify that the installed component was switched to the new version ([e]):
+$ dnf module list nodejs
+...
+rhel-AppStream
+Name       Stream     Profiles                                     Summary
+nodejs     18         common [d], development, minimal, s2i        Javascript runtime
+nodejs     20 [e]     common [d] [i], development, minimal, s2i    Javascript runtime
+
+Hint: [d]efault, [e]nabled, [x]disabled, [i]nstalled
+Appendix A. DNF commands list
+In the following sections, examine DNF commands for listing, installing, and removing content in Red Hat Enterprise Linux 9.
+A.1. Commands for listing content in RHEL 9
+The following are the commonly used DNF commands for finding content and its details in Red Hat Enterprise Linux 9:
+A.2. Commands for installing content in RHEL 9
+The following are the commonly used DNF commands for installing content in Red Hat Enterprise Linux 9:
+A.3. Commands for removing content in RHEL 9
+The following are the commonly used DNF commands for removing content in Red Hat Enterprise Linux 9:

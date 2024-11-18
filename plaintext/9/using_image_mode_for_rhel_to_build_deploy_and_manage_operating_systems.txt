@@ -1,0 +1,1195 @@
+Abstract
+RHEL bootc images enable you to build, deploy, and manage the operating system as if it is any other container. You can converge on a single container-native workflow to manage everything from your applications to the underlying OS.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 1. Introducing image mode for RHEL
+Use image mode for RHEL to build, test, and deploy operating systems by using the same tools and techniques as application containers. Image mode for RHEL is available by using the registry.redhat.io/rhel9/rhel-bootc bootc image. The RHEL bootc images differ from the existing application Universal Base Images (UBI) in that they contain additional components necessary to boot that were traditionally excluded, such as, kernel, initrd, boot loader, firmware, among others.
+Figure 1.1. Building, deploying, and managing operating system by using image mode for RHEL
+Red Hat provides bootc image for the following computer architectures:
+AMD and Intel 64-bit architectures (x86-64-v2)
+The 64-bit ARM architecture (ARMv8.0-A)
+The benefits of image mode for RHEL occur across the lifecycle of a system. The following list contains some of the most important advantages:
+Although containers provide the foundation to build, transport, and run images, it is important to understand that after you deploy these bootc images, either by using an installation mechanism, or you convert them to a disk image, the system does not run as a container.
+The supported image types are the following:
+Container image formats: OCI
+Disk image formats:
+ISO
+QEMU copy-on-write (QCOW2), Raw
+Amazon Machine Image (AMI)
+Virtual Machine Image (VMI)
+Virtual Machine Disk (VMDK)
+Containers help streamline the lifecycle of a RHEL system by offering the following possibilities:
+RHEL has two deployment modes. Both provide the same stability, reliability, and performance during deployment. See their differences:
+Package mode: the operating system uses RPM packages and is updated by using the dnf package manager. The root filesystem is mutable. However, the operating system cannot be managed as a containerized application.
+Image mode: a container-native approach to build, deploy, and manage RHEL. The same RPM packages are delivered as a base image and updates are deployed as a container image. The root filesystem is immutable by default, except for /etc and /var, with most content coming from the container image.
+You can choose to use either the Image mode or the Package mode deployment to build, test, and share your operating system. Image mode additionally enables you to manage your operating system in the same way as any other containerized application.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.1. Prerequisites
+You have a subscribed RHEL 9 system. For more information, see Getting Started with RHEL System Registration documentation.
+You have a container registry. You can create your registry locally or create a free account on the Quay.io service. To create the Quay.io account, see Red Hat Quay.io page.
+You have a Red Hat account with either production or developer subscriptions. No cost developer subscriptions are available on the Red Hat Enterprise Linux Overview page.
+You have authenticated to registry.redhat.io. For more information, see Red Hat Container Registry Authentication article.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.2. Additional resources
+Introducing image mode for RHEL and bootc in Podman Desktop quick start guide
+Image mode for Red Hat Enterprise Linux quick start: AI inference quick start guide
+Getting Started with Podman AI Lab blog article
+Customizing Anaconda product documentation
+Automatically installing RHEL product documentation (Kickstart)
+Composing a customized RHEL system image product documentation
+Composing, installing, and managing RHEL for Edge images product documentation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 2. Building and testing RHEL bootc images
+The following procedures use Podman to build and test your container image. You can also use other tools, for example, OpenShift Container Platform. For more examples of configuring RHEL systems by using containers, see the rhel-bootc-examples repository.
+Figure 2.1. Building an image by using instructions from a Containerfile, testing the container, pushing an image to a registry, and sharing it with others
+A general Containerfile structure is the following:
+FROM registry.redhat.io/rhel9/rhel-bootc:latest
+
+RUN dnf -y install [software] [dependencies] && dnf clean all
+
+ADD [application]
+ADD [configuration files]
+
+RUN [config scripts]
+The available commands that are usable inside a Containerfile and a Dockerfile are equivalent.
+However, the following commands in a Containerfile are ignored when the rhel-9-bootc image is installed to a system:
+ENTRYPOINT and CMD (OCI: Entrypoint/Cmd): you can set CMD /sbin/init instead.
+ENV (OCI: Env): change the systemd configuration to configure the global system environment.
+EXPOSE (OCI: exposedPorts): it is independent of how the system firewall and network function at runtime.
+USER (OCI: User): configure individual services inside the RHEL bootc to run as unprivileged users instead.
+The rhel-9-bootc container image reuses the OCI image format.
+The rhel-9-bootc container image ignores the container config section (Config) when it is installed to a system.
+The rhel-9-bootc container image does not ignore the container config section (Config) when you run this image by using container runtimes such as podman or docker.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.1. Building a container image
+Use the podman build command to build an image using instructions from a Containerfile.
+Prerequisites
+The container-tools meta-package is installed.
+Procedure
+Create a Containerfile:
+$ cat Containerfile
+FROM registry.redhat.io/rhel9/rhel-bootc:latest
+RUN dnf -y install cloud-init && \
+    ln -s ../cloud-init.target /usr/lib/systemd/system/default.target.wants && \
+    dnf clean all
+This Containerfile example adds the cloud-init tool, so it automatically fetches SSH keys and can run scripts from the infrastructure and also gather configuration and secrets from the instance metadata. For example, you can use this container image for pre-generated AWS or KVM guest systems.
+Build the <image> image by using Containerfile in the current directory:
+$ podman build -t quay.io/<namespace>/<image>:<tag> .
+Verification
+List all images:
+$ podman images
+REPOSITORY                                  TAG      IMAGE ID       CREATED              SIZE
+localhost/<image>                           latest   b28cd00741b3   About a minute ago   2.1 GB
+Additional resources
+Working with container registries
+Building an image from a Containerfile with Buildah
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.2. Building derived bootable images by using multi-stage builds
+The deployment image should include only the application and its required runtime, without adding any build tools or unnecessary libraries. To achieve this, use a two-stage Containerfile: one stage for building the artifacts and another for hosting the application.
+With multi-stage builds, you use multiple FROM instructions in your Containerfile. Each FROM instruction can use a different base, and each of them begins a new stage of the build. You can selectively copy artifacts from one stage to another, and exclude everything you do not need in the final image.
+Multi-stage builds offer several advantages:
+The following Containerfile consists of two stages. The first stage is typically named builder and it compiles a golang binary. The second stage copies the binary from the first stage. The default working directory for the go-toolset builder is opt/ap-root/src.
+FROM registry.access.redhat.com/ubi9/go-toolset:latest as builder
+RUN echo 'package main; import "fmt"; func main() { fmt.Println("hello world") }' > helloworld.go
+RUN go build helloworld.go
+
+FROM registry.redhat.io/rhel9/rhel-bootc:latest
+COPY --from=builder /opt/app-root/src/helloworld /
+CMD ["/helloworld"]
+As a result, the final container image includes the helloworld binary but no data from the previous stage.
+You can also use multi-stage builds to perform the following scenarios:
+$ podman build --target build -t hello .
+For example, you can use this approach to debugging a specific build stage.
+COPY --from=<image> <source_path> <destination_path>_
+FROM ubi9 AS stage1
+[...]
+
+FROM stage1 AS stage2
+[...]
+
+FROM ubi9 AS final-stage
+[...]
+Additional resources
+How to build multi-architecture container images article
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.3. Running a container image
+Use the podman run command to run and test your container.
+Prerequisites
+The container-tools meta-package is installed.
+Procedure
+Run the container named mybootc based on the quay.io/<namespace>/<image>:<tag> container image:
+$ podman run -it --rm --name mybootc quay.io/<namespace>/<image>:<tag> /bin/bash
+The -i option creates an interactive session. Without the -t option, the shell stays open, but you cannot type anything to the shell.
+The -t option opens a terminal session. Without the -i option, the shell opens and then exits.
+The --rm option removes the quay.io/<namespace>/<image>:<tag> container image after the container exits.
+Verification
+List all running containers:
+$ podman ps
+CONTAINER ID  IMAGE                                    COMMAND          CREATED        STATUS            PORTS   NAMES
+7ccd6001166e  quay.io/<namespace>/<image>:<tag>  /sbin/init  6 seconds ago  Up 5 seconds ago          mybootc
+Additional resources
+Podman run command
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.4. Pushing a container image to the registry
+Use the podman push command to push an image to your own, or a third party, registry and share it with others. The following procedure uses the Red Hat Quay registry.
+Prerequisites
+The container-tools meta-package is installed.
+An image is built and available on the local system.
+You have created the Red Hat Quay registry. For more information see Proof of Concept - Deploying Red Hat Quay.
+Procedure
+Push the quay.io/<namespace>/<image>:<tag> container image from your local storage to the registry:
+$ podman push quay.io/<namespace>/<image>:<tag>
+Additional resources
+Redistributing UBI images
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 3. Building and managing logically bound images
+By using the logically bound images, you have support for container images that are lifecycle bound to the base bootc image. This helps unite different operational processes for applications and operating systems, and the container application images are referenced from the base image as image files or an equivalent. Consequently, you can manage multiple container images for system installations. You can easily use containers for lifecycle-bound workloads, such as security agents and monitoring tools. By using the bootc upgrade command, you can upgrade everything.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.1. The logically bound images
+Logically bound images contrast with physically bound images. Both approaches offer some advantages and disadvantages.
+With the logically bound images, there is an association of the container application images to a base bootc system image. The following are examples for lifecycle bound workloads, whose activities are usually not updated outside of the host:
+Logging, for example, journald→remote log forwarder container
+Monitoring, for example, Prometheus node_exporter
+Configuration management agents
+Security agents
+Another important property of the logically bound images is that they must be present and available on the host, possibly from a very early stage in the boot process.
+Differently from the default usage of tools like Podman or Docker, images might be pulled dynamically after the boot starts, which requires a functioning network. For example, if the remote registry is temporarily unavailable, the host system might run longer without log forwarding or monitoring, which is not desirable. Logically bound images enable you to reference container images similarly to you can with ExecStart= in a systemd unit.
+The logically bound images offer the following benefits:
+You can update the bootc system without re-downloading the application container images.
+You can update the application container images without modifying the bootc system image, which is especially useful for development work.
+When using logically bound images, you must manage multiple container images for the system to install the logically bound images. This is an advantage and also a disadvantage. For example, for a disconnected or offline installation, you must mirror all the containers, not just one. In this model, the app images are only referenced from the base image as .image files or an equivalent.
+The bootc upgrade consist of the following steps:
+Fetches a new base image.
+Reads the new base image root file system to discover logically bound images.
+Pulls any discovered logically bound images into the bootc-owned /usr/lib/bootc/storage.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.2. Using logically bound images
+Each logically bound image is defined in a Podman Quadlet .image or .container file.
+Prerequisites
+The container-tools meta-package is installed.
+Procedure
+Create a Containerfile:
+$ cat Containerfile
+FROM quay.io/<namespace>/<image>:latest
+COPY ./<app_1>.image /usr/share/containers/systemd/<app_1>.image
+COPY ./<app_2>.container /usr/share/containers/systemd/<app_2>.container
+
+RUN ln -s /usr/share/containers/systemd/<app_1>.image /usr/lib/bootc/bound-images.d/<app_1>_image && \ ln -s /usr/share/containers/systemd/<app_2>_.image /usr/lib/bootc/bound-images.d/my-app.image
+In the .container definition, use:
+GlobalArgs=--storage-opt=additionalimagestore=/usr/lib/bootc/storage
+In this Containerfile example, the image is selected to be logically bound by creating a symlink in the /usr/lib/bootc/bound-images.d directory pointing to either an .image or a .container file.
+After creating a symlink, you can use a bootc upgrade or a bootc switch. The bound images defined in the new bootc image are automatically pulled into the bootc image storage, and are available to container runtimes such as Podman.
+Explicitly configure the images to point to the bootc storage as an additional image store, by using, for example, the following command:
+podman --storage-opt=additionalimagestore=/usr/lib/bootc/storage run <image>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 4. Creating bootc compatible base disk images with bootc-image-builder
+The bootc-image-builder, available as a Technology Preview, is a containerized tool to create disk images from bootc images. You can use the images that you build to deploy disk images in different environments, such as the edge, server, and clouds.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.1. Introducing image mode for RHEL for bootc-image-builder
+With the bootc-image-builder tool, you can convert bootc images into disk images for a variety of different platforms and formats. Converting bootc images into disk images is equivalent to installing a bootc. After you deploy these disk images to the target environment, you can update them directly from the container registry.
+The bootc-image-builder tool supports generating the following image types:
+Disk image formats, such as ISO, suitable for disconnected installations.
+Virtual disk images formats, such as:
+QEMU copy-on-write (QCOW2)
+Amazon Machine Image (AMI)/ — Raw
+Virtual Machine Image (VMI)
+Deploying from a container image is beneficial when you run VMs or servers because you can achieve the same installation result. That consistency extends across multiple different image types and platforms when you build them from the same container image. Consequently, you can minimize the effort in maintaining operating system images across platforms. You can also update systems that you deploy from these disk images by using the bootc tool, instead of re-creating and uploading new disk images with bootc-image-builder.
+Although you can deploy a rhel-9-bootc image directly, you can also create your own customized images that are derived from this bootc image. The bootc-image-builder tool takes the rhel-9-bootc OCI container image as an input.
+Additional resources
+Red Hat products that use cloud-init
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.2. Installing bootc-image-builder
+The bootc-image-builder is intended to be used as a container and it is not available as an RPM package in RHEL. To access it, follow the procedure.
+Prerequisites
+The container-tools meta-package is installed. The meta-package contains all container tools, such as Podman, Buildah, and Skopeo.
+You are authenticated to registry.redhat.io. For details, see Red Hat Container Registry Authentication.
+Procedure
+Login to authenticate to registry.redhat.io:
+$ sudo podman login registry.redhat.io
+Install the bootc-image-builder tool:
+$ sudo podman pull registry.redhat.io/rhel9/bootc-image-builder
+Verification
+List all images pulled to your local system:
+$ sudo podman images
+REPOSITORY                                    TAG         IMAGE ID      CREATED       SIZE
+registry.redhat.io/rhel9/bootc-image-builder  latest      b361f3e845ea  24 hours ago  676 MB
+Additional resources
+Red Hat Container Registry Authentication
+Pulling images from registries
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.3. Creating QCOW2 images by using bootc-image-builder
+Build a RHEL bootc image into a QEMU Disk Images (QCOW2) image for the architecture that you are running the commands on.
+The RHEL base image does not include a default user. Optionally, you can inject a user configuration with the --config option to run the bootc-image-builder container. Alternatively, you can configure the base image with cloud-init to inject users and SSH keys on first boot. See Users and groups configuration - Injecting users and SSH keys by using cloud-init.
+Prerequisites
+You have Podman installed on your host machine.
+You have virt-install installed on your host machine.
+You have root access to run the bootc-image-builder tool, and run the containers in --privileged mode, to build the images.
+Procedure
+Optional: Create a config.toml to configure user access, for example:
+[[blueprint.customizations.user]]
+name = "user"
+password = "pass"
+key = "ssh-rsa AAA ... user@email.com"
+groups = ["wheel"]
+Run bootc-image-builder. Optionally, if you want to use user access configuration, pass the config.toml as an argument.
+The following is an example of creating a public QCOW2 image:
+$ sudo podman run \
+    --rm \
+    -it \
+    --privileged \
+    --pull=newer \
+    --security-opt label=type:unconfined_t \
+    -v ./config.toml:/config.toml \
+    -v ./output:/output \
+    registry.redhat.io/rhel9/bootc-image-builder:latest \
+    --type qcow2 \
+    --config config.toml \
+  quay.io/<namespace>/<image>:<tag>
+The following is an example of creating a private QCOW2 image:
+$ sudo podman run \
+    --rm \
+    -it \
+    --privileged \
+    --pull=newer \
+    --security-opt label=type:unconfined_t \
+    -v $(pwd)/config.toml:/config.toml:ro \
+    -v $(pwd)/output:/output \
+    -v /var/lib/containers/storage:/var/lib/containers/storage \
+    registry.redhat.io/rhel9/bootc-image-builder:latest \
+    --local
+    --type qcow2 \
+    quay.io/<namespace>/<image>:<tag>
+You can find the .qcow2 image in the output folder.
+Next steps
+You can deploy your image. See Deploying a container image using KVM with a QCOW2 disk image.
+You can make updates to the image and push the changes to a registry. See Managing RHEL bootc images.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.4. Creating VMDK images by using bootc-image-builder
+Create a Virtual Machine Disk (VMDK) from a bootc image and use it within WMware’s virtualization platforms, such as vSphere, or use the Virtual Machine Disk (VMDK) in VirtualBox.
+Prerequisites
+You have Podman installed on your host machine.
+You have authenticated to the Red Hat Registry by using the podman login registry.redhat.io.
+You have pulled the rhel9/bootc-image-builder container image.
+Procedure
+Create a Containerfile with the following content:
+FROM registry.redhat.io/rhel9/rhel-bootc:9.4
+RUN dnf -y install cloud-init open-vm-tools && \
+ln -s ../cloud-init.target /usr/lib/systemd/system/default.target.wants && \
+rm -rf /var/{cache,log} /var/lib/{dnf,rhsm} && \
+systemctl enable vmtoolsd.service
+Build the bootc image:
+# podman build . -t localhost/rhel-bootc-vmdk
+Create a VMDK file from the previously created bootc image:
+# podman run \
+--rm \
+-it \
+--privileged \
+-v /var/lib/containers/storage:/var/lib/containers/storage \
+-v ./output:/output \
+--security-opt label=type:unconfined_t \
+--pull newer \
+registry.redhat.io/rhel9/bootc-image-builder:9.4
+--local \
+--type vmdk \
+localhost/rhel-bootc-vmdk:latest
+The --local option uses the local container storage to source the originating image to produce the VMDK instead of a remote repository.
+A VMDK disk file for the bootc image is stored in the output/vmdk directory.
+Next steps
+You can make updates to the image and push the changes to a registry. See Managing RHEL bootc images.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.5. Creating GCE images by using bootc-image-builder
+Build a RHEL bootc image into a gce image for the architecture that you are running the commands on. The RHEL base image does not include a default user. Optionally, you can inject a user configuration with the --config option to run the bootc-image-builder container. Alternatively, you can configure the base image with cloud-init to inject users and SSH keys on first boot. See Users and groups configuration - Injecting users and SSH keys by using cloud-init.
+Prerequisites
+You have Podman installed on your host machine.
+You have root access to run the bootc-image-builder tool, and run the containers in --privileged mode, to build the images.
+Procedure
+Optional: Create a config.toml to configure user access, for example:
+[[blueprint.customizations.user]]
+name = "user"
+password = "pass"
+key = "ssh-rsa AAA ... user@email.com"
+groups = ["wheel"]
+Run bootc-image-builder. Optionally, if you want to use user access configuration, pass the config.toml as an argument.
+The following is an example of creating a gce image:
+$ sudo podman run \
+    --rm \
+    -it \
+    --privileged \
+    --pull=newer \
+    --security-opt label=type:unconfined_t \
+    -v ./config.toml:/config.toml \
+    -v ./output:/output \
+    registry.redhat.io/rhel9/bootc-image-builder:latest \
+    --type gce \
+    --config config.toml \
+  quay.io/<namespace>/<image>:<tag>
+You can find the gce image in the output folder.
+Next steps
+You can deploy your image. See Deploying a container image using KVM with a QCOW2 disk image.
+You can make updates to the image and push the changes to a registry. See Managing RHEL bootc images.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.6. Creating AMI images by using bootc-image-builder and uploading it to AWS
+Create an Amazon Machine Image (AMI) from a bootc image and use it to launch an Amazon Web Service EC2 (Amazon Elastic Compute Cloud) instance.
+Prerequisites
+You have Podman installed on your host machine.
+You have an existing AWS S3 bucket within your AWS account.
+You have root access to run the bootc-image-builder tool, and run the containers in --privileged mode, to build the images.
+You have the vmimport service role configured on your account to import an AMI into your AWS account.
+Procedure
+Create a disk image from the bootc image.
+Configure the user details in the Containerfile. Make sure that you assign it with sudo access.
+Build a customized operating system image with the configured user from the Containerfile. It creates a default user with passwordless sudo access.
+Optional: Configure the machine image with cloud-init. See Users and groups configuration - Injecting users and SSH keys by using cloud-init. The following is an example:
+FROM registry.redhat.io/rhel9/rhel-bootc:9.4
+
+RUN dnf -y install cloud-init && \
+    ln -s ../cloud-init.target /usr/lib/systemd/system/default.target.wants && \
+    rm -rf /var/{cache,log} /var/lib/{dnf,rhsm}
+Build the bootc image. For example, to deploy the image to an x86_64 AWS machine, use the following commands:
+$ podman build -t quay.io/<namespace>/<image>:<tag> .
+$ podman push quay.io/<namespace>/<image>:<tag> .
+Use the bootc-image-builder tool to create an AMI from the bootc container image.
+$ sudo podman run \
+  --rm \
+  -it \
+  --privileged \
+  --pull=newer \
+  -v $HOME/.aws:/root/.aws:ro \
+  --env AWS_PROFILE=default \
+  registry.redhat.io/rhel9/bootc-image-builder:latest \
+  --type ami \
+  --aws-ami-name rhel-bootc-x86 \
+  --aws-bucket rhel-bootc-bucket \
+  --aws-region us-east-1 \
+quay.io/<namespace>/<image>:<tag>
+--aws-ami-name - The name of the AMI image in AWS
+--aws-bucket - The target S3 bucket name for intermediate storage when you are creating the AMI
+--aws-region - The target region for AWS uploads
+The bootc-image-builder tool builds an AMI image and uploads it to your AWS s3 bucket by using your AWS credentials to push and register an AMI image after building it.
+Next steps
+You can deploy your image. See Deploying a container image to AWS with an AMI disk image.
+You can make updates to the image and push the changes to a registry. See Managing RHEL bootc images.
+Additional resources
+AWS CLI documentation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.7. Creating Raw disk images by using bootc-image-builder
+You can convert a bootc image to a Raw image with an MBR or GPT partition table by using bootc-image-builder. The RHEL base image does not include a default user, so optionally, you can inject a user configuration with the --config option to run the bootc-image-builder container. Alternatively, you can configure the base image with cloud-init to inject users and SSH keys on first boot. See Users and groups configuration - Injecting users and SSH keys by using cloud-init.
+Prerequisites
+You have Podman installed on your host machine.
+You have root access to run the bootc-image-builder tool, and run the containers in --privileged mode, to build the images.
+You have pulled your target container image in the container storage.
+Procedure
+Optional: Create a config.toml to configure user access, for example:
+[[blueprint.customizations.user]]
+name = "user"
+password = "pass"
+key = "ssh-rsa AAA ... user@email.com"
+groups = ["wheel"]
+Run bootc-image-builder. If you want to use user access configuration, pass the config.toml as an argument:
+$ sudo podman run \
+    --rm \
+    -it \
+    --privileged \
+    --pull=newer \
+    --security-opt label=type:unconfined_t \
+    -v /var/lib/containers/storage:/var/lib/containers/storage \
+    -v ./config.toml:/config.toml \
+    -v ./output:/output \
+    registry.redhat.io/rhel9/bootc-image-builder:latest \
+    --local \
+    --type raw \
+    --config config.toml \
+  quay.io/<namespace>/<image>:<tag>
+You can find the .raw image in the output folder.
+Next steps
+You can deploy your image. See Deploying a container image by using KVM with a QCOW2 disk image.
+You can make updates to the image and push the changes to a registry. See Managing RHEL bootc images.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.8. Creating ISO images by using bootc-image-builder
+You can use bootc-image-builder to create an ISO from which you can perform an offline deployment of a bootable container.
+Prerequisites
+You have Podman installed on your host machine.
+You have root access to run the bootc-image-builder tool, and run the containers in --privileged mode, to build the images.
+Procedure
+Optional: Create a config.toml to configure user access, for example:
+[[blueprint.customizations.user]]
+name = "user"
+password = "pass"
+key = "ssh-rsa AAA ... user@email.com"
+groups = ["wheel"]
+Run bootc-image-builder. If you do not want to add any configuration, omit the -v $(pwd)/config.toml:/config.toml argument.
+$ sudo podman run \
+    --rm \
+    -it \
+    --privileged \
+    --pull=newer \
+    --security-opt label=type:unconfined_t \
+    -v /var/lib/containers/storage:/var/lib/containers/storage \
+    -v $(pwd)/config.toml:/config.toml \
+    -v $(pwd)/output:/output \
+    registry.redhat.io/rhel9/bootc-image-builder:latest \
+    --type iso \
+    --config config.toml \
+  quay.io/<namespace>/<image>:<tag>
+You can find the .iso image in the output folder.
+Next steps
+You can use the ISO image on unattended installation methods, such as USB sticks or Install-on-boot. The installable boot ISO contains a configured Kickstart file. See Deploying a container image by using Anaconda and Kickstart.
+You can make updates to the image and push the changes to a registry. See Managing RHEL bootable images.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.9. Using bootc-image-builder to build ISO images with a Kickstart file
+You can use a Kickstart file to configure various parts of the installation process, such as setting up users, customizing partitioning, and adding an SSH key. You can include the Kickstart file in an ISO build to configure any part of the installation process, except the deployment of the base image. For ISOs with bootc container base images, you can use a Kickstart file to configure anything except the ostreecontainer command.
+For example, you can use a Kickstart to perform either a partial installation, a full installation, or even omit the user creation. Use bootc-image-builder to build an ISO image that contains the custom Kickstart to configure your installation process.
+Prerequisites
+You have Podman installed on your host machine.
+You have root access to run the bootc-image-builder tool, and run the containers in --privileged mode, to build the images.
+Procedure
+Create your Kickstart file. The following Kickstart file is an example of a fully unattended Kickstart file configuration that contains user creation, and partition instructions.
+[customizations.installer.kickstart]
+contents = """
+lang en_GB.UTF-8
+keyboard uk
+timezone CET
+
+user --name <user> --password <password> --plaintext --groups <groups>
+sshkey --username <user> ssh-<type> <public key>
+rootpw --lock
+
+zerombr
+clearpart --all --initlabel
+autopart --type=plain
+reboot --eject
+"""
+Save the Kickstart configuration in the toml format to inject the Kickstart content. For example, config.toml.
+Run bootc-image-builder, and include the Kickstart file configuration that you want to add to the ISO build. The bootc-image-builder automatically adds the ostreecontainer command that installs the container image.
+$ sudo podman run \
+    --rm \
+    -it \
+    --privileged \
+    --pull=newer \
+    --security-opt label=type:unconfined_t \
+    -v /var/lib/containers/storage:/var/lib/containers/storage \
+    -v $(pwd)/config.toml:/config.toml \
+    -v $(pwd)/output:/output \
+    registry.redhat.io/rhel9/bootc-image-builder:latest \
+    --type iso \
+    --config config.toml \
+  quay.io/<namespace>/<image>:<tag>
+You can find the .iso image in the output folder.
+Next steps
+You can use the ISO image on unattended installation methods, such as USB sticks or Install-on-boot. The installable boot ISO contains a configured Kickstart file. See Deploying a container image by using Anaconda and Kickstart.
+You can make updates to the image and push the changes to a registry. See Managing RHEL bootable images.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.10. Verification and troubleshooting
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 5. Best practices for running containers using local sources
+You can access content hosted in an internal registry that requires a custom Transport Layer Security (TLS) root certificate, when running RHEL bootc images.
+There are two options available to install content to a container by using only local resources:
+Bind mounts: Use for example -v /etc/pki:/etc/pki to override the container’s store with the host’s.
+Derived image: Create a new container image with your custom certificates by building it using a Containerfile.
+You can use the same techniques to run a bootc-image-builder` container or a bootc container when appropriate.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.1. Importing custom certificate to a container by using bind mounts
+Use bound mounts to override the container’s store with the host’s.
+Procedure
+Run RHEL bootc image and use bind mount, for example -v /etc/pki:/etc/pki, to override the container’s store with the host’s:
+# podman run \
+  --rm \
+  -it \
+  --privileged \
+  --pull=newer \
+  --security-opt label=type:unconfined_t \
+  -v $(pwd)/output:/output \
+  -v /etc/pki:/etc/pki \
+  localhost/<image> \
+  --type iso \
+  --config /config.toml \
+  quay.io/<namespace>/<image>:<tag>
+Verification
+List certificates inside the container:
+# ls -l /etc/pki
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.2. Importing custom certificates to a container by using Containerfile
+Create a new container image with your custom certificates by building it using a Containerfile.
+Procedure
+Create a Containerfile:
+FROM <internal_repository>/<image>
+RUN  mkdir -p /etc/pki/ca-trust/extracted/pem/
+COPY tls-ca-bundle.pem /etc/pki/ca-trust/extracted/pem/
+RUN  rm -rf /etc/yum.repos.d/*
+COPY echo-rhel9_4.repo /etc/yum.repos.d/
+Build the custom image:
+# podman build -t <your_image> .
+Run the <your_image>:
+# podman run -it --rm <your_image>
+Verification
+List the certificates inside the container:
+# ls -l /etc/pki/ca-trust/extracted/pem/
+tls-ca-bundle.pem
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 6. Deploying the RHEL bootc images
+You can deploy the rhel-bootc container image by using the following different mechanisms.
+Anaconda
+bootc-image-builder
+bootc install
+The following bootc image types are available:
+Disk images that you generated by using the bootc image-builder such as:
+QCOW2 (QEMU copy-on-write, virtual disk)
+Raw (Mac Format)
+AMI (Amazon Cloud)
+ISO: Unattended installation method, by using an USB Sticks or Install-on-boot.
+After you have created a layered image that you can deploy, there are several ways that the image can be installed to a host:
+You can use RHEL installer and Kickstart to install the layered image to a bare metal system, by using the following mechanisms:
+Deploy by using USB
+PXE
+You can also use bootc-image-builder to convert the container image to a bootc image and deploy it to a bare metal or to a cloud environment.
+The installation method happens only one time. After you deploy your image, any future updates will apply directly from the container registry as the updates are published.
+Figure 6.1. Deploying a bootc image by using a basic build installer bootc install, or deploying a container image by using Anaconda and Kickstart
+Figure 6.2. Using bootc-image-builder to create disk images from bootc images and deploying disk images in different environments, such as the edge, servers, and clouds by using Anaconda, bootc-image-builder or bootc install
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.1. Deploying a container image by using KVM with a QCOW2 disk image
+After creating a QEMU disk image from a RHEL bootc image by using the bootc-image-builder tool, you can use a virtualization software to boot it.
+Prerequisites
+You created a container image. See Creating QCOW2 images by using bootc-image-builder.
+You pushed the container image to an accessible repository.
+Procedure
+Run the container image that you create by using either libvirt. See Creating virtual machines by using the command-line interface for more details.
+The following example uses libvirt:
+$ sudo virt-install \
+  --name bootc \
+  --memory 4096 \
+  --vcpus 2 \
+  --disk qcow2/disk.qcow2 \
+  --import \
+  --os-variant rhel9-unknown
+Verification
+Connect to the VM in which you are running the container image. See Connecting to virtual machines for more details.
+Next steps
+You can make updates to the image and push the changes to a registry. See Managing RHEL bootc images.
+Additional resources
+Configuring and managing virtualization
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.2. Deploying a container image to AWS with an AMI disk image
+After using the bootc-image-builder tool to create an AMI from a bootc image, and uploading it to a AWS s3 bucket, you can deploy a container image to AWS with the AMI disk image.
+Prerequisites
+You created an Amazon Machine Image (AMI) from a bootc image. See Creating AMI images by using bootc-image-builder and uploading it to AWS.
+cloud-init is available in the Containerfile that you previously created so that you can create a layered image for your use case.
+Procedure
+In a browser, access Service→EC2 and log in.
+On the AWS console dashboard menu, choose the correct region. The image must have the Available status, to indicate that it was correctly uploaded.
+On the AWS dashboard, select your image and click Launch.
+In the new window that opens, choose an instance type according to the resources you need to start your image. Click Review and Launch.
+Review your instance details. You can edit each section if you need to make any changes. Click Launch.
+Before you start the instance, select a public key to access it. You can either use the key pair you already have or you can create a new key pair.
+Click Launch Instance to start your instance. You can check the status of the instance, which displays as Initializing.
+After the instance status is Running, the Connect button becomes available.
+Click Connect. A window appears with instructions on how to connect by using SSH.
+Run the following command to set the permissions of your private key file so that only you can read it. See Connect to your Linux instance.
+$ chmod 400 <your-instance-name.pem>
+Connect to your instance by using its Public DNS:
+$ ssh -i <your-instance-name.pem>ec2-user@<your-instance-IP-address>
+Verification
+After launching your image, you can:
+Try to connect to http://<your_instance_ip_address> in a browser.
+Check if you are able to perform any action while connected to your instance by using SSH.
+Next steps
+After you deploy your image, you can make updates to the image and push the changes to a registry. See Managing RHEL bootc images.
+Additional resources
+Pushing images to AWS Cloud AMI
+Amazon Machine Images (AMI)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.3. Deploying a container image by using Anaconda and Kickstart
+You can deploy the RHEL ISO image that you downloaded from Red Hat by using Anaconda and Kickstart to install your container image.
+Prerequisites
+You have downloaded the 9.4 Boot ISO for your architecture from Red Hat. See Downloading RH boot images.
+Procedure
+Create an ostreecontainer Kickstart file. For example:
+# Basic setup
+text
+network --bootproto=dhcp --device=link --activate
+# Basic partitioning
+clearpart --all --initlabel --disklabel=gpt
+reqpart --add-boot
+part / --grow --fstype xfs
+
+# Reference the container image to install - The kickstart
+# has no %packages section. A container image is being installed.
+ostreecontainer --url registry.redhat.io/rhel9/rhel-bootc:9.4
+
+firewall --disabled
+services --enabled=sshd
+
+# Only inject a SSH key for root
+rootpw --iscrypted locked
+sshkey --username root "<your key here>"
+reboot
+Boot a system by using the 9.4 Boot ISO installation media.
+Append the Kickstart file with the following to the kernel argument:
+inst.ks=http://<path_to_your_kickstart>
+Press CTRL+X to boot the system.
+Next steps
+After you deploy your container image, you can make updates to the image and push the changes to a registry. See Managing RHEL bootc images.
+Additional resources
+ostreecontainer documentation
+bootc upgrade fails when using local rpm-ostree modifications (Red Hat Knowledgebase)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.4. Deploying a custom ISO container image
+After you build an ISO image by using bootc-image-builder, the resulting image is a system similar to the RHEL ISOs available for download, except that your container image content is embedded in the ISO disk image. You do not need to have access to the network during installation. You can install the resulting ISO disk image to a bare metal system. See Creating ISO images by using bootc-image-builder.
+Prerequisites
+You have created an ISO image with your bootc image embedded.
+Procedure
+Copy your ISO disk image to a USB flash drive.
+Perform a bare-metal installation by using the content in the USB stick into a disconnected environment.
+Next steps
+After you deploy your container image, you can make updates to the image and push the changes to a registry. See Managing RHEL bootc images.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.5. Deploying an ISO bootc image over PXE boot
+You can use a network installation to deploy the RHEL ISO image over PXE boot to run your ISO bootc image.
+Prerequisites
+You have downloaded the 9.4 Boot ISO for your architecture from Red Hat. See Downloading RH boot images.
+You have configured the server for the PXE boot. Choose one of the following options:
+For HTTP clients, see Configuring the DHCPv4 server for HTTP and PXE boot.
+For UEFI-based clients, see Configuring a TFTP server for UEFI-based clients.
+For BIOS-based clients, see Configuring a TFTP server for BIOS-based clients.
+You have a client, also known as the system to which you are installing your ISO image.
+Procedure
+Export the RHEL installation ISO image to the HTTP server. The PXE boot server is now ready to serve PXE clients.
+Boot the client and start the installation.
+Select PXE Boot when prompted to specify a boot source. If the boot options are not displayed, press the Enter key on your keyboard or wait until the boot window opens.
+From the Red Hat Enterprise Linux boot window, select the boot option that you want, and press Enter.
+Start the network installation.
+Next steps
+You can make updates to the image and push the changes to a registry. See Managing RHEL bootc images.
+Additional resources
+Preparing to install from the network using PXE
+Booting the installation from a network by using PXE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.6. Building, configuring, and launching disk images with bootc-image-builder
+You can inject configuration into a custom image by using a Containerfile.
+Procedure
+Create a disk image. The following example shows how to add a user to the disk image.
+[[blueprint.customizations.user]]
+name = "user"
+password = "pass"
+key = "ssh-rsa AAA ... user@email.com"
+groups = ["wheel"]
+name - User name. Mandatory
+password - Nonencrypted password. Not mandatory
+key - Public SSH key contents. Not mandatory
+groups - An array of groups to add the user into. Not mandatory
+Run bootc-image-builder and pass the following arguments:
+$ sudo podman run \
+    --rm \
+    -it \
+    --privileged \
+    --pull=newer \
+    --security-opt label=type:unconfined_t \
+    -v $(pwd)/config.toml:/config.toml \
+    -v $(pwd)/output:/output \
+    registry.redhat.io/rhel9/bootc-image-builder:latest \
+    --type qcow2 \
+    --config config.toml \
+    quay.io/<namespace>/<image>:<tag>
+Launch a VM, for example, by using virt-install:
+$ sudo virt-install \
+  --name bootc \
+  --memory 4096 \
+  --vcpus 2 \
+  --disk qcow2/disk.qcow2 \
+  --import \
+  --os-variant rhel9
+Verification
+Access the system with SSH:
+# ssh -i /<path_to_private_ssh-key> <user1>@<ip-address>
+Next steps
+After you deploy your container image, you can make updates to the image and push the changes to a registry. See Managing RHEL bootable images.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.7. Deploying a container image by using bootc
+With bootc, you have a container that is the source of truth. It contains a basic build installer and it is available as bootc install to-disk or bootc install to-filesystem. By using the bootc install methods you do not need to perform any additional steps to deploy the container image, because the container images include a basic installer.
+With image mode for RHEL, you can install unconfigured images, for example, images that do not have a default password or SSH key.
+Perform a bare-metal installation to a device by using a RHEL ISO image.
+Prerequisites
+You have downloaded the 9.4 Boot ISO for your architecture from Red Hat. See Downloading RH boot images.
+You have created a configuration file.
+Procedure
+inject a configuration into the running ISO image, for example:
+$ podman run --rm --privileged --pid=host -v /var/lib/containers:/var/lib/containers --security-opt label=type:unconfined_t <image> bootc install to-disk <path-to-disk>
+Next steps
+After you deploy your container image, you can make updates to the image and push the changes to a registry. See Managing RHEL bootable images.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.8. Advanced installation with to-filesystem
+The bootc install contains two subcommands: bootc install to-disk and bootc install to-filesystem.
+The bootc-install-to-filesystem performs installation to the target filesystem.
+The bootc install to-disk subcommand consists of a set of opinionated lower level tools that you can also call independently. The command consist of the following tools:
+mkfs.$fs /dev/disk
+mount /dev/disk /mnt
+bootc install to-filesystem --karg=root=UUID=<uuid of /mnt> --imgref $self /mnt
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.8.1. Using bootc install to-existing-root
+The bootc install to-existing-root is a variant of install to-filesystem. You can use it to convert an existing system into the target container image.
+Prerequisites
+You must have root permissions to complete the procedure.
+You must match the host environment and the target container version, for example, if your host is a RHEL 9 host, then you must have a RHEL 9 container. Installing a RHEL container on a Fedora host by using btrfs as the RHEL kernel will not support that filesystem.
+Procedure
+Run the following command to convert an existing system into the target container image. Pass the target rootfs by using the -v /:/target option.
+# podman run --rm --privileged -v /dev:/dev -v /var/lib/containers:/var/lib/containers -v /:/target \
+            --pid=host --security-opt label=type:unconfined_t \
+            <image> \
+            bootc install to-existing-root
+This command deletes the data in /boot, but everything else in the existing operating system is not automatically deleted. This can be useful because the new image can automatically import data from the previous host system. Consequently, container images, database, the user home directory data, configuration files in /etc are all available after the subsequent reboot in /sysroot.
+You can also use the --root-ssh-authorized-keys flag to inherit the root user SSH keys, by adding --root-ssh-authorized-keys /target/root/.ssh/authorized_keys. For example:
+# podman run --rm --privileged -v /dev:/dev -v /var/lib/containers:/var/lib/containers -v /:/target \
+            --pid=host --security-opt label=type:unconfined_t \
+            <image> \
+            bootc install to-existing-root --root-ssh-authorized-keys /target/root/.ssh/authorized_keys
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 7. Enabling the FIPS mode while building a bootc image
+FIPs include standards for cryptographic operations. You can enable the FIPS mode during the bootc image build time, when building a bootc image, to configure the system to use only FIPS approved modules. There are 2 options to enable FIPS mode:
+By using the bootc-image-builder tool: you must enable the FIPS crypto policy into the Containerfile.
+When performing an Anaconda installation: apart from enabling the FIPS crypto policy into the Containerfile, you must add the fips=1 kernel argument during the boot time.
+FIPS dracut module is built-in to the base image. It defaults to a boot=UUID= karg in bootc install-to-filesystem.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.1. Enabling the FIPS mode by using bootc-image-builder tool
+To create a disk image and enable the FIPS mode with the bootc-image-builder or the bootc install to-disk tool, pass the custom Containerfile as an argument when building the image.
+Prerequisites
+You have Podman installed on your host machine.
+You have virt-install installed on your host machine.
+You have root access to run the bootc-image-builder tool, and run the containers in --privileged mode, to build the images.
+Procedure
+Create a Containerfile with the following instructions to enable the fips=1 kernel argument:
+FROM registry.redhat.io/rhel9/rhel-bootc:latest
+# Enable fips=1 kernel argument: https://containers.github.io/bootc/building/kernel-arguments.html
+COPY 01-fips.toml /usr/lib/bootc/kargs.d/
+# Enable the FIPS crypto policy
+# crypto-policies-scripts is not installed by default in RHEL-10
+RUN dnf install -y crypto-policies-scripts && update-crypto-policies --no-reload --set FIPS
+Create your bootc compatible base disk images with bootc-image-builder.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.2. Enabling the FIPS mode to perform an Anaconda installation
+To create a disk image and enable the FIPS mode when performing an Anaconda installation, follow the steps:
+Prerequisites
+You have Podman installed on your host machine.
+You have virt-install installed on your host machine.
+You have root access to run the bootc-image-builder tool, and run the containers in --privileged mode, to build the images.
+Procedure
+Create a Containerfile with the following instructions to enable the fips=1 kernel argument:
+FROM registry.redhat.io/rhel9/rhel-bootc:latest
+# Enable fips=1 kernel argument: https://containers.github.io/bootc/building/kernel-arguments.html
+COPY 01-fips.toml /usr/lib/bootc/kargs.d/
+# Install and enable the FIPS crypto policy
+RUN dnf install -y crypto-policies-scripts && update-crypto-policies --no-reload --set FIPS
+Create your bootc compatible base disk images with bootc-image-builder, passing the custom container as an argument.
+Follow the Installing the system with FIPS mode enabled documentation to enable FIPS mode during the system installation.
+When booting the RHEL Anaconda installer, on the installation screen, press the TAB key and add the fips=1 kernel argument.
+Verification
+After login in to the system, check that FIPS mode is enabled:
+$ cat /proc/sys/crypto/fips_enabled
+1
+$ update-crypto-policies --show
+FIPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 8. Managing RHEL bootc images
+After installing and deploying RHEL bootc images, you can perform management operations on your container images, such as changing or updating the systems. The system supports in-place transactional updates with rollback after deployment.
+This kind of management, also known as Day 2 management baseline, consists of transactionally fetching new operating system updates from a container registry and booting the system into them, while supporting manual, or automated rollbacks in case of failures.
+You can also rely on automatic updates, that are turned on by default. The systemd service unit and the systemd timer unit files check the container registry for updates and apply them to the system. You can trigger an update process with different events, such as updating an application. There are automation tools watching these updates and then triggering the CI/CD pipelines. A reboot is required, because the updates are transactional. For environments that require more sophisticated or scheduled rollouts, you must disable auto updates and use the bootc utility to update your operating system.
+See Day 2 operations support for more details.
+Figure 8.1. Manually updating an installed operating system, changing the container image reference or rolling back changes if needed
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.1. Switching the container image reference
+You can change the container image reference used for upgrades by using the bootc switch command. For example, you can switch from the stage to the production tag. The bootc switch command performs the same operations as the bootc upgrade command and additionally changes the container image reference.
+To manually switch an existing ostree-based container image reference, use the bootc switch command.
+Prerequisites
+A booted system using bootc.
+Procedure
+Run the following command:
+$ bootc switch [--apply] quay.io/<namespace>/<image>:<tag>
+Optionally, you can use the --apply option when you want to automatically take actions, such as rebooting if the system has changed.
+Additional resources
+The bootc-switch man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.2. Adding modules to the bootc image initramfs
+The rhel9/rhel-bootc image uses the dracut infrastructure to build an initial RAM disk, the initrd during the image build time. The initrd is built and included in the /usr/lib/modules/$kver/initramfs.img location inside the container.
+You can use a drop-in configuration file to override the dracut configuration, and place it in /usr/lib/dracut/dracut.conf.d/<50-custom-added-modules.conf> And thus re-create initrd with the modules you want to add.
+Prerequisites
+A booted system using bootc.
+Procedure
+Re-create the initrd as part of a container build:
+FROM <baseimage>
+COPY <50-custom-added-modules>.conf /usr/lib/dracut/dracut.conf.d
+RUN set -x; kver=$(cd /usr/lib/modules && echo *); dracut -vf /usr/lib/modules/$kver/initramfs.img $kver
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.3. Modifying and regenerating initrd
+The default container image includes a pre-generated initial RAM disk (initrd) in /usr/lib/modules/$kver/initramfs.img. To regenerate the initrd, for example, to add a dracut module, follow the steps:
+Procedure
+Write your drop-in configuration file. For example:
+dracutmodules = "module"
+Place your drop-in configuration file in the location that dracut normally uses: /usr. For example:
+/usr/lib/dracut/dracut.conf.d/50-custom-added-modules.conf
+Regenerate the initrd as part of the container build. You must explicitly pass the kernel version to target to dracut, because it tries to pull the running kernel version, which can cause an error. The following is an example:
+FROM <baseimage>
+COPY 50-custom-added-modules.conf /usr/lib/dracut/dracut.conf.d
+RUN set -x; kver=$(cd /usr/lib/modules && echo *); dracut -vf /usr/lib/modules/$kver/initramfs.img $kver
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.4. Performing manual updates from an installed operating system
+Installing image mode for RHEL is a one time task. You can perform any other management task, such as changing or updating the system, by pushing the changes to the container registry.
+When using image mode for RHEL, you can choose to perform manual updates for your systems. Manual updates are also useful if you have an automated way to perform updates, for example, by using Ansible. Because the automatic updates are enabled by default, to perform manual updates you must turn the automatic updates off. You can do this by choosing one of the following options:
+Running the bootc upgrade command
+Modifying the systemd timer file
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.5. Turning off automatic updates
+To perform manual updates you must turn off automatic updates. You can do this by choosing one of the following options in the procedure below.
+Procedure
+Disable the timer of a container build.
+By running the bootc upgrade command:
+$ systemctl mask bootc-fetch-apply-updates.timer
+By modifying the systemd timer file. Use systemd "drop-ins" to override the timer. In the following example, updates are scheduled for once a week.
+Create an updates.conf file with the following content:
+[Timer]
+# Clear previous timers
+OnBootSec= OnBootSec=1w OnUnitInactiveSec=1w
+Add your container to the file that you created:
+$ mkdir -p /usr/lib/systemd/system/bootc-fetch-apply-updates.timer.d
+$ cp updates.conf /usr/lib/systemd/system/bootc-fetch-apply-updates.timer.d
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.6. Manually updating an installed operating system
+To manually fetch updates from a registry and boot the system into the new updates, use bootc upgrade. This command fetches the transactional in-place updates from the installed operating system to the container image registry. The command queries the registry and queues an updated container image for the next boot. It stages the changes to the base image, while not changing the running system by default.
+Procedure
+Run the following command:
+$ bootc upgrade [--apply]
+The apply argument is optional and you can use it when you want to automatically take actions, such as rebooting if the system has changed.
+Additional resources
+The bootc-upgrade man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.7. Performing rollbacks from a updated operating system
+You can roll back to a previous boot entry to revert changes by using the bootc rollback command. This command changes the boot loader entry ordering by making the deployment under rollback queued for the next boot. The current deployment then becomes the rollback. Any staged changes, such as a queued upgrade that was not applied, are discarded.
+After a rollback completes, the system reboots and the update timer runs within 1 to 3 hours which automatically updates and reboots your system to the image you just rolled back from.
+Prerequisites
+You performed an update to the system.
+Procedure
+Run the following command:
+$ bootc rollback [-h|--help] [-V|--version]
+Verification
+Use systemd journal to check the logged message for the detected rollback invocation.
+$ journalctl -b
+You can see a log similar to:
+MESSAGE_ID=26f3b1eb24464d12aa5e7b544a6b5468
+Additional resources
+The bootc-rollback man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.8. Deploying updates to system groups
+You can change the configuration of your operating system by modifying the Containerfile. Then you can build and push your container image to the registry. When you next boot your operating system, an update will be applied.
+You can also change the container image source by using the bootc switch command. The container registry is the source of truth. See Switching the container image reference.
+Usually, when deploying updates to system groups, you can use a central management service to provide a client to be installed on each system which connects to the central service. Often, the management service requires the client to perform a one time registration. The following is an example on how to deploy updates to system groups. You can modify it to create a persistent systemd service, if required.
+You can install a client into an image mode for RHEL image and run it at startup to register the system.
+Prerequisites
+The management-client handles future connections to the server, by using a cron job or a separate systemd service.
+Procedure
+Create a management service with the following characteristics. It determines when to upgrade the system.
+Disable bootc-fetch-apply-updates.timer if it is included in the base image.
+Install the client by using dnf, or some other method that applies for your client.
+Inject the credentials for the management service into the image.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.9. Checking inventory health
+Health checks are one of the Day 2 Operations. You can manually check the system health of the container images and events that are running inside the container.
+You can set health checks by creating the container on the command line. You can display the health check status of a container by using the podman inspect or podman ps commands.
+You can monitor and print events that occur in Podman by using the podman events command. Each event includes a timestamp, a type, a status, a name, if applicable, and an image, if applicable.
+For more information about health checks and events, see chapter Monitoring containers.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.10. Automation and GitOps
+You can automate the building process by using CI/CD pipelines so that an update process can be triggered by events, such as updating an application. You can use automation tools that track these updates and trigger the CI/CD pipelines. The pipeline keeps the systems up to date by using the transactional background operating system updates.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.11. Using Toolbx to inspect bootc containers
+Installing software on a system presents certain risks: it can change a system’s behavior, and can leave unwanted files and directories behind after they are no longer needed. You can prevent these risks by installing your favorite development and debugging tools, editors, and software development kits (SDKs) into the Toolbx utility included in the RHEL bootc, an image fully mutable container without affecting the base operating system. You can perform changes on the host system with commands such as less, lsof, rsync, ssh, sudo, and unzip.
+The Toolbx utility performs the following actions:
+Pulling the registry.access.redhat.com/ubi9/toolbox:latest image to your local system
+Starting up a container from the image
+Running a shell inside the container from which you can access the host system
+The default container name is rhel-toolbox. To inspect bootc containers, follow the steps:
+Procedure
+Start a Toolbx container by using the toolbox create command and enter the container with the toolbox enter command.
+As a rootless user:
+$ toolbox create <mytoolbox>
+As a root user:
+$ sudo toolbox create <mytoolbox>
+Created container: <mytoolbox>
+Enter with: toolbox enter
+Verify that you pulled the correct image:
+[user@toolbox ~]$ toolbox list
+IMAGE ID      IMAGE NAME    CREATED
+fe0ae375f149   registry.access.redhat.com/ubi{ProductVersion}/toolbox 5 weeks ago
+
+CONTAINER ID  CONTAINER NAME  CREATED         STATUS   IMAGE NAME
+5245b924c2cb  <mytoolbox>       7 minutes ago   created  registry.access.redhat.com/ubi{ProductVersion}/toolbox:8.9-6
+Enter the Toolbx container:
+[user@toolbox ~]$ toolbox enter <mytoolbox>
+Optional: Check if you pulled the correct image
+Enter a command inside the <mytoolbox> container and display the name of the container and the image:
+⬢ [user@toolbox ~]$ cat /run/.containerenv
+engine="podman-4.8.2"
+name="<mytoolbox>"
+id="5245b924c2cb..."
+image="registry.access.redhat.com/ubi{ProductVersion}/toolbox"
+imageid="fe0ae375f14919cbc0596142e3aff22a70973a36e5a165c75a86ea7ec5d8d65c"
+Use the Toolbx to install the development tools:
+Install the tools of your choice, for example, the Emacs text editor, GCC compiler and GNU Debugger (GDB):
+⬢[user@toolbox ~]$ sudo dnf install emacs gcc gdb
+Optional: Verify that the tools are installed:
+⬢[user@toolbox ~]$  dnf repoquery --info --installed <package_name>
+After installation, you can continue using those tools as a rootless user.
+Use Toolbx to troubleshoot the host system without installing them on the host system.
+Install the systemd suite to be able to run the journalctl command:
+⬢[root@toolbox ~]# dnf install systemd
+Display log messages for all processes running on the host:
+⬢[root@toolbox ~]# j journalctl --boot -0
+Jan 02 09:06:48 user-thinkpadp1gen4i.brq.csb kernel: microcode: updated ear>
+Jan 02 09:06:48 user-thinkpadp1gen4i.brq.csb kernel: Linux version 6.6.8-10>
+Jan 02 09:06:48 user-thinkpadp1gen4i.brq.csb kernel: Command line: BOOT_IMA>
+Jan 02 09:06:48 user-thinkpadp1gen4i.brq.csb kernel: x86/split lock detecti>
+Jan 02 09:06:48 user-thinkpadp1gen4i.brq.csb kernel: BIOS-provided physical>
+Display log messages for the kernel:
+⬢[root@toolbox ~]# journalctl --boot -0 --dmesg
+Jan 02 09:06:48 user-thinkpadp1gen4i.brq.csb kernel: microcode: updated ear>
+Jan 02 09:06:48 user-thinkpadp1gen4i.brq.csb kernel: Linux version 6.6.8-10>
+Jan 02 09:06:48 user-thinkpadp1gen4i.brq.csb kernel: Command line: BOOT_IMA>
+Jan 02 09:06:48 user-thinkpadp1gen4i.brq.csb kernel: x86/split lock detecti>
+Jan 02 09:06:48 user-thinkpadp1gen4i.brq.csb kernel: BIOS-provided physical>
+Jan 02 09:06:48 user-thinkpadp1gen4i.brq.csb kernel: BIOS-e820: [mem 0x0000>
+Install the nmap network scanning tool:
+⬢[root@toolbox ~]# dnf install nmap
+Scan IP addresses and ports in a network:
+⬢[root@toolbox ~]# nmap -sS scanme.nmap.org
+Starting Nmap 7.93 ( https://nmap.org ) at 2024-01-02 10:39 CET
+Stats: 0:01:01 elapsed; 0 hosts completed (0 up), 256 undergoing Ping Scan
+Ping Scan Timing: About 29.79% done; ETC: 10:43 (0:02:24 remaining)
+Nmap done: 256 IP addresses (0 hosts up) scanned in 206.45 seconds
+The -sS option performs a TCP SYN scan. Most of Nmap’s scan types are only available to privileged users, because they send and receive raw packets, which requires root access on UNIX systems.
+Stop the Toolbx bootc container.
+Leave the container and return to the host:
+⬢ [user@toolbox ~]$ exit
+Stop the toolbox container:
+⬢ [user@toolbox ~]$ podman stop <mytoolbox>
+Optional: Remove the toolbox container:
+⬢ [user@toolbox ~]$ toolbox rm <mytoolbox>
+Alternatively, you can also use the podman rm command to remove the bootc container.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 9. Managing kernel arguments in bootc systems
+You can use bootc to configure kernel arguments. By default, bootc uses the boot loader configuration files that are stored in /boot/loader/entries. This directory defines arguments provided to the Linux kernel. The set of kernel arguments is machine-specific state, but you can also manage the kernel arguments by using container updates. The boot loader menu entries are shared between multiple operating systems and boot loaders are installed on one device.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.1. How to add support to inject kernel arguments with bootc
+The bootc tool uses generic operating system kernels. You can add support to inject kernel arguments by adding a custom configuration, in the TOML format, in /usr/lib/bootc/kargs.d. For example:
+# /usr/lib/bootc/kargs.d/10-example.toml
+kargs = ["mitigations=auto,nosmt"]
+You can also make these kernel arguments architecture-specific by using the match-architectures key. For example:
+# /usr/lib/bootc/kargs.d/00-console.toml
+kargs = ["console=ttyS0,114800n8"]
+match-architectures = ["x86_64"]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.2. How to modify kernel arguments by using bootc install configs
+You can use bootc install to add kernel arguments during the install time in the following ways:
+Adding kernel arguments into the container image.
+Adding kernel arguments by using the bootc install --karg command.
+You can use the kernel arguments on Day 2 operations, by adding the arguments and applying them on a switch, upgrade, or edit. Adding kernel arguments and using it for Day 2 operations involves the following high-level steps:
+Create files within /usr/lib/bootc/kargs.d with kernel arguments.
+Fetch the container image to get the OSTree commit.
+Use the OSTree commit to return the file tree.
+Navigate to /usr/lib/bootc/kargs.d.
+Read each file within the directory.
+Push the contents of each kargs file into a file containing all the needed kargs.
+Pass the kargs to the stage() function.
+Apply these arguments to switch, upgrade, or edit.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.3. How to inject kernel arguments in the Containerfile
+To add kernel arguments into a container image, use a Containerfile. The following is an example:
+FROM registry.redhat.io/rhel9/rhel-bootc:latest
+
+RUN mkdir -p /usr/lib/bootc/kargs.d
+RUN cat <<EOF >> /usr/lib/bootc/kargs.d/console.toml
+kargs = ["console=ttyS0,114800n8"]
+match-architectures = ["x86_64"]
+EOF
+
+RUN cat <<EOF >> /usr/lib/bootc/kargs.d/01-mitigations.toml
+kargs = ["mitigations=on", "systemd.unified_cgroup_hierarchy=0"]
+match-architectures = ["x86_64", "aarch64"]
+EOF
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.4. How to inject kernel arguments at installation time
+You can use boot install with the --karg to inject kernel arguments during installation time. As a result, the kernel arguments become machine-local state.
+For example, to inject kernel arguments, use the following command:
+# bootc install to-filesystem --karg
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.5. How to add install-time kernel arguments with bootc-image-builder
+The bootc-image-builder tool supports the customizations.kernel.append during install-time.
+To add the kernel arguments with bootc-image-builder, use the following customization:
+{
+  "customizations": {
+    "kernel": {
+      "append": "mitigations=auto,nosmt"
+    }
+  }
+}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.6. About changing kernel arguments post-install with kargs.d
+The changes that you make to kargs.d files and include in a container build are applied after the installation, and the difference between the set of kernel arguments is applied to the current boot loader configuration. This preserves any machine-local kernel arguments. You can use any tool to edit the /boot/loader/entries files, which are in a standardized format. The /boot file has read-only access to limit the set of tools that can write to this filesystem.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.7. How to edit kernel arguments in bootc systems
+To perform machine local changes, you also can edit kernel arguments on a bootc system or an`rpm-ostree` system, by using the rpm-ostree kargs command. The changes are made through the user/lib/bootc/kargs.d path, which also handles "Day 2" changes, besides the first boot changes.
+The following are the options that you can use to add, modify or remove kernel arguments.
+rpm-ostree kargs [option]
+For more information, check the help:
+# rpm-ostree kargs --help
+The following is an example:
+# rpm-ostree kargs --append debug
+Staging deployment... done
+Freed: 40.1 MB (pkgcache branches: 0)
+Changes queued for next boot. Run "systemctl reboot" to start a reboot
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 10. Managing file systems in image mode for RHEL
+Currently, image mode for RHEL uses OSTree as a backend, and enables composefs for storage by default. The /opt and /usr/local paths are plain directories, and not symbolic links into /var. This enables you to easily install third-party content in derived container images that write into /opt for example.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10.1. Physical and logical root with /sysroot
+When a system is fully booted, it is similar to chroot, that is, the operating system changes the apparent root directory for the current running process and its children. The physical host root filesystem is mounted at /sysroot. The chroot filesystem is called a deployment root.
+The remaining filesystem paths are part of a deployment root which is used as a final target for the system boot. The system uses the ostree=kernel argument to find the deployment root.
+The ostree-finalize-staged.service executes these tasks during shutdown time, before creating the new boot loader entry.
+This happens because many components of a Linux system ship default configuration files in the /etc directory. Even if the default package does not ship it, by default the software only checks for config files in /etc. Non bootc image based update systems with no distinct versions of /etc are populated only during the installation time, and will not be changed at any point after installation. This causes the /etc system state to be influenced by the initial image version and can lead to problems to apply a change, for example, to /etc/sudoers.conf, and requires external intervention. For more details about file configuration, see Building and testing RHEL bootc images.
+There is just one /var directory. If it is not a distinct partition, then physically the /var directory is a bind mount into /ostree/deploy/$stateroot/var and is shared across the available boot loader entries deployments.
+By default, the content in /var acts as a volume, that is, the content from the container image is copied during the initial installation time, and is not updated thereafter.
+The /var and the /etc directories are different. You can use /etc for relatively small configuration files, and the expected configuration files are often bound to the operating system binaries in /usr. The /var directory has arbitrarily large data, for example, system logs, databases, and by default, will not be rolled back if the operating system state is rolled back.
+For example, making an update such as dnf downgrade postgresql should not affect the physical database in /var/lib/postgres. Similarly, making a bootc update or bootc rollback do not affect this application data.
+Having /var separate also makes it work cleanly to stage new operating system updates before applying them, that is, updates are downloaded and ready, but only take effect on reboot. The same applies for Docker volume, as it decouples the application code from its data.
+You can use this case if you want applications to have a pre-created directory structure, for example, /var/lib/postgresql. Use systemd tmpfiles.d for this. You can also use StateDirectory=<directory> in units.
+When a software needs to write to its own directory in /opt/exampleapp, a common pattern is to use a symbolic link to redirect to, for example, /var for operations such as log files:
+RUN rmdir /opt/exampleapp/logs && ln -sr /var/log/exampleapp /opt/exampleapp/logs
+Optionally, you can configure the systemd unit to launch the service to do these mounts dynamically. For example:
+BindPaths=/var/log/exampleapp:/opt/exampleapp/logs
+[root]
+transient = true
+This enables a software to transiently writes to /opt, with symlinks to /var for content that must persist.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10.2. Version selection and bootup
+Image mode for RHEL uses GRUB by default, with exception to s390x architectures. Each version of image mode for RHEL currently available on a system has a menu entry.
+The menu entry references an OSTree deployment which consists of a Linux kernel, an initramfs and a hash linking to an OSTree commit, that you can pass by using the ostree=kernel argument.
+During bootup, OSTree reads the kernel argument to determine which deployment to use as the root filesystem. Each update or change to the system, such as package installation, addition of kernel arguments, creates a new deployment.
+This enables rolling back to a previous deployment if the update causes problems.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 11. Appendix: Managing users, groups, SSH keys, and secrets in image mode for RHEL
+Learn more about users, groups, SSH keys, and secrets management in image mode for RHEL.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11.1. Users and groups configuration
+Image mode for RHEL is a generic operating system update and configuration mechanism. You cannot use it to configure users or groups. The only exception is the bootc install command that has the --root-ssh-authorized-keys option.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11.2. Injecting secrets in image mode for RHEL
+Image mode for RHEL does not have an opinionated mechanism for secrets. You can inject container pull secrets in your system for some cases, for example:
+For bootc to fetch updates from a registry that requires authentication, you must include a pull secret in a file. In the following example, the creds secret contains the registry pull secret.
+FROM registry.redhat.io/rhel9/bootc-image-builder:latest
+COPY containers-auth.conf /usr/lib/tmpfiles.d/link-podman-credentials.conf
+RUN --mount=type=secret,id=creds,required=true cp /run/secrets/creds /usr/lib/container-auth.json && \
+    chmod 0600 /usr/lib/container-auth.json && \
+    ln -sr /usr/lib/container-auth.json /etc/ostree/auth.json
+To build it, run podman build --secret id=creds,src=$HOME/.docker/config.json. Use a single pull secret for bootc and Podman by using a symlink to both locations to a common persistent file embedded in the container image, for example /usr/lib/container-auth.json.
+For Podman to fetch container images, include a pull secret to /etc/containers/auth.json. With this configuration, the two stacks share the /usr/lib/container-auth.json file.
+Additional resources
+Example bootc images
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11.3. Configuring container pull secrets
+To be able to fetch container images, you must configure a host system with a "pull secret", which includes the host updates itself. See the appendix about Injecting secrets in image mode for RHEL documentation for more details.
+You can configure the container pull secrets to an image already built. If you use an external installer such as Anaconda for bare metal, or bootc-image-builder, you must configure the systems with any applicable pull secrets.
+The host bootc updates write the configuration to the /etc/ostree/auth.json file, which is shared with rpm-ostree.
+Podman does not have system wide credentials. Podman accepts the containers-auth locations that are underneath the following directories:
+/run: The content of this directory vanishes on reboot, which is not desired.
+/root: Part of root’s home directory, which is local mutable state by default.
+To unify bootc and Podman credentials, use a single default global pull secret for both bootc and Podman. The following container build is an example to unify the bootc and the Podman credentials. The example expects a secret named creds to contain the registry pull secret to build.
+Prerequisites
+TBD
+Procedure
+Create a symbolic link between bootc and Podman to use a single pull secret. By creating the symbolic link, you ensure that both locations are present to a common persistent file embedded in the container image.
+Create the /usr/lib/container-auth.json file.
+FROM quay.io/<namespace>/<image>:_<tag>_
+COPY containers-auth.conf /usr/lib/tmpfiles.d/link-podman-credentials.conf
+RUN --mount=type=secret,id=creds,required=true cp /run/secrets/creds /usr/lib/container-auth.json && \
+    chmod 0600 /usr/lib/container-auth.json && \
+    ln -sr /usr/lib/container-auth.json /etc/ostree/auth.json
+When you run the Containerfile, the following actions happen:
+The Containerfile makes /run/containers/0/auth.json a transient runtime file.
+It creates a symbolic link to the /usr/lib/container-auth.json.
+It also creates a persistent file, which is also symbolic linked from /etc/ostree/auth.json.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11.4. Injecting pull secrets for registries and disabling TLS
+You can configure container images, pull secrets, and disable TLS for a registry within a system. These actions enable containerized environments to pull images from private or insecure registries.
+You can include container pull secrets and other configuration to access a registry inside the base image. However, when installing by using Anaconda, the installation environment might need a duplicate copy of "bootstrap" configuration to access the targeted registry when fetching over the network.
+To perform arbitrary changes to the installation environment before the target bootc container image is fetched, you can use the Anaconda %pre command.
+Procedure
+Configure a pull secret:
+%pre
+mkdir -p /etc/ostree
+cat > /etc/ostree/auth.json << 'EOF'
+{
+        "auths": {
+                "quay.io": {
+                        "auth": "<your secret here>"
+                }
+        }
+}
+EOF
+%end
+With this configuration, the system pulls images from quay.io using the provided authentication credentials, which are stored in /etc/ostree/auth.json.
+Disable TLS for an insecure registry:
+%pre
+mkdir -p /etc/containers/registries.conf.d/
+cat > /etc/containers/registries.conf.d/local-registry.conf << 'EOF'
+
+[[registry]]
+location="[IP_Address]:5000"
+insecure=true
+EOF
+%end
+With this configuration, the system pulls container images from a registry that is not secured with TLS. You can use it in development or internal networks.
+You can also use %pre to:
+Fetch data from the network by using binaries included in the installation environment, such as curl.
+Inject trusted certificate authorities into the installation environment /etc/pki/ca-trust/source/anchors by using the update-ca-trust command.
+You can configure insecure registries similarly by modifying the /etc/containers directory.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 12. Appendix: System configuration
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+12.1. Transient runtime reconfiguration
+You can perform a dynamic reconfiguration in the base image configuration. For example, you can run the firewall-cmd --permanent command to achieve persistent changes across a reboot.
+In the default configuration, first make the changes in the base image, then queue the changes without restarting running systems, and then simultaneously write to apply the changes to existing systems only in memory.
+You can configure the /etc directory to be transient by using bind mounts. In this case, the etc directory is a part of the machine’s local root filesystem. For example, if you inject static IP addresses by using Anaconda kickstarts, they persist across upgrades.
+A 3-way merge is applied across upgrades and each "deployment" has its own copy of /etc.
+In the Push model, some workloads are implemented by tooling such as Ansible.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+12.2. Using dnf
+The rhel9/rhel-bootc container image includes dnf. There are several use cases:
+You can use the bootc-usr-overlay command to create a writable overlay filesystem for /usr directory. The dnf install writes to this overlay. You can use this feature for installing debugging tools. Note that changes will be lost on reboot.
+You can add other storage packages to the host system.
+Storage with bootc-image-builder You can use the bootc-image-builder tool to create a disk image. The available configuration for partitioning and layout is relatively fixed. The default filesystem type is derived from the container image’s bootc install configuration.
+Storage with bootc install You can use the bootc install to-disk command for flat storage configurations and bootc install to-filesytem command for more advanced installations. For more information see Advanced installation with to-filesystem.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+12.3. Setting a hostname
+To set a custom hostname for your system, modify the /etc/hostname file. You can set the hostname by using Anaconda, or with a privileged container.
+Once you boot a system, you can verify the hostname by using the hostnamectl command.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+12.4. Proxied Internet Access
+If you are deploying to an environment requiring internet access by using a proxy, you need to configure services so that they can access resources as intended.
+This is done by defining a single file with required environment variables in your configuration, and to reference this by using systemd drop-in unit files for all such services.
+# /etc/example-proxy.env
+https_proxy="http://example.com:8080"
+all_proxy="http://example.com:8080"
+http_proxy="http://example.com:8080"
+HTTP_PROXY="http://example.com:8080"
+HTTPS_PROXY="http://example.com:8080"
+no_proxy="*.example.com,127.0.0.1,0.0.0.0,localhost"
+# /usr/lib/systemd/system/bootc-fetch-apply-updates.service.d/99-proxy.conf
+[Service]
+EnvironmentFile=/etc/example-proxy.env
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 13. Appendix: Getting the source code of container images
+You can find the source code for bootc image in the Red Hat Ecosystem Catalog.
+Procedure
+Access the Red Hat Ecosystem Catalog and search for rhel-bootc.
+In the Get this image tab, click Get the source and follow the instructions.
+After you extract the content, the input RPM package list and other content resources are available in the extra_src_dir directory.
+The .tar ﬁles are snapshots of the input git repository, and contain YAML files with the package lists.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 14. Appendix: Contributing to the upstream projects
+You can contribute to the following upstream bootc projects:
+The upstream git repository is in CentOS Stream.
+The CentOS Stream sources primarily track the Fedora upstream project.

@@ -1,0 +1,63 @@
+Abstract
+The Package manifest document provides lists of packages available in Red Hat Enterprise Linux 9.
+Making open source more inclusive
+Red Hat is committed to replacing problematic language in our code, documentation, and web properties. We are beginning with these four terms: master, slave, blacklist, and whitelist. Because of the enormity of this endeavor, these changes will be implemented gradually over several upcoming releases. For more details, see our CTO Chris Wright’s message.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 1. Red Hat Enterprise Linux 9 content
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.1. Repositories
+Content in Red Hat Enterprise Linux 9 is made available through the following content repositories:
+BaseOS
+AppStream
+CodeReady Linux Builder
+Supplementary
+In addition, specific content is available through the Red Hat Enterprise Linux Add-on repositories:
+High Availability
+Resilient Storage
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.2. Types of Content
+There are two primary types of Red Hat Enterprise Linux 9 content.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.2.1. Traditional content
+Traditional content is released as RPMs and is, unless specified otherwise, supported for the life of the release in accordance with the Red Hat Enterprise Linux Life Cycle.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.2.2. Application Streams
+Certain user space components distributed in the AppStream repository are Application Streams. Application Streams are delivered on a cadence that is suitable for each package, which makes the distribution diversified. Application Streams offer multiple versions of a single package for installation within RHEL 9, which is an improvement over previous methods of making multiple versions of packages available. RHEL 9 also consolidates previous distribution channels to a single place.
+Depending on the needs of the individual Application Stream, packaging for these components is implemented in a number of forms:
+RPMs
+Modules
+Software Collections.
+For detailed information on the length of Application Streams support, see the Red Hat Enterprise Linux Application Streams Life Cycle. For information about the other components or packages in the AppStream repository, see the Scope of Coverage Details document.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 2. Repositories
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.1. The BaseOS repository
+Content in the BaseOS repository is intended to provide a core set of the underlying OS functionality that provides the foundation for all installations. This content is available in the RPM format and is subject to support terms similar to those in previous releases of Red Hat Enterprise Linux. For more information, see the Scope of Coverage Details document.
+The following table lists all the packages in the BaseOS repository along with their license and application compatibility level.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.2. The AppStream repository
+Content in the AppStream repository includes additional user space applications, runtime languages, and databases in support of the varied workloads and use cases.
+The following table lists all the packages in the AppStream repository along with their license and application compatibility level. For a list of available modules and streams, see Section 2.2.1, “AppStream modules”.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.2.1. AppStream modules
+The following table lists packages in the AppStream repository by module and stream. Note that not all packages in the AppStream repository are distributed within a module. For all packages in the AppStream repository, see Section 2.2, “The AppStream repository”.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.3. The CodeReady Linux Builder repository
+The CodeReady Linux Builder repository contains additional packages for use by developers. This repository is available with all Red Hat Enterprise Linux subscriptions but does not need to be enabled on your runtime deployments. Packages included in the CodeReady Linux Builder repository are unsupported. For more information, see How to enable and make use of content within CodeReady Linux Builder.
+The following table lists all the packages in the CodeReady Linux Builder repository along with their license.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.3.1. Modules in the CodeReady Linux Builder repository
+The following table lists packages in the CodeReady Linux Builder repository by module and stream. Note that not all packages in this repository are distributed within a module. For all packages in the CodeReady Linux Builder repository, see Section 2.3, “The CodeReady Linux Builder repository”.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.4. The Supplementary repository
+The Supplementary repository includes proprietary-licensed packages that are not included in the open source Red Hat Enterprise Linux repositories. Software packages in the Supplementary repository are not supported, nor are the ABIs guaranteed. Issues arising from packages belonging to the Supplementary repository are not supported. For more information, see the Support policy of the optional and supplementary channels in Red Hat Enterprise Linux.
+The following table lists all the packages in the Supplementary repository along with their license.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.5. The High Availability add-on
+The High Availability add-on provides on-demand failover services between nodes within a cluster. The add-on is available with a separate subscription. For details, see the Support Policies for RHEL High Availability Clusters.
+The following table lists all the packages available with the High Availability add-on along with their license and application compatibility level.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.6. The Resilient Storage add-on
+The Resilient Storage add-on enables a shared storage or clustered file system to access the same storage device over a network through a pool of data that is available to each server in the group. The add-on is available with a separate subscription. For details, see the Support Policies for RHEL Resilient Storage - Subscriptions, Support Services, and Software Access.
+The following table lists all the packages available with the Resilient Storage add-on along with their license and application compatibility level.
+Appendix A. Revision History

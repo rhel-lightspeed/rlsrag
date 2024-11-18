@@ -1,0 +1,1640 @@
+Abstract
+With Red Hat Identity Management (IdM), you can store credentials in the form of a private key and a certificate on a smart card. You can then use this smart card instead of passwords to authenticate to services. Administrators can configure mapping rules to reduce the administrative overhead.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 1. Understanding smart card authentication
+Authentication based on smart cards is an alternative to passwords. You can store user credentials on a smart card in the form of a private key and a certificate, and special software and hardware is used to access them. Place the smart card into a reader or a USB port and supply the PIN code for the smart card instead of providing your password.
+This section describes what a smart card is and how smart card authentication works. It describes the tools that you can use to read and manipulate smart card content. It also provides sample use cases and describes the setup of both the IdM server and IdM client for smart card authentication.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.1. What is a smart card
+A smart card is a physical device, usually a plastic card with a microprocessor, that can provide personal authentication using certificates stored on the card. Personal authentication means that you can use smart cards in the same way as user passwords.
+You can store user credentials on the smart card in the form of a private key and a certificate, and special software and hardware is used to access them. You place the smart card into a reader or a USB socket and supply the PIN code for the smart card instead of providing your password.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.2. What is smart card authentication
+Public-key based authentication and certificate based authentication are two widely used alternatives to password based authentication. Your identity is confirmed by using public and private keys instead of your password. A certificate is an electronic document used to identify an individual, a server, a company, or other entity and to associate that identity with a public key. Like a driver’s license or passport, a certificate provides generally recognized proof of a person’s identity. Public-key cryptography uses certificates to address the problem of impersonation.
+In the case of smart card authentication, your user credentials, that is your public and private keys and certificate, are stored on a smart card and can only be used after the smart card is inserted into the reader and a PIN is provided. As you need to possess a physical device, the smart card, and know its PIN, smart card authentication is considered as a type of two factor authentication.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.2.1. Examples of smart card authentication in IdM
+The following examples describe two simple scenarios on how you can use smart cards in IdM.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.2.1.1. Logging in to your system with a smart card
+You can use a smart card to authenticate to a RHEL system as a local user. If your system is configured to enforce smart card login, you are prompted to insert your smart card and enter its PIN and, if that fails, you cannot log in to your system. Alternatively, you can configure your system to authenticate using either smart card authentication or your user name and password. In this case, if you do not have your smart card inserted, you are prompted for your user name and password.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.2.1.2. Logging in to GDM with lock on removal
+You can activate the lock on removal function if you have configured smart card authentication on your RHEL system. If you are logged in to the GNOME Display Manager (GDM) and you remove your smart card, screen lock is enabled and you must reinsert your smart card and authenticate with the PIN to unlock the screen. You cannot use your user name and password to authenticate.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.3. Smart card authentication options in RHEL
+You can configure how you want smart card authentication to work in a particular Identity Management (IdM) client by using the authselect command, authselect enable-feature <smartcardoption>. The following smart card options are available:
+with-smartcard: Users can authenticate with the user name and password or with their smart card.
+with-smartcard-required: Users can authenticate with their smart cards, and password authentication is disabled. You cannot access the system without your smart card. Once you have authenticated with your smart card, you can stay logged in even if your smart card is removed from its reader.
+with-smartcard-lock-on-removal: Users can authenticate with their smart card. However, if you remove your smart card from its reader, you are automatically locked out of the system. You cannot use password authentication.
+For more information, see Configuring smart cards using authselect.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.4. Tools for managing smart cards and their contents
+You can use many different tools to manage the keys and certificates stored on your smart cards. You can use these tools to do the following:
+List available smart card readers connected to a system.
+List available smart cards and view their contents.
+Manipulate the smart card content, that is the keys and certificates.
+There are many tools that provide similar functionality but some work at different layers of your system. Smart cards are managed on multiple layers by multiple components. On the lower level, the operating system communicates with the smart card reader using the PC/SC protocol, and this communication is handled by the pcsc-lite daemon. The daemon forwards the commands received to the smart card reader typically over USB, which is handled by low-level CCID driver. The PC/SC low level communication is rarely seen on the application level. The main method in RHEL for applications to access smart cards is via a higher level application programming interface (API), the OASIS PKCS#11 API, which abstracts the card communication to specific commands that operate on cryptographic objects, for example, private keys. Smart card vendors provide a shared module, such as an .so file, which follows the PKCS#11 API and serves as a driver for the smart card.
+You can use the following tools to manage your smart cards and their contents:
+OpenSC tools: work with the drivers implemented in opensc.
+opensc-tool: perform smart card operations.
+pkcs15-tool: manage the PKCS#15 data structures on smart cards, such as listing and reading PINs, keys, and certificates stored on the token.
+pkcs11-tool: manage the PKCS#11 data objects on smart cards, such as listing and reading PINs, keys, and certificates stored on the token.
+GnuTLS utils: an API for applications to enable secure communication over the network transport layer, as well as interfaces to access X.509, PKCS#12, OpenPGP, and other structures.
+p11tool: perform operations on PKCS#11 smart cards and security modules.
+certtool: parse and generate X.509 certificates, requests, and private keys.
+Network Security Services (NSS) Tools: a set of libraries designed to support the cross-platform development of security-enabled client and server applications. Applications built with NSS can support SSL v3, TLS, PKCS #5, PKCS #7, PKCS #11, PKCS #12, S/MIME, X.509 v3 certificates, and other security standards.
+modutil: manage PKCS#11 module information with the security module database.
+certutil: manage keys and certificates in both NSS databases and other NSS tokens.
+For more information about using these tools to troubleshoot issues with authenticating using a smart card, see Troubleshooting authentication with smart cards.
+Additional resources
+opensc-tool, pkcs15-tool, and pkcs11-tool man pages on your system
+p11tool and certtool man pages on your system
+modutil and certutil man pages on your system
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.5. Certificates and smart card authentication
+If you use Identity Management (IdM) or Active Directory (AD) to manage identity stores, authentication, policies, and authorization policies in your domain, the certificates used for authentication are generated by IdM or AD, respectively. You can also use certificates provided by an external certificate authority and in this case you must configure Active Directory or IdM to accept certificates from the external provider. If the user is not part of a domain, you can use a certificate generated by a local certificate authority. For details, refer to the following sections:
+Configuring Identity Management for smart card authentication
+Configuring certificates issued by ADCS for smart card authentication in IdM
+Managing externally signed certificates for IdM users, hosts, and services
+Configuring and importing local certificates to a smart card
+For a full list of certificates eligible for smart card authentication, see Certificates eligible for smart cards.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.6. Required steps for smart card authentication in IdM
+You must ensure the following steps have been followed before you can authenticate with a smart card in Identity Management (IdM):
+Configure your IdM server for smart card authentication. See Configuring the IdM server for smart card authentication
+Configure your IdM client for smart card authentication. See Configuring the IdM client for smart card authentication
+Add the certificate to the user entry in IdM. See Adding a certificate to a user entry in the IdM Web UI
+Store your keys and certificates on the smart card. See Storing a certificate on a smart card
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.7. Required steps for smart card authentication with certificates issued by Active Directory
+You must ensure the following steps have been followed before you can authenticate with a smart card with certificates issued by Active Directory (AD):
+Copy the CA and user certificates from Active Directory to the IdM server and client.
+Configure the IdM server and clients for smart card authentication using ADCS certificates.
+Convert the PFX (PKCS#12) file to be able to store the certificate and private key on the smart card.
+Configure timeouts in the sssd.conf file.
+Create certificate mapping rules for smart card authentication.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 2. Configuring Identity Management for smart card authentication
+Identity Management (IdM) supports smart card authentication with:
+User certificates issued by the IdM certificate authority
+User certificates issued by an external certificate authority
+You can configure smart card authentication in IdM for both types of certificates. In this scenario, the rootca.pem CA certificate is the file containing the certificate of a trusted external certificate authority.
+For information about smart card authentication in IdM, see Understanding smart card authentication.
+For more details on configuring smart card authentication:
+Configuring the IdM server for smart card authentication
+Configuring the IdM client for smart card authentication
+Adding a certificate to a user entry in the IdM Web UI
+Adding a certificate to a user entry in the IdM CLI
+Installing tools for managing and using smart cards
+Storing a certificate on a smart card
+Logging in to IdM with smart cards
+Configuring GDM access using smart card authentication
+Configuring su access using smart card authentication
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.1. Configuring the IdM server for smart card authentication
+If you want to enable smart card authentication for users whose certificates have been issued by the certificate authority (CA) of the <EXAMPLE.ORG> domain that your Identity Management (IdM) CA trusts, you must obtain the following certificates so that you can add them when running the ipa-advise script that configures the IdM server:
+The certificate of the root CA that has either issued the certificate for the <EXAMPLE.ORG> CA directly, or through one or more of its sub-CAs. You can download the certificate chain from a web page whose certificate has been issued by the authority. For details, see Steps 1 - 4a in Configuring a browser to enable certificate authentication.
+The IdM CA certificate. You can obtain the CA certificate from the /etc/ipa/ca.crt file on the IdM server on which an IdM CA instance is running.
+The certificates of all of the intermediate CAs; that is, intermediate between the <EXAMPLE.ORG> CA and the IdM CA.
+To configure an IdM server for smart card authentication:
+Obtain files with the CA certificates in the PEM format.
+Run the built-in ipa-advise script.
+Reload the system configuration.
+Prerequisites
+You have root access to the IdM server.
+You have the root CA certificate and all the intermediate CA certificates.
+Procedure
+Create a directory in which you will do the configuration:
+[root@server]# mkdir ~/SmartCard/
+Navigate to the directory:
+[root@server]# cd ~/SmartCard/
+Obtain the relevant CA certificates stored in files in PEM format. If your CA certificate is stored in a file of a different format, such as DER, convert it to PEM format. The IdM Certificate Authority certificate is in PEM format and is located in the /etc/ipa/ca.crt file.
+Convert a DER file to a PEM file:
+# openssl x509 -in <filename>.der -inform DER -out <filename>.pem -outform PEM
+For convenience, copy the certificates to the directory in which you want to do the configuration:
+[root@server SmartCard]# cp /tmp/rootca.pem ~/SmartCard/
+[root@server SmartCard]# cp /tmp/subca.pem ~/SmartCard/
+[root@server SmartCard]# cp /tmp/issuingca.pem ~/SmartCard/
+Optional: If you use certificates of external certificate authorities, use the openssl x509 utility to view the contents of the files in the PEM format to check that the Issuer and Subject values are correct:
+[root@server SmartCard]# openssl x509 -noout -text -in rootca.pem | more
+Generate a configuration script with the in-built ipa-advise utility, using the administrator’s privileges:
+[root@server SmartCard]# kinit admin
+[root@server SmartCard]# ipa-advise config-server-for-smart-card-auth > config-server-for-smart-card-auth.sh
+The config-server-for-smart-card-auth.sh script performs the following actions:
+It configures the IdM Apache HTTP Server.
+It enables Public Key Cryptography for Initial Authentication in Kerberos (PKINIT) on the Key Distribution Center (KDC).
+It configures the IdM Web UI to accept smart card authorization requests.
+Execute the script, adding the PEM files containing the root CA and sub CA certificates as arguments:
+[root@server SmartCard]# chmod +x config-server-for-smart-card-auth.sh
+[root@server SmartCard]# ./config-server-for-smart-card-auth.sh rootca.pem subca.pem issuingca.pem
+Ticket cache:KEYRING:persistent:0:0
+Default principal: admin@IDM.EXAMPLE.COM
+[...]
+Systemwide CA database updated.
+The ipa-certupdate command was successful
+Optional: If the certificate authority that issued the user certificate does not provide any Online Certificate Status Protocol (OCSP) responder, you may need to disable OCSP check for authentication to the IdM Web UI:
+Set the SSLOCSPEnable parameter to off in the /etc/httpd/conf.d/ssl.conf file:
+SSLOCSPEnable off
+Restart the Apache daemon (httpd) for the changes to take effect immediately:
+[root@server SmartCard]# systemctl restart httpd
+For instructions on how to keep the OCSP check enabled, and yet prevent a user certificate from being rejected by the IdM server if it does not contain the information about the location at which the CA that issued the user certificate listens for OCSP service requests, see the SSLOCSPDefaultResponder directive in Apache mod_ssl configuration options.
+The server is now configured for smart card authentication.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.2. Using Ansible to configure the IdM server for smart card authentication
+You can use Ansible to enable smart card authentication for users whose certificates have been issued by the certificate authority (CA) of the <EXAMPLE.ORG> domain that your Identity Management (IdM) CA trusts. To do that, you must obtain the following certificates so that you can use them when running an Ansible playbook with the ipasmartcard_server ansible-freeipa role script:
+The certificate of the root CA that has either issued the certificate for the <EXAMPLE.ORG> CA directly, or through one or more of its sub-CAs. You can download the certificate chain from a web page whose certificate has been issued by the authority. For details, see Step 4 in Configuring a browser to enable certificate authentication.
+The IdM CA certificate. You can obtain the CA certificate from the /etc/ipa/ca.crt file on any IdM CA server.
+The certificates of all of the CAs that are intermediate between the <EXAMPLE.ORG> CA and the IdM CA.
+Prerequisites
+You have root access to the IdM server.
+You know the IdM admin password.
+You have the root CA certificate, the IdM CA certificate, and all the intermediate CA certificates.
+You have configured your Ansible control node to meet the following requirements:
+You are using Ansible version 2.15 or later.
+You have installed the ansible-freeipa package on the Ansible controller.
+The example assumes that in the ~/MyPlaybooks/ directory, you have created an Ansible inventory file with the fully-qualified domain name (FQDN) of the IdM server.
+The example assumes that the secret.yml Ansible vault stores your ipaadmin_password.
+The target node, that is the node on which the ansible-freeipa module is executed, is part of the IdM domain as an IdM client, server or replica.
+Procedure
+If your CA certificates are stored in files of a different format, such as DER, convert them to PEM format:
+# openssl x509 -in <filename>.der -inform DER -out <filename>.pem -outform PEM
+The IdM Certificate Authority certificate is in PEM format and is located in the /etc/ipa/ca.crt file.
+Optional: Use the openssl x509 utility to view the contents of the files in the PEM format to check that the Issuer and Subject values are correct:
+# openssl x509 -noout -text -in root-ca.pem | more
+Navigate to your ~/MyPlaybooks/ directory:
+$ cd ~/MyPlaybooks/
+Create a subdirectory dedicated to the CA certificates:
+$ mkdir SmartCard/
+For convenience, copy all the required certificates to the ~/MyPlaybooks/SmartCard/ directory:
+# cp /tmp/root-ca.pem ~/MyPlaybooks/SmartCard/
+# cp /tmp/intermediate-ca.pem ~/MyPlaybooks/SmartCard/
+# cp /etc/ipa/ca.crt ~/MyPlaybooks/SmartCard/ipa-ca.crt
+In your Ansible inventory file, specify the following:
+The IdM servers that you want to configure for smart card authentication.
+The IdM administrator password.
+The paths to the certificates of the CAs in the following order:
+The root CA certificate file
+The intermediate CA certificates files
+The IdM CA certificate file
+The file can look as follows:
+[ipaserver]
+ipaserver.idm.example.com
+
+[ipareplicas]
+ipareplica1.idm.example.com
+ipareplica2.idm.example.com
+
+[ipacluster:children]
+ipaserver
+ipareplicas
+
+[ipacluster:vars]
+ipaadmin_password= "{{ ipaadmin_password }}"
+ipasmartcard_server_ca_certs=/home/<user_name>/MyPlaybooks/SmartCard/root-ca.pem,/home/<user_name>/MyPlaybooks/SmartCard/intermediate-ca.pem,/home/<user_name>/MyPlaybooks/SmartCard/ipa-ca.crt
+Create an install-smartcard-server.yml playbook with the following content:
+---
+- name: Playbook to set up smart card authentication for an IdM server
+  hosts: ipaserver
+  become: true
+
+  roles:
+  - role: ipasmartcard_server
+    state: present
+Save the file.
+Run the Ansible playbook. Specify the playbook file, the file storing the password protecting the secret.yml file, and the inventory file:
+$ ansible-playbook --vault-password-file=password_file -v -i inventory install-smartcard-server.yml
+The ipasmartcard_server Ansible role performs the following actions:
+It configures the IdM Apache HTTP Server.
+It enables Public Key Cryptography for Initial Authentication in Kerberos (PKINIT) on the Key Distribution Center (KDC).
+It configures the IdM Web UI to accept smart card authorization requests.
+Optional: If the certificate authority that issued the user certificate does not provide any Online Certificate Status Protocol (OCSP) responder, you may need to disable OCSP check for authentication to the IdM Web UI:
+Connect to the IdM server as root:
+ssh root@ipaserver.idm.example.com
+Set the SSLOCSPEnable parameter to off in the /etc/httpd/conf.d/ssl.conf file:
+SSLOCSPEnable off
+Restart the Apache daemon (httpd) for the changes to take effect immediately:
+# systemctl restart httpd
+For instructions on how to keep the OCSP check enabled, and yet prevent a user certificate from being rejected by the IdM server if it does not contain the information about the location at which the CA that issued the user certificate listens for OCSP service requests, see the SSLOCSPDefaultResponder directive in Apache mod_ssl configuration options.
+The server listed in the inventory file is now configured for smart card authentication.
+Additional resources
+Sample playbooks using the ipasmartcard_server role in the /usr/share/doc/ansible-freeipa/playbooks/ directory
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.3. Configuring the IdM client for smart card authentication
+Follow this procedure to configure IdM clients for smart card authentication. The procedure needs to be run on each IdM system, a client or a server, to which you want to connect while using a smart card for authentication. For example, to enable an ssh connection from host A to host B, the script needs to be run on host B.
+As an administrator, run this procedure to enable smart card authentication using
+The ssh protocol
+For details see Configuring SSH access using smart card authentication.
+The console login
+The GNOME Display Manager (GDM)
+The su command
+This procedure is not required for authenticating to the IdM Web UI. Authenticating to the IdM Web UI involves two hosts, neither of which needs to be an IdM client:
+The machine on which the browser is running. The machine can be outside of the IdM domain.
+The IdM server on which httpd is running.
+The following procedure assumes that you are configuring smart card authentication on an IdM client, not an IdM server. For this reason you need two computers: an IdM server to generate the configuration script, and the IdM client on which to run the script.
+Prerequisites
+Your IdM server has been configured for smart card authentication, as described in Configuring the IdM server for smart card authentication.
+You have root access to the IdM server and the IdM client.
+You have the root CA certificate and all the intermediate CA certificates.
+You installed the IdM client with the --mkhomedir option to ensure remote users can log in successfully. If you do not create a home directory, the default login location is the root of the directory structure, /.
+Procedure
+On an IdM server, generate a configuration script with ipa-advise using the administrator’s privileges:
+[root@server SmartCard]# kinit admin
+[root@server SmartCard]# ipa-advise config-client-for-smart-card-auth > config-client-for-smart-card-auth.sh
+The config-client-for-smart-card-auth.sh script performs the following actions:
+It configures the smart card daemon.
+It sets the system-wide truststore.
+It configures the System Security Services Daemon (SSSD) to allow users to authenticate with either their user name and password or with their smart card. For more details on SSSD profile options for smart card authentication, see Smart card authentication options in RHEL.
+From the IdM server, copy the script to a directory of your choice on the IdM client machine:
+[root@server SmartCard]# scp config-client-for-smart-card-auth.sh root@client.idm.example.com:/root/SmartCard/
+Password:
+config-client-for-smart-card-auth.sh        100%   2419       3.5MB/s   00:00
+From the IdM server, copy the CA certificate files in PEM format for convenience to the same directory on the IdM client machine as used in the previous step:
+[root@server SmartCard]# scp {rootca.pem,subca.pem,issuingca.pem} root@client.idm.example.com:/root/SmartCard/
+Password:
+rootca.pem                          100%   1237     9.6KB/s   00:00
+subca.pem                           100%   2514    19.6KB/s   00:00
+issuingca.pem                       100%   2514    19.6KB/s   00:00
+On the client machine, execute the script, adding the PEM files containing the CA certificates as arguments:
+[root@client SmartCard]# kinit admin
+[root@client SmartCard]# chmod +x config-client-for-smart-card-auth.sh
+[root@client SmartCard]# ./config-client-for-smart-card-auth.sh rootca.pem subca.pem issuingca.pem
+Ticket cache:KEYRING:persistent:0:0
+Default principal: admin@IDM.EXAMPLE.COM
+[...]
+Systemwide CA database updated.
+The ipa-certupdate command was successful
+The client is now configured for smart card authentication.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.4. Using Ansible to configure IdM clients for smart card authentication
+Follow this procedure to use the ansible-freeipa ipasmartcard_client module to configure specific Identity Management (IdM) clients to permit IdM users to authenticate with a smart card. Run this procedure to enable smart card authentication for IdM users that use any of the following to access IdM:
+The ssh protocol
+For details see Configuring SSH access using smart card authentication.
+The console login
+The GNOME Display Manager (GDM)
+The su command
+Prerequisites
+Your IdM server has been configured for smart card authentication, as described in Using Ansible to configure the IdM server for smart card authentication.
+You have root access to the IdM server and the IdM client.
+You have the root CA certificate, the IdM CA certificate, and all the intermediate CA certificates.
+You have configured your Ansible control node to meet the following requirements:
+You are using Ansible version 2.15 or later.
+You have installed the ansible-freeipa package on the Ansible controller.
+The example assumes that in the ~/MyPlaybooks/ directory, you have created an Ansible inventory file with the fully-qualified domain name (FQDN) of the IdM server.
+The example assumes that the secret.yml Ansible vault stores your ipaadmin_password.
+The target node, that is the node on which the ansible-freeipa module is executed, is part of the IdM domain as an IdM client, server or replica.
+Procedure
+If your CA certificates are stored in files of a different format, such as DER, convert them to PEM format:
+# openssl x509 -in <filename>.der -inform DER -out <filename>.pem -outform PEM
+The IdM CA certificate is in PEM format and is located in the /etc/ipa/ca.crt file.
+Optional: Use the openssl x509 utility to view the contents of the files in the PEM format to check that the Issuer and Subject values are correct:
+# openssl x509 -noout -text -in root-ca.pem | more
+On your Ansible control node, navigate to your ~/MyPlaybooks/ directory:
+$ cd ~/MyPlaybooks/
+Create a subdirectory dedicated to the CA certificates:
+$ mkdir SmartCard/
+For convenience, copy all the required certificates to the ~/MyPlaybooks/SmartCard/ directory, for example:
+# cp /tmp/root-ca.pem ~/MyPlaybooks/SmartCard/
+# cp /tmp/intermediate-ca.pem ~/MyPlaybooks/SmartCard/
+# cp /etc/ipa/ca.crt ~/MyPlaybooks/SmartCard/ipa-ca.crt
+In your Ansible inventory file, specify the following:
+The IdM clients that you want to configure for smart card authentication.
+The IdM administrator password.
+The paths to the certificates of the CAs in the following order:
+The root CA certificate file
+The intermediate CA certificates files
+The IdM CA certificate file
+The file can look as follows:
+[ipaclients]
+ipaclient1.example.com
+ipaclient2.example.com
+
+[ipaclients:vars]
+ipaadmin_password=SomeADMINpassword
+ipasmartcard_client_ca_certs=/home/<user_name>/MyPlaybooks/SmartCard/root-ca.pem,/home/<user_name>/MyPlaybooks/SmartCard/intermediate-ca.pem,/home/<user_name>/MyPlaybooks/SmartCard/ipa-ca.crt
+Create an install-smartcard-clients.yml playbook with the following content:
+---
+- name: Playbook to set up smart card authentication for an IdM client
+  hosts: ipaclients
+  become: true
+
+  roles:
+  - role: ipasmartcard_client
+    state: present
+Save the file.
+Run the Ansible playbook. Specify the playbook and inventory files:
+$ ansible-playbook --vault-password-file=password_file -v -i inventory install-smartcard-clients.yml
+The ipasmartcard_client Ansible role performs the following actions:
+It configures the smart card daemon.
+It sets the system-wide truststore.
+It configures the System Security Services Daemon (SSSD) to allow users to authenticate with either their user name and password or their smart card. For more details on SSSD profile options for smart card authentication, see Smart card authentication options in RHEL.
+The clients listed in the ipaclients section of the inventory file are now configured for smart card authentication.
+Additional resources
+Sample playbooks using the ipasmartcard_server role in the /usr/share/doc/ansible-freeipa/playbooks/ directory
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.5. Adding a certificate to a user entry in the IdM Web UI
+Follow this procedure to add an external certificate to a user entry in IdM Web UI.
+Prerequisites
+You have the certificate that you want to add to the user entry at your disposal.
+Procedure
+Log into the IdM Web UI as an administrator if you want to add a certificate to another user. For adding a certificate to your own profile, you do not need the administrator’s credentials.
+Navigate to Users → Active users → sc_user.
+Find the Certificate option and click Add.
+In the command-line interface, display the certificate in the PEM format using the cat utility or a text editor:
+[user@client SmartCard]$ cat testuser.crt
+Copy and paste the certificate from the CLI into the window that has opened in the Web UI.
+Click Add.
+Figure 2.1. Adding a new certificate in the IdM Web UI
+The sc_user entry now contains an external certificate.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.6. Adding a certificate to a user entry in the IdM CLI
+Follow this procedure to add an external certificate to a user entry in IdM CLI.
+Prerequisites
+You have the certificate that you want to add to the user entry at your disposal.
+Procedure
+Log into the IdM CLI as an administrator if you want to add a certificate to another user:
+[user@client SmartCard]$ kinit admin
+For adding a certificate to your own profile, you do not need the administrator’s credentials:
+[user@client SmartCard]$ kinit sc_user
+Create an environment variable containing the certificate with the header and footer removed and concatenated into a single line, which is the format expected by the ipa user-add-cert command:
+[user@client SmartCard]$ export CERT=`openssl x509 -outform der -in testuser.crt | base64 -w0 -`
+Note that certificate in the testuser.crt file must be in the PEM format.
+Add the certificate to the profile of sc_user using the ipa user-add-cert command:
+[user@client SmartCard]$ ipa user-add-cert sc_user --certificate=$CERT
+The sc_user entry now contains an external certificate.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.7. Installing tools for managing and using smart cards
+Prerequisites
+The gnutls-utils package is installed.
+The opensc package is installed.
+The pcscd service is running.
+Before you can configure your smart card, you must install the corresponding tools, which can generate certificates and start the pscd service.
+Procedure
+Install the opensc and gnutls-utils packages:
+# dnf -y install opensc gnutls-utils
+Start the pcscd service.
+# systemctl start pcscd
+Verification
+Verify that the pcscd service is up and running
+# systemctl status pcscd
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.8. Preparing your smart card and uploading your certificates and keys to your smart card
+Follow this procedure to configure your smart card with the pkcs15-init tool, which helps you to configure:
+Erasing your smart card
+Setting new PINs and optional PIN Unblocking Keys (PUKs)
+Creating a new slot on the smart card
+Storing the certificate, private key, and public key in the slot
+If required, locking the smart card settings as certain smart cards require this type of finalization
+Prerequisites
+The opensc package, which includes the pkcs15-init tool, is installed.
+For more details, see Installing tools for managing and using smart cards.
+The card is inserted in the reader and connected to the computer.
+You have a private key, a public key, and a certificate to store on the smart card. In this procedure, testuser.key, testuserpublic.key, and testuser.crt are the names used for the private key, public key, and the certificate.
+You have your current smart card user PIN and Security Officer PIN (SO-PIN).
+Procedure
+Erase your smart card and authenticate yourself with your PIN:
+$ pkcs15-init --erase-card --use-default-transport-keys
+Using reader with a card: Reader name
+PIN [Security Officer PIN] required.
+Please enter PIN [Security Officer PIN]:
+The card has been erased.
+Initialize your smart card, set your user PIN and PUK, and your Security Officer PIN and PUK:
+$ pkcs15-init --create-pkcs15 --use-default-transport-keys \ --pin 963214 --puk 321478 --so-pin 65498714 --so-puk 784123
+Using reader with a card: Reader name
+The pcks15-init tool creates a new slot on the smart card.
+Set a label and the authentication ID for the slot:
+$ pkcs15-init --store-pin --label testuser \ --auth-id 01 --so-pin 65498714 --pin 963214 --puk 321478
+Using reader with a card: Reader name
+The label is set to a human-readable value, in this case, testuser. The auth-id must be two hexadecimal values, in this case it is set to 01.
+Store and label the private key in the new slot on the smart card:
+$ pkcs15-init --store-private-key testuser.key --label testuser_key \ --auth-id 01 --id 01 --pin 963214
+Using reader with a card: Reader name
+Store and label the certificate in the new slot on the smart card:
+$ pkcs15-init --store-certificate testuser.crt --label testuser_crt \ --auth-id 01 --id 01 --format pem --pin 963214
+Using reader with a card: Reader name
+Optional: Store and label the public key in the new slot on the smart card:
+$ pkcs15-init --store-public-key testuserpublic.key --label testuserpublic_key --auth-id 01 --id 01 --pin 963214
+Using reader with a card: Reader name
+Optional: Certain smart cards require you to finalize the card by locking the settings:
+$ pkcs15-init -F
+At this stage, your smart card includes the certificate, private key, and public key in the newly created slot. You have also created your user PIN and PUK and the Security Officer PIN and PUK.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.9. Logging in to IdM with smart cards
+Follow this procedure to use smart cards for logging in to the IdM Web UI.
+Prerequisites
+The web browser is configured for using smart card authentication.
+The IdM server is configured for smart card authentication.
+The certificate installed on your smart card is either issued by the IdM server or has been added to the user entry in IdM.
+You know the PIN required to unlock the smart card.
+The smart card has been inserted into the reader.
+Procedure
+Open the IdM Web UI in the browser.
+Click Log In Using Certificate.
+If the Password Required dialog box opens, add the PIN to unlock the smart card and click the OK button.
+The User Identification Request dialog box opens.
+If the smart card contains more than one certificate, select the certificate you want to use for authentication in the drop down list below Choose a certificate to present as identification.
+Click the OK button.
+Now you are successfully logged in to the IdM Web UI.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.10. Logging in to GDM using smart card authentication on an IdM client
+The GNOME Desktop Manager (GDM) requires authentication. You can use your password; however, you can also use a smart card for authentication.
+Follow this procedure to use smart card authentication to access GDM.
+Prerequisites
+The system has been configured for smart card authentication. For details, see Configuring the IdM client for smart card authentication.
+The smart card contains your certificate and private key.
+The user account is a member of the IdM domain.
+The certificate on the smart card maps to the user entry through:
+Assigning the certificate to a particular user entry. For details, see, Adding a certificate to a user entry in the IdM Web UI or Adding a certificate to a user entry in the IdM CLI.
+The certificate mapping data being applied to the account. For details, see Certificate mapping rules for configuring authentication on smart cards.
+Procedure
+Insert the smart card in the reader.
+Enter the smart card PIN.
+Click Sign In.
+You are successfully logged in to the RHEL system and you have a TGT provided by the IdM server.
+Verification
+In the Terminal window, enter klist and check the result:
+$ klist
+Ticket cache: KEYRING:persistent:1358900015:krb_cache_TObtNMd
+Default principal: example.user@REDHAT.COM
+
+Valid starting       Expires              Service principal
+04/20/2020 13:58:24  04/20/2020 23:58:24  krbtgt/EXAMPLE.COM@EXAMPLE.COM
+	renew until 04/27/2020 08:58:15
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.11. Using smart card authentication with the su command
+Changing to a different user requires authentication. You can use a password or a certificate. Follow this procedure to use your smart card with the su command. It means that after entering the su command, you are prompted for the smart card PIN.
+Prerequisites
+Your IdM server and client have been configured for smart card authentication.
+See Configuring the IdM server for smart card authentication
+See Configuring the IdM client for smart card authentication
+The smart card contains your certificate and private key. See Storing a certificate on a smart card
+The card is inserted in the reader and connected to the computer.
+Procedure
+In a terminal window, change to a different user with the su command:
+$ su - example.user
+PIN for smart_card
+If the configuration is correct, you are prompted to enter the smart card PIN.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 3. Configuring certificates issued by ADCS for smart card authentication in IdM
+To configure smart card authentication in IdM for users whose certificates are issued by Active Directory (AD) certificate services:
+Your deployment is based on cross-forest trust between Identity Management (IdM) and Active Directory (AD).
+You want to allow smart card authentication for users whose accounts are stored in AD.
+Certificates are created and stored in Active Directory Certificate Services (ADCS).
+For an overview of smart card authentication, see Understanding smart card authentication.
+Configuration is accomplished in the following steps:
+Copying CA and user certificates from Active Directory to the IdM server and client
+Configuring the IdM server and clients for smart card authentication using ADCS certificates
+Converting a PFX (PKCS#12) file to be able to store the certificate and private key into the smart card
+Configuring timeouts in the sssd.conf file
+Creating certificate mapping rules for smart card authentication
+Prerequisites
+Identity Management (IdM) and Active Directory (AD) trust is installed
+For details, see Installing trust between IdM and AD.
+Active Directory Certificate Services (ADCS) is installed and certificates for users are generated
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.1. Windows Server settings required for trust configuration and certificate usage
+You must configure the following on the Windows Server:
+Active Directory Certificate Services (ADCS) is installed
+Certificate Authority is created
+Optional: If you are using Certificate Authority Web Enrollment, the Internet Information Services (IIS) must be configured
+Export the certificate:
+Key must have 2048 bits or more
+Include a private key
+You will need a certificate in the following format: Personal Information Exchange — PKCS #12(.PFX)
+Enable certificate privacy
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.2. Copying certificates from Active Directory using sftp
+To be able to use smart card authetication, you need to copy the following certificate files:
+A root CA certificate in the CER format: adcs-winserver-ca.cer on your IdM server.
+A user certificate with a private key in the PFX format: aduser1.pfx on an IdM client.
+Procedure
+Connect from the IdM server and copy the adcs-winserver-ca.cer root certificate to the IdM server:
+root@idmserver ~]# sftp Administrator@winserver.ad.example.com
+Administrator@winserver.ad.example.com's password:
+Connected to Administrator@winserver.ad.example.com.
+sftp> cd <Path to certificates>
+sftp> ls
+adcs-winserver-ca.cer    aduser1.pfx
+sftp>
+sftp> get adcs-winserver-ca.cer
+Fetching <Path to certificates>/adcs-winserver-ca.cer to adcs-winserver-ca.cer
+<Path to certificates>/adcs-winserver-ca.cer                 100%  1254    15KB/s 00:00
+sftp quit
+Connect from the IdM client and copy the aduser1.pfx user certificate to the client:
+[root@client1 ~]# sftp Administrator@winserver.ad.example.com
+Administrator@winserver.ad.example.com's password:
+Connected to Administrator@winserver.ad.example.com.
+sftp> cd /<Path to certificates>
+sftp> get aduser1.pfx
+Fetching <Path to certificates>/aduser1.pfx to aduser1.pfx
+<Path to certificates>/aduser1.pfx                 100%  1254    15KB/s 00:00
+sftp quit
+Now the CA certificate is stored in the IdM server and the user certificates is stored on the client machine.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.3. Configuring the IdM server and clients for smart card authentication using ADCS certificates
+You must configure the IdM (Identity Management) server and clients to be able to use smart card authentication in the IdM environment. IdM includes the ipa-advise scripts which makes all necessary changes:
+Install necessary packages
+Configure IdM server and clients
+Copy the CA certificates into the expected locations
+You can run ipa-advise on your IdM server.
+Follow this procedure to configure your server and clients for smart card authentication:
+On an IdM server: Preparing the ipa-advise script to configure your IdM server for smart card authentication.
+On an IdM server: Preparing the ipa-advise script to configure your IdM client for smart card authentication.
+On an IdM server: Applying the the ipa-advise server script on the IdM server using the AD certificate.
+Moving the client script to the IdM client machine.
+On an IdM client: Applying the the ipa-advise client script on the IdM client using the AD certificate.
+Prerequisites
+The certificate has been copied to the IdM server.
+Obtain the Kerberos ticket.
+Log in as a user with administration rights.
+Procedure
+On the IdM server, use the ipa-advise script for configuring a client:
+[root@idmserver ~]# ipa-advise config-client-for-smart-card-auth > sc_client.sh
+On the IdM server, use the ipa-advise script for configuring a server:
+[root@idmserver ~]# ipa-advise config-server-for-smart-card-auth > sc_server.sh
+On the IdM server, execute the script:
+[root@idmserver ~]# sh -x sc_server.sh adcs-winserver-ca.cer
+It configures the IdM Apache HTTP Server.
+It enables Public Key Cryptography for Initial Authentication in Kerberos (PKINIT) on the Key Distribution Center (KDC).
+It configures the IdM Web UI to accept smart card authorization requests.
+Copy the sc_client.sh script to the client system:
+[root@idmserver ~]# scp sc_client.sh root@client1.idm.example.com:/root
+Password:
+sc_client.sh                  100%  2857   1.6MB/s   00:00
+Copy the Windows certificate to the client system:
+[root@idmserver ~]# scp adcs-winserver-ca.cer root@client1.idm.example.com:/root
+Password:
+adcs-winserver-ca.cer                 100%  1254   952.0KB/s   00:00
+On the client system, run the client script:
+[root@idmclient1 ~]# sh -x sc_client.sh adcs-winserver-ca.cer
+The CA certificate is installed in the correct format on the IdM server and client systems and next step is to copy the user certificates onto the smart card itself.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.4. Converting the PFX file
+Before you store the PFX (PKCS#12) file into the smart card, you must:
+Convert the file to the PEM format
+Extract the private key and the certificate to two different files
+Prerequisites
+The PFX file is copied into the IdM client machine.
+Procedure
+On the IdM client, into the PEM format:
+[root@idmclient1 ~]# openssl pkcs12 -in aduser1.pfx -out aduser1_cert_only.pem -clcerts -nodes
+Enter Import Password:
+Extract the key into the separate file:
+[root@idmclient1 ~]# openssl pkcs12 -in adduser1.pfx -nocerts -out adduser1.pem > aduser1.key
+Extract the public certificate into the separate file:
+[root@idmclient1 ~]# openssl pkcs12 -in adduser1.pfx -clcerts -nokeys -out aduser1_cert_only.pem > aduser1.crt
+At this point, you can store the aduser1.key and aduser1.crt into the smart card.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.5. Installing tools for managing and using smart cards
+Prerequisites
+The gnutls-utils package is installed.
+The opensc package is installed.
+The pcscd service is running.
+Before you can configure your smart card, you must install the corresponding tools, which can generate certificates and start the pscd service.
+Procedure
+Install the opensc and gnutls-utils packages:
+# dnf -y install opensc gnutls-utils
+Start the pcscd service.
+# systemctl start pcscd
+Verification
+Verify that the pcscd service is up and running
+# systemctl status pcscd
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.6. Preparing your smart card and uploading your certificates and keys to your smart card
+Follow this procedure to configure your smart card with the pkcs15-init tool, which helps you to configure:
+Erasing your smart card
+Setting new PINs and optional PIN Unblocking Keys (PUKs)
+Creating a new slot on the smart card
+Storing the certificate, private key, and public key in the slot
+If required, locking the smart card settings as certain smart cards require this type of finalization
+Prerequisites
+The opensc package, which includes the pkcs15-init tool, is installed.
+For more details, see Installing tools for managing and using smart cards.
+The card is inserted in the reader and connected to the computer.
+You have a private key, a public key, and a certificate to store on the smart card. In this procedure, testuser.key, testuserpublic.key, and testuser.crt are the names used for the private key, public key, and the certificate.
+You have your current smart card user PIN and Security Officer PIN (SO-PIN).
+Procedure
+Erase your smart card and authenticate yourself with your PIN:
+$ pkcs15-init --erase-card --use-default-transport-keys
+Using reader with a card: Reader name
+PIN [Security Officer PIN] required.
+Please enter PIN [Security Officer PIN]:
+The card has been erased.
+Initialize your smart card, set your user PIN and PUK, and your Security Officer PIN and PUK:
+$ pkcs15-init --create-pkcs15 --use-default-transport-keys \ --pin 963214 --puk 321478 --so-pin 65498714 --so-puk 784123
+Using reader with a card: Reader name
+The pcks15-init tool creates a new slot on the smart card.
+Set a label and the authentication ID for the slot:
+$ pkcs15-init --store-pin --label testuser \ --auth-id 01 --so-pin 65498714 --pin 963214 --puk 321478
+Using reader with a card: Reader name
+The label is set to a human-readable value, in this case, testuser. The auth-id must be two hexadecimal values, in this case it is set to 01.
+Store and label the private key in the new slot on the smart card:
+$ pkcs15-init --store-private-key testuser.key --label testuser_key \ --auth-id 01 --id 01 --pin 963214
+Using reader with a card: Reader name
+Store and label the certificate in the new slot on the smart card:
+$ pkcs15-init --store-certificate testuser.crt --label testuser_crt \ --auth-id 01 --id 01 --format pem --pin 963214
+Using reader with a card: Reader name
+Optional: Store and label the public key in the new slot on the smart card:
+$ pkcs15-init --store-public-key testuserpublic.key --label testuserpublic_key --auth-id 01 --id 01 --pin 963214
+Using reader with a card: Reader name
+Optional: Certain smart cards require you to finalize the card by locking the settings:
+$ pkcs15-init -F
+At this stage, your smart card includes the certificate, private key, and public key in the newly created slot. You have also created your user PIN and PUK and the Security Officer PIN and PUK.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.7. Configuring timeouts in sssd.conf
+Authentication with a smart card certificate might take longer than the default timeouts used by SSSD. Time out expiration can be caused by:
+Slow reader
+A forwarding form a physical device into a virtual environment
+Too many certificates stored on the smart card
+Slow response from the OCSP (Online Certificate Status Protocol) responder if OCSP is used to verify the certificates
+In this case you can prolong the following timeouts in the sssd.conf file, for example, to 60 seconds:
+p11_child_timeout
+krb5_auth_timeout
+Prerequisites
+You must be logged in as root.
+Procedure
+Open the sssd.conf file:
+[root@idmclient1 ~]# vim /etc/sssd/sssd.conf
+Change the value of p11_child_timeout:
+[pam]
+p11_child_timeout = 60
+Change the value of krb5_auth_timeout:
+[domain/IDM.EXAMPLE.COM]
+krb5_auth_timeout = 60
+Save the settings.
+Now, the interaction with the smart card is allowed to run for 1 minute (60 seconds) before authentication will fail with a timeout.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.8. Creating certificate mapping rules for smart card authentication
+If you want to use one certificate for a user who has accounts in AD (Active Directory) and in IdM (Identity Management), you can create a certificate mapping rule on the IdM server.
+After creating such a rule, the user is able to authenticate with their smart card in both domains.
+For details about certificate mapping rules, see Certificate mapping rules for configuring authentication.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 4. Certificate mapping rules for configuring authentication
+You might need to configure certificate mapping rules in the following scenarios:
+Certificates have been issued by the Certificate System of the Active Directory (AD) with which the IdM domain is in a trust relationship.
+Certificates have been issued by an external certificate authority.
+The IdM environment is large with many users using smart cards. In this case, adding full certificates can be complicated. The subject and issuer are predictable in most scenarios and therefore easier to add ahead of time than the full certificate.
+As a system administrator, you can create a certificate mapping rule and add certificate mapping data to a user entry even before a certificate is issued to a particular user. Once the certificate is issued, the user can log in using the certificate even though the full certificate has not yet been uploaded to the user entry.
+In addition, as certificates are renewed at regular intervals, certificate mapping rules reduce administrative overhead. When a user’s certificate is renewed, the administrator does not have to update the user entry. For example, if the mapping is based on the Subject and Issuer values, and if the new certificate has the same subject and issuer as the old one, the mapping still applies. If, in contrast, the full certificate was used, then the administrator would have to upload the new certificate to the user entry to replace the old one.
+To set up certificate mapping:
+An administrator has to load the certificate mapping data or the full certificate into a user account.
+An administrator has to create a certificate mapping rule to allow successful logging into IdM for a user whose account contains a certificate mapping data entry that matches the information on the certificate.
+Once the certificate mapping rules have been created, when the end-user presents the certificate, stored either on a filesystem or a smart card, authentication is successful.
+For details on the individual components that make up a mapping rule and how to obtain and use them, see Components of an identity mapping rule in IdM and Obtaining the issuer from a certificate for use in a matching rule.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 5. Configuring smart card authentication with the web console for centrally managed users
+You can configure smart card authentication in the RHEL web console for users who are centrally managed by:
+Identity Management
+Active Directory which is connected in the cross-forest trust with Identity Management
+Prerequisites
+The system for which you want to use the smart card authentication must be a member of an Active Directory or Identity Management domain.
+For details about joining the RHEL 9 system into a domain using the web console, see Joining a RHEL system to an IdM domain using the web console.
+The certificate used for the smart card authentication must be associated with a particular user in Identity Management or Active Directory.
+For more details about associating a certificate with the user in Identity Management, see Adding a certificate to a user entry in the IdM Web UI or Adding a certificate to a user entry in the IdM CLI.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.1. Smart card authentication for centrally managed users
+A smart card is a physical device, which can provide personal authentication using certificates stored on the card. Personal authentication means that you can use smart cards in the same way as user passwords.
+You can store user credentials on the smart card in the form of a private key and a certificate. Special software and hardware is used to access them. You insert the smart card into a reader or a USB socket and supply the PIN code for the smart card instead of providing your password.
+Identity Management (IdM) supports smart card authentication with:
+User certificates issued by the IdM certificate authority.
+User certificates issued by the Active Directory Certificate Service (ADCS) certificate authority.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.2. Installing tools for managing and using smart cards
+Prerequisites
+The gnutls-utils package is installed.
+The opensc package is installed.
+The pcscd service is running.
+Before you can configure your smart card, you must install the corresponding tools, which can generate certificates and start the pscd service.
+Procedure
+Install the opensc and gnutls-utils packages:
+# dnf -y install opensc gnutls-utils
+Start the pcscd service.
+# systemctl start pcscd
+Verification
+Verify that the pcscd service is up and running
+# systemctl status pcscd
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.3. Preparing your smart card and uploading your certificates and keys to your smart card
+Follow this procedure to configure your smart card with the pkcs15-init tool, which helps you to configure:
+Erasing your smart card
+Setting new PINs and optional PIN Unblocking Keys (PUKs)
+Creating a new slot on the smart card
+Storing the certificate, private key, and public key in the slot
+If required, locking the smart card settings as certain smart cards require this type of finalization
+Prerequisites
+The opensc package, which includes the pkcs15-init tool, is installed.
+For more details, see Installing tools for managing and using smart cards.
+The card is inserted in the reader and connected to the computer.
+You have a private key, a public key, and a certificate to store on the smart card. In this procedure, testuser.key, testuserpublic.key, and testuser.crt are the names used for the private key, public key, and the certificate.
+You have your current smart card user PIN and Security Officer PIN (SO-PIN).
+Procedure
+Erase your smart card and authenticate yourself with your PIN:
+$ pkcs15-init --erase-card --use-default-transport-keys
+Using reader with a card: Reader name
+PIN [Security Officer PIN] required.
+Please enter PIN [Security Officer PIN]:
+The card has been erased.
+Initialize your smart card, set your user PIN and PUK, and your Security Officer PIN and PUK:
+$ pkcs15-init --create-pkcs15 --use-default-transport-keys \ --pin 963214 --puk 321478 --so-pin 65498714 --so-puk 784123
+Using reader with a card: Reader name
+The pcks15-init tool creates a new slot on the smart card.
+Set a label and the authentication ID for the slot:
+$ pkcs15-init --store-pin --label testuser \ --auth-id 01 --so-pin 65498714 --pin 963214 --puk 321478
+Using reader with a card: Reader name
+The label is set to a human-readable value, in this case, testuser. The auth-id must be two hexadecimal values, in this case it is set to 01.
+Store and label the private key in the new slot on the smart card:
+$ pkcs15-init --store-private-key testuser.key --label testuser_key \ --auth-id 01 --id 01 --pin 963214
+Using reader with a card: Reader name
+Store and label the certificate in the new slot on the smart card:
+$ pkcs15-init --store-certificate testuser.crt --label testuser_crt \ --auth-id 01 --id 01 --format pem --pin 963214
+Using reader with a card: Reader name
+Optional: Store and label the public key in the new slot on the smart card:
+$ pkcs15-init --store-public-key testuserpublic.key --label testuserpublic_key --auth-id 01 --id 01 --pin 963214
+Using reader with a card: Reader name
+Optional: Certain smart cards require you to finalize the card by locking the settings:
+$ pkcs15-init -F
+At this stage, your smart card includes the certificate, private key, and public key in the newly created slot. You have also created your user PIN and PUK and the Security Officer PIN and PUK.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.4. Enabling smart card authentication for the web console
+To use smart card authentication in the web console, enable this authentication method in the cockpit.conf file.
+Additionally, you can disable password authentication in the same file.
+Prerequisites
+You have installed the RHEL 9 web console.
+For instructions, see Installing and enabling the web console.
+Procedure
+Log in to the RHEL 9 web console.
+For details, see Logging in to the web console.
+Click Terminal.
+In the /etc/cockpit/cockpit.conf, set the ClientCertAuthentication to yes:
+[WebService]
+ClientCertAuthentication = yes
+Optional: Disable password based authentication in cockpit.conf with:
+[Basic]
+action = none
+This configuration disables password authentication and you must always use the smart card.
+Restart the web console to ensure that the cockpit.service accepts the change:
+# systemctl restart cockpit
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.5. Logging in to the web console with smart cards
+You can use smart cards to log in to the web console.
+Prerequisites
+A valid certificate stored in your smart card that is associated to a user account created in a Active Directory or Identity Management domain.
+PIN to unlock the smart card.
+The smart card has been put into the reader.
+You have installed the RHEL 9 web console.
+For instructions, see Installing and enabling the web console.
+Procedure
+Log in to the RHEL 9 web console.
+For details, see Logging in to the web console.
+The browser asks you to add the PIN protecting the certificate stored on the smart card.
+In the Password Required dialog box, enter PIN and click OK.
+In the User Identification Request dialog box, select the certificate stored in the smart card.
+Select Remember this decision.
+The system does not open this window next time.
+Click OK.
+You are now connected and the web console displays its content.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.6. Enabling passwordless sudo authentication for smart card users
+You can configure passwordless authentication to sudo and other services for smart card users in the web console.
+As an alternative, if you use Red Hat Identity Management, you can declare the initial web console certificate authentication as trusted for authenticating to sudo, SSH, or other services. For that purpose, the web console automatically creates an S4U2Proxy Kerberos ticket in the user session.
+Prerequisites
+Identity Management installed.
+Active Directory connected in the cross-forest trust with Identity Management.
+Smart card set up to log in to the web console. See Configuring smart card authentication with the web console for centrally managed users for more information.
+Procedure
+Set up constraint delegation rules to list which hosts the ticket can access.
+Example 5.1. Setting up constraint delegation rules
+The web console session runs host host.example.com and should be trusted to access its own host with sudo. Additionally, we are adding second trusted host - remote.example.com.
+Create the following delegation:
+Run the following commands to add a list of target machines a particular rule can access:
+# ipa servicedelegationtarget-add cockpit-target
+# ipa servicedelegationtarget-add-member cockpit-target \ --principals=host/host.example.com@EXAMPLE.COM \ --principals=host/remote.example.com@EXAMPLE.COM
+To allow the web console sessions (HTTP/principal) to access that host list, use the following commands:
+# ipa servicedelegationrule-add cockpit-delegation
+# ipa servicedelegationrule-add-member cockpit-delegation \ --principals=HTTP/host.example.com@EXAMPLE.COM
+# ipa servicedelegationrule-add-target cockpit-delegation \ --servicedelegationtargets=cockpit-target
+Enable GSS authentication in the corresponding services:
+For sudo, enable the pam_sss_gss module in the /etc/sssd/sssd.conf file:
+As root, add an entry for your domain to the /etc/sssd/sssd.conf configuration file.
+[domain/example.com]
+pam_gssapi_services = sudo, sudo-i
+Enable the module in the /etc/pam.d/sudo file on the first line.
+auth sufficient pam_sss_gss.so
+For SSH, update the GSSAPIAuthentication option in the /etc/ssh/sshd_config file to yes.
+Verification
+Log in to the web console using a smart card.
+Click the Limited access button.
+Authenticate using your smart card.
+Alternatively:
+Try to connect to a different host with SSH.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.7. Limiting user sessions and memory to prevent a DoS attack
+A certificate authentication is protected by separating and isolating instances of the cockpit-ws web server against attackers who wants to impersonate another user. However, this introduces a potential denial of service (DoS) attack: A remote attacker could create a large number of certificates and send a large number of HTTPS requests to cockpit-ws each using a different certificate.
+To prevent such DoS attacks, the collective resources of these web server instances are limited. By default, limits for the number of connections and memory usage are set to 200 threads and 75 % (soft) or 90 % (hard) memory limit.
+The example procedure demonstrates resource protection by limiting the number of connections and memory.
+Procedure
+In the terminal, open the system-cockpithttps.slice configuration file:
+# systemctl edit system-cockpithttps.slice
+Limit the TasksMax to 100 and CPUQuota to 30%:
+[Slice]
+# change existing value
+TasksMax=100
+# add new restriction
+CPUQuota=30%
+To apply the changes, restart the system:
+# systemctl daemon-reload
+# systemctl stop cockpit
+Now, the new memory and user session lower the risk of DoS attacks on the cockpit-ws web server.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.8. Additional resources
+Configuring Identity Management for smart card authentication.
+Configuring certificates issued by ADCS for smart card authentication in IdM.
+Configuring and importing local certificates to a smart card.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 6. Configuring smart card authentication with local certificates
+To configure smart card authentication with local certificates:
+The host is not connected to a domain.
+You want to authenticate with a smart card on this host.
+You want to configure SSH access using smart card authentication.
+You want to configure the smart card with authselect.
+Use the following configuration to accomplish this scenario:
+Obtain a user certificate for the user who wants to authenticate with a smart card. The certificate should be generated by a trustworthy Certification Authority used in the domain.
+If you cannot get the certificate, you can generate a user certificate signed by a local certificate authority for testing purposes,
+Store the certificate and private key in a smart card.
+Configure the smart card authentication for SSH access.
+Prerequisites
+Authselect installed
+The authselect tool configures user authentication on Linux hosts and you can use it to configure smart card authentication parameters. For details about authselect, see Explaining authselect.
+Smart Card or USB devices supported by RHEL 9
+For details, see Smart Card support in RHEL9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.1. Creating local certificates
+Follow this procedure to perform the following tasks:
+Generate the OpenSSL certificate authority
+Create a certificate signing request
+Procedure
+Create a directory where you can generate the certificate, for example:
+# mkdir /tmp/ca
+# cd /tmp/ca
+Set up the certificate (copy this text to your command line in the ca directory):
+cat > ca.cnf <<EOF
+[ ca ]
+default_ca = CA_default
+
+[ CA_default ]
+dir              = .
+database         = \$dir/index.txt
+new_certs_dir    = \$dir/newcerts
+
+certificate      = \$dir/rootCA.crt
+serial           = \$dir/serial
+private_key      = \$dir/rootCA.key
+RANDFILE         = \$dir/rand
+
+default_days     = 365
+default_crl_days = 30
+default_md       = sha256
+
+policy           = policy_any
+email_in_dn      = no
+
+name_opt         = ca_default
+cert_opt         = ca_default
+copy_extensions  = copy
+
+[ usr_cert ]
+authorityKeyIdentifier = keyid, issuer
+
+[ v3_ca ]
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid:always,issuer:always
+basicConstraints       = CA:true
+keyUsage               = critical, digitalSignature, cRLSign, keyCertSign
+
+[ policy_any ]
+organizationName       = supplied
+organizationalUnitName = supplied
+commonName             = supplied
+emailAddress           = optional
+
+[ req ]
+distinguished_name = req_distinguished_name
+prompt             = no
+
+[ req_distinguished_name ]
+O  = Example
+OU = Example Test
+CN = Example Test CA
+EOF
+Create the following directories:
+# mkdir certs crl newcerts
+Create the following files:
+# touch index.txt crlnumber index.txt.attr
+Write the number 01 in the serial file:
+# echo 01 > serial
+This command writes a number 01 in the serial file. It is a serial number of the certificate. With each new certificate released by this CA the number increases by one.
+Create an OpenSSL root CA key:
+# openssl genrsa -out rootCA.key 2048
+Create a self-signed root Certification Authority certificate:
+# openssl req -batch -config ca.cnf \
+    -x509 -new -nodes -key rootCA.key -sha256 -days 10000 \
+    -set_serial 0 -extensions v3_ca -out rootCA.crt
+Create the key for your username:
+# openssl genrsa -out example.user.key 2048
+This key is generated in the local system which is not secure, therefore, remove the key from the system when the key is stored in the card.
+You can create a key directly in the smart card as well. For doing this, follow instructions created by the manufacturer of your smart card.
+Create the certificate signing request configuration file (copy this text to your command line in the ca directory):
+cat > req.cnf <<EOF
+[ req ]
+distinguished_name = req_distinguished_name
+prompt = no
+
+[ req_distinguished_name ]
+O = Example
+OU = Example Test
+CN = testuser
+
+[ req_exts ]
+basicConstraints = CA:FALSE
+nsCertType = client, email
+nsComment = "testuser"
+subjectKeyIdentifier = hash
+keyUsage = critical, nonRepudiation, digitalSignature, keyEncipherment
+extendedKeyUsage = clientAuth, emailProtection, msSmartcardLogin
+subjectAltName = otherName:msUPN;UTF8:testuser@EXAMPLE.COM, email:testuser@example.com
+EOF
+Create a certificate signing request for your example.user certificate:
+# openssl req -new -nodes -key example.user.key \
+    -reqexts req_exts -config req.cnf -out example.user.csr
+Configure the new certificate. Expiration period is set to 1 year:
+# openssl ca -config ca.cnf -batch -notext \
+    -keyfile rootCA.key -in example.user.csr -days 365 \
+    -extensions usr_cert -out example.user.crt
+At this point, the certification authority and certificates are successfully generated and prepared for import into a smart card.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.2. Copying certificates to the SSSD directory
+GNOME Desktop Manager (GDM) requires SSSD. If you use GDM, you need to copy the PEM certificate to the /etc/sssd/pki directory.
+Prerequisites
+The local CA authority and certificates have been generated
+Procedure
+Ensure that you have SSSD installed on the system.
+# rpm -q sssd
+sssd-2.0.0.43.el8_0.3.x86_64
+Create a /etc/sssd/pki directory:
+# file /etc/sssd/pki
+/etc/sssd/pki/: directory
+Copy the rootCA.crt as a PEM file in the /etc/sssd/pki/ directory:
+# cp /tmp/ca/rootCA.crt /etc/sssd/pki/sssd_auth_ca_db.pem
+Now you have successfully generated the certificate authority and certificates, and you have saved them in the /etc/sssd/pki directory.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.3. Installing tools for managing and using smart cards
+Prerequisites
+The gnutls-utils package is installed.
+The opensc package is installed.
+The pcscd service is running.
+Before you can configure your smart card, you must install the corresponding tools, which can generate certificates and start the pscd service.
+Procedure
+Install the opensc and gnutls-utils packages:
+# dnf -y install opensc gnutls-utils
+Start the pcscd service.
+# systemctl start pcscd
+Verification
+Verify that the pcscd service is up and running
+# systemctl status pcscd
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.4. Preparing your smart card and uploading your certificates and keys to your smart card
+Follow this procedure to configure your smart card with the pkcs15-init tool, which helps you to configure:
+Erasing your smart card
+Setting new PINs and optional PIN Unblocking Keys (PUKs)
+Creating a new slot on the smart card
+Storing the certificate, private key, and public key in the slot
+If required, locking the smart card settings as certain smart cards require this type of finalization
+Prerequisites
+The opensc package, which includes the pkcs15-init tool, is installed.
+For more details, see Installing tools for managing and using smart cards.
+The card is inserted in the reader and connected to the computer.
+You have a private key, a public key, and a certificate to store on the smart card. In this procedure, testuser.key, testuserpublic.key, and testuser.crt are the names used for the private key, public key, and the certificate.
+You have your current smart card user PIN and Security Officer PIN (SO-PIN).
+Procedure
+Erase your smart card and authenticate yourself with your PIN:
+$ pkcs15-init --erase-card --use-default-transport-keys
+Using reader with a card: Reader name
+PIN [Security Officer PIN] required.
+Please enter PIN [Security Officer PIN]:
+The card has been erased.
+Initialize your smart card, set your user PIN and PUK, and your Security Officer PIN and PUK:
+$ pkcs15-init --create-pkcs15 --use-default-transport-keys \ --pin 963214 --puk 321478 --so-pin 65498714 --so-puk 784123
+Using reader with a card: Reader name
+The pcks15-init tool creates a new slot on the smart card.
+Set a label and the authentication ID for the slot:
+$ pkcs15-init --store-pin --label testuser \ --auth-id 01 --so-pin 65498714 --pin 963214 --puk 321478
+Using reader with a card: Reader name
+The label is set to a human-readable value, in this case, testuser. The auth-id must be two hexadecimal values, in this case it is set to 01.
+Store and label the private key in the new slot on the smart card:
+$ pkcs15-init --store-private-key testuser.key --label testuser_key \ --auth-id 01 --id 01 --pin 963214
+Using reader with a card: Reader name
+Store and label the certificate in the new slot on the smart card:
+$ pkcs15-init --store-certificate testuser.crt --label testuser_crt \ --auth-id 01 --id 01 --format pem --pin 963214
+Using reader with a card: Reader name
+Optional: Store and label the public key in the new slot on the smart card:
+$ pkcs15-init --store-public-key testuserpublic.key --label testuserpublic_key --auth-id 01 --id 01 --pin 963214
+Using reader with a card: Reader name
+Optional: Certain smart cards require you to finalize the card by locking the settings:
+$ pkcs15-init -F
+At this stage, your smart card includes the certificate, private key, and public key in the newly created slot. You have also created your user PIN and PUK and the Security Officer PIN and PUK.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.5. Configuring SSH access using smart card authentication
+SSH connections require authentication. You can use a password or a certificate. Follow this procedure to enable authentication using a certificate stored on a smart card.
+For details about configuring smart cards with authselect, see Configuring smart cards using authselect.
+Prerequisites
+The smart card contains your certificate and private key.
+The card is inserted in the reader and connected to the computer.
+Your username matches the Common Name (CN) or User ID (UID) in the certificate’s SUBJECT.
+The pcscd service is running on your local machine.
+For details, see Installing tools for managing and using smart cards.
+Procedure
+Create a new directory for SSH keys in the home directory of the user who uses smart card authentication:
+# mkdir /home/example.user/.ssh
+Run the ssh-keygen -D command with the opensc library to retrieve the existing public key paired with the private key on the smart card, and add it to the authorized_keys list of the user’s SSH keys directory to enable SSH access with smart card authentication.
+# ssh-keygen -D /usr/lib64/pkcs11/opensc-pkcs11.so >> ~example.user/.ssh/authorized_keys
+SSH requires access right configuration for the /.ssh directory and the authorized_keys file. To set or change the access rights, enter:
+# chown -R example.user:example.user ~example.user/.ssh/
+# chmod 700 ~example.user/.ssh/
+# chmod 600 ~example.user/.ssh/authorized_keys
+Verification
+Display the keys:
+# cat ~example.user/.ssh/authorized_keys
+The terminal displays the keys.
+You can verify the SSH access with the following command:
+# ssh -I /usr/lib64/opensc-pkcs11.so -l example.user localhost hostname
+If the configuration is successful, you are prompted to enter the smart card PIN.
+The configuration works now locally. Now you can copy the public key and distribute it to authorized_keys files located on all servers on which you want to use SSH.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 7. Configuring smart card authentication using authselect
+This section describes how to configure your smart card to achieve one of the following aims:
+Enable both password and smart card authentication
+Disable password and enable smart card authentication
+Enable lock on removal
+Prerequisites
+Authselect installed
+The authselect tool configures user authentication on Linux hosts and you can use it to configure smart card authentication parameters. For details about authselect, see Configuring user authentication using authselect.
+Smart Card or USB devices supported by RHEL 9
+For details, see Smart Card support in RHEL9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.1. Certificates eligible for smart cards
+Before you can configure a smart card with authselect, you must import a certificate into your card. You can use the following tools to generate the certificate:
+Active Directory (AD)
+Identity Management (IdM)
+For details about how to create IdM certificates, see Requesting a new user certificate and exporting it to the client.
+Red Hat Certificate System (RHCS)
+For details, see Managing Smart Cards with the Enterprise Security Client.
+Third-party Certification Authority (CA)
+Local Certification Authority. You can use a certificate generated by the Local Certification Authority if the user is not part of a domain or for testing purposes.
+For details about how to create and import local certificates into a smart card, Configuring and importing local certificates to a smart card.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.2. Configure your system to enable both smart card and password authentication
+Follow this procedure to enable both smart card and password authentication on your system.
+Prerequisites
+The Smart card contains your certificate and private key.
+The card is inserted into the reader and connected to the computer.
+The authselect tool is installed on your system.
+Procedure
+Enter the following command to allow smart card and password authentication:
+# authselect select sssd with-smartcard --force
+At this point, smart card authentication is enabled, however, password authentication will work if you forget your smart card at home.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.3. Configuring your system to enforce smart card authentication
+The authselect tool enables you to configure smart card authentication on your system and to disable the default password authentication. The authselect command includes the following options:
+with-smartcard — enables smart card authentication in addition to password authentication
+with-smartcard-required — enables smart card authentication and disables password authentication
+Prerequisites
+Smart card contains your certificate and private key.
+The card is inserted into the reader and connected to the computer.
+The authselect tool is installed on your local system.
+Procedure
+Enter the following command to enforce smart card authentication:
+# authselect select sssd with-smartcard  with-smartcard-required --force
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.4. Configuring smart card authentication with lock on removal
+The authselect service enables you to configure your smart card authentication to lock your screen instantly after removing the smart card from the reader. The authselect command must include the following variables:
+with-smartcard — enabling smart card authentication
+with-smartcard-required — enabling exclusive smart card authentication (authentication with a password is disabled)
+with-smartcard-lock-on-removal — enforcing log out after the smart card removal
+Prerequisites
+Smart card contains your certificate and private key.
+The card is inserted into the reader and connected to the computer.
+The authselect tool is installed on your local system.
+Procedure
+Enter the following command to enable smart card authentication, disable password authentication, and enforce lock on removal:
+# authselect select sssd  with-smartcard  with-smartcard-required with-smartcard-lock-on-removal --force
+Now, when you remove the card, the screen locks. You must re-insert your smart card to unlock it.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 8. Authenticating to sudo remotely using smart cards
+This section describes how to authenticate to sudo remotely using smart cards. After the ssh-agent service is running locally and can forward the ssh-agent socket to a remote machine, you can use the SSH authentication protocol in the sudo PAM module to authenticate users remotely.
+After logging in locally using a smart card, you can log in through SSH to the remote machine and run the sudo command without being prompted for a password by using SSH forwarding of the smart card authentication.
+For the purposes of this example, a client is connecting to the IPA server through SSH and running the sudo command on the IPA server with credentials stored on a smart card.
+Creating sudo rules in IdM
+Setting up the PAM module for sudo
+Connecting to sudo remotely using a smart card
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.1. Creating sudo rules in IdM
+Follow this procedure to create sudo rules in IdM to give ipauser1 permission to run sudo on the remote host.
+For the purposes of this example, the less and whoami commands are added as sudo commands to test the procedure.
+Prerequisites
+The IdM user has been created. For the purpose of this example, the user is ipauser1.
+You have the hostname of the system where you are running sudo remotely. For the purpose of this example, the host is server.ipa.test.
+Procedure
+Create a sudo rule named adminrule to allow a user to run commands.
+ipa sudorule-add adminrule
+Add less and whoami as sudo commands:
+ipa sudocmd-add /usr/bin/less
+ipa sudocmd-add /usr/bin/whoami
+Add the less and whoami commands to the adminrule:
+ipa sudorule-add-allow-command adminrule --sudocmds /usr/bin/less
+ipa sudorule-add-allow-command adminrule --sudocmds /usr/bin/whoami
+Add the ipauser1 user to the adminrule:
+ipa sudorule-add-user adminrule --users ipauser1
+Add the host on which you are running sudo to the adminrule:
+ipa sudorule-add-host adminrule --hosts server.ipa.test
+Additional resources
+See ipa sudorule-add --help.
+See ipa sudocmd-add --help.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.2. Setting up the PAM module for sudo
+Follow this procedure to install and set up the pam_ssh_agent_auth.so PAM module for sudo authentication with a smart card on any host where you are running sudo.
+Procedure
+Install the PAM SSH agent:
+dnf -y install pam_ssh_agent_auth
+Add the authorized_keys_command for pam_ssh_agent_auth.so to the /etc/pam.d/sudo file before any other auth entry:
+#%PAM-1.0
+auth sufficient pam_ssh_agent_auth.so authorized_keys_command=/usr/bin/sss_ssh_authorizedkeys
+auth       include      system-auth
+account    include      system-auth
+password   include      system-auth
+session    include      system-auth
+To enable the SSH agent forwarding to work when you run sudo commands, add the following to the /etc/sudoers file:
+Defaults env_keep += "SSH_AUTH_SOCK"
+This allows users who have their public keys from smart cards stored in IPA/SSSD to authenticate to sudo without entering a password.
+Restart the sssd service:
+systemctl restart sssd
+Additional resources
+See the pam man page on your system.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.3. Connecting to sudo remotely using a smart card
+Follow this procedure to configure the SSH agent and client to connect to sudo remotely using a smart card.
+Prerequisites
+You have created sudo rules in IdM.
+You have installed and set up the pam_ssh_agent_auth PAM module for sudo authentication on the remote system where you are going to run sudo.
+Procedure
+Start the SSH agent (if not already running).
+eval `ssh-agent`
+Add your smart card to the SSH agent. Enter your PIN when prompted:
+ssh-add -s /usr/lib64/opensc-pkcs11.so
+Connect to the system where you need to run sudo remotely by using SSH with ssh-agent forwarding enabled. Use the -A option:
+ssh -A ipauser1@server.ipa.test
+Verification
+Run the whoami command with sudo:
+sudo /usr/bin/whoami
+You are not prompted for a PIN or password when the smart card is inserted.
+Additional resources
+Using secure communications between two systems with OpenSSH
+Connecting to remote machines with SSH keys using ssh-agent
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 9. Authenticating as an Active Directory user using PKINIT with a smart card
+Active Directory (AD) users can authenticate with a smart card to a desktop client system joined to IdM and get a Kerberos ticket-granting ticket (TGT). These tickets can be used for single sign-on (SSO) authentication from the client.
+Prerequisites
+The client is configured for smart card authentication.
+The krb5-pkinit package is installed.
+The AD server is configured to trust the certificate authority (CA) that issued the smart card certificate. Import the CA certificates into the NTAuth store (see Microsoft support) and add the CA as a trusted CA. See Active Directory documentation for details.
+Procedure
+Configure the Kerberos client to trust the CA that issued the smart card certificate:
+On the IdM client, open the /etc/krb5.conf file.
+Add the following lines to the file:
+[realms]
+  AD.DOMAIN.COM = {
+    pkinit_eku_checking = kpServerAuth
+    pkinit_kdc_hostname = adserver.ad.domain.com
+  }
+If the user certificates do not contain a certificate revocation list (CRL) distribution point extension, configure AD to ignore revocation errors:
+Save the following REG-formatted content in a plain text file and import it to the Windows registry:
+Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Kdc]
+"UseCachedCRLOnlyAndIgnoreRevocationUnknownErrors"=dword:00000001
+
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\LSA\Kerberos\Parameters]
+"UseCachedCRLOnlyAndIgnoreRevocationUnknownErrors"=dword:00000001
+Alternatively, you can set the values manually by using the regedit.exe application.
+Reboot the Windows system to apply the changes.
+Authenticate by using the kinit utility on an Identity Management client. Specify the Active Directory user with the user name and domain name:
+$ kinit -X X509_user_identity='PKCS11:opensc-pkcs11.so' ad_user@AD.DOMAIN.COM
+The -X option specifies the opensc-pkcs11.so module as the pre-authentication attribute.
+Additional resources
+kinit(1) man page on your system
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 10. Troubleshooting authentication with smart cards
+The following sections describe how to resolve some of the issues you might encounter when setting up smart card authentication.
+Testing smart card authentication
+Troubleshooting smart card authentication with SSSD
+Verifying that IdM Kerberos KDC can use PKINIT and that the CA certificates are correctly located
+Increasing SSSD timeouts
+Troubleshooting certificate mapping and matching rules
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10.1. Testing smart card access on the system
+Follow this procedure to test whether you can access your smart card.
+Prerequisites
+You have installed and configured your IdM Server and client for use with smart cards.
+You have installed the certutil tool from the nss-tools package.
+You have the PIN or password for your smart card.
+Procedure
+Using the lsusb command, verify that the smart card reader is visible to the operating system:
+$ lsusb
+Bus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub
+Bus 001 Device 003: ID 072f:b100 Advanced Card Systems, Ltd ACR39U
+Bus 001 Device 002: ID 0627:0001 Adomax Technology Co., Ltd
+Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+For more information about the smart cards and readers tested and supported in RHEL, see Smart Card support in RHEL 9.
+Ensure that the pcscd service and socket are enabled and running:
+$ systemctl status pcscd.service pcscd.socket
+
+● pcscd.service - PC/SC Smart Card Daemon
+      Loaded: loaded (/usr/lib/systemd/system/pcscd.service; indirect;
+vendor preset: disabled)
+      Active: active (running) since Fri 2021-09-24 11:05:04 CEST; 2
+weeks 6 days ago
+TriggeredBy: ● pcscd.socket
+        Docs: man:pcscd(8)
+    Main PID: 3772184 (pcscd)
+       Tasks: 12 (limit: 38201)
+      Memory: 8.2M
+         CPU: 1min 8.067s
+      CGroup: /system.slice/pcscd.service
+              └─3772184 /usr/sbin/pcscd --foreground --auto-exit
+
+● pcscd.socket - PC/SC Smart Card Daemon Activation Socket
+      Loaded: loaded (/usr/lib/systemd/system/pcscd.socket; enabled;
+vendor preset: enabled)
+      Active: active (running) since Fri 2021-09-24 11:05:04 CEST; 2
+weeks 6 days ago
+    Triggers: ● pcscd.service
+      Listen: /run/pcscd/pcscd.comm (Stream)
+      CGroup: /system.slice/pcscd.socket
+Using the p11-kit list-modules command, display information about the configured smart card and the tokens present on the smart card:
+$ p11-kit list-modules
+p11-kit-trust: p11-kit-trust.so
+[...]
+opensc: opensc-pkcs11.so
+    library-description: OpenSC smartcard framework
+    library-manufacturer: OpenSC Project
+    library-version: 0.20
+    token: MyEID (sctest)
+        manufacturer: Aventra Ltd.
+        model: PKCS#15
+        serial-number: 8185043840990797
+        firmware-version: 40.1
+        flags:
+               rng
+               login-required
+               user-pin-initialized
+               token-initialized
+Verify you can access the contents of your smart card:
+$ pkcs11-tool --list-objects --login
+Using slot 0 with a present token (0x0)
+Logging in to "MyEID (sctest)".
+Please enter User PIN:
+Private Key Object; RSA
+  label:      Certificate
+  ID:         01
+  Usage:      sign
+  Access:     sensitive
+Public Key Object; RSA 2048 bits
+  label:      Public Key
+  ID:         01
+  Usage:      verify
+  Access:     none
+Certificate Object; type = X.509 cert
+  label:      Certificate
+  subject:    DN: O=IDM.EXAMPLE.COM, CN=idmuser1
+  ID:         01
+Display the contents of the certificate on your smart card using the certutil command:
+Run the following command to determine the correct name of your certificate:
+$ certutil -d /etc/pki/nssdb -L -h all
+
+Certificate Nickname                                         Trust Attributes
+                                                             SSL,S/MIME,JAR/XPI
+
+Enter Password or Pin for "MyEID (sctest)":
+Smart Card CA 0f5019a8-7e65-46a1-afe5-8e17c256ae00           CT,C,C
+MyEID (sctest):Certificate                                   u,u,u
+Display the contents of the certificate on your smart card:
+$ certutil -d /etc/pki/nssdb -L -n "MyEID (sctest):Certificate"
+
+Enter Password or Pin for "MyEID (sctest)":
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 15 (0xf)
+        Signature Algorithm: PKCS #1 SHA-256 With RSA Encryption
+        Issuer: "CN=Certificate Authority,O=IDM.EXAMPLE.COM"
+        Validity:
+            Not Before: Thu Sep 30 14:01:41 2021
+            Not After : Sun Oct 01 14:01:41 2023
+        Subject: "CN=idmuser1,O=IDM.EXAMPLE.COM"
+        Subject Public Key Info:
+            Public Key Algorithm: PKCS #1 RSA Encryption
+            RSA Public Key:
+                Modulus:
+                    [...]
+                Exponent: 65537 (0x10001)
+        Signed Extensions:
+            Name: Certificate Authority Key Identifier
+            Key ID:
+                e2:27:56:0d:2f:f5:f2:72:ce:de:37:20:44:8f:18:7f:
+                2f:56:f9:1a
+
+            Name: Authority Information Access
+            Method: PKIX Online Certificate Status Protocol
+            Location:
+                URI: "http://ipa-ca.idm.example.com/ca/ocsp"
+
+            Name: Certificate Key Usage
+            Critical: True
+            Usages: Digital Signature
+                    Non-Repudiation
+                    Key Encipherment
+                    Data Encipherment
+
+            Name: Extended Key Usage
+                TLS Web Server Authentication Certificate
+                TLS Web Client Authentication Certificate
+
+            Name: CRL Distribution Points
+            Distribution point:
+                URI: "http://ipa-ca.idm.example.com/ipa/crl/MasterCRL.bin"
+                CRL issuer:
+                    Directory Name: "CN=Certificate Authority,O=ipaca"
+
+            Name: Certificate Subject Key ID
+            Data:
+                43:23:9f:c1:cf:b1:9f:51:18:be:05:b5:44:dc:e6:ab:
+                be:07:1f:36
+
+    Signature Algorithm: PKCS #1 SHA-256 With RSA Encryption
+    Signature:
+        [...]
+    Fingerprint (SHA-256):
+        6A:F9:64:F7:F2:A2:B5:04:88:27:6E:B8:53:3E:44:3E:F5:75:85:91:34:ED:48:A8:0D:F0:31:5D:7B:C9:E0:EC
+    Fingerprint (SHA1):
+        B4:9A:59:9F:1C:A8:5D:0E:C1:A2:41:EC:FD:43:E0:80:5F:63:DF:29
+
+    Mozilla-CA-Policy: false (attribute missing)
+    Certificate Trust Flags:
+        SSL Flags:
+            User
+        Email Flags:
+            User
+        Object Signing Flags:
+            User
+Additional resources
+certutil(1) man page on your system
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10.2. Troubleshooting smart card authentication with SSSD
+Follow this procedure to troubleshoot authentication with SSSD using smart cards.
+Prerequisites
+You have installed and configured your IdM Server and client for use with smart cards.
+You have installed the sssd-tools package.
+You are able to detect your smart card reader and display the contents of your smart card. See Testing smart card access on the system.
+Procedure
+Verify you can authenticate with your smart card using su:
+$ su - idmuser1 -c ‘su - idmuser1 -c whoami’
+PIN for MyEID (sctest):
+idmuser1
+If you are not prompted for the smart card PIN, and either a password prompt or an authorization error are returned, check the SSSD logs. See Troubleshooting authentication with SSSD in IdM for information about logging in SSSD. The following is an example of an authentication failure:
+$ su - idmuser1 -c ‘su - idmuser1 -c whoami’
+PIN for MyEID (sctest):
+su: Authentication failure
+If the SSSD logs indicate an issue from the krb5_child, similar to the following, you may have an issue with your CA certificates. To troubleshoot issues with certificates, see Verifying that IdM Kerberos KDC can use Pkinit and that the CA certificates are correctly located.
+[Pre-authentication failed: Failed to verify own certificate (depth 0): unable to get local issuer certificate: could not load the shared library]
+If the SSSD logs indicate a timeout either from p11_child or krb5_child, you may need to increase the SSSD timeouts and try authenticating again with your smart card. See Increasing SSSD timeouts for details on how to increase the timeouts.
+Verify your GDM smart card authentication configuration is correct. A success message for PAM authentication should be returned as shown below:
+# sssctl user-checks -s gdm-smartcard "idmuser1" -a auth
+user: idmuser1
+action: auth
+service: gdm-smartcard
+
+SSSD nss user lookup result:
+ - user name: idmuser1
+ - user id: 603200210
+ - group id: 603200210
+ - gecos: idm user1
+ - home directory: /home/idmuser1
+ - shell: /bin/sh
+
+SSSD InfoPipe user lookup result:
+ - name: idmuser1
+ - uidNumber: 603200210
+ - gidNumber: 603200210
+ - gecos: idm user1
+ - homeDirectory: /home/idmuser1
+ - loginShell: /bin/sh
+
+testing pam_authenticate
+
+PIN for MyEID (sctest)
+pam_authenticate for user [idmuser1]: Success
+
+PAM Environment:
+ - PKCS11_LOGIN_TOKEN_NAME=MyEID (sctest)
+ - KRB5CCNAME=KCM:
+If an authentication error, similar to the following, is returned, check the SSSD logs to try and determine what is causing the issue. See Troubleshooting authentication with SSSD in IdM for information about logging in SSSD.
+pam_authenticate for user [idmuser1]: Authentication failure
+
+PAM Environment:
+ - no env -
+If PAM authentication continues to fail, clear your cache and run the command again.
+# sssctl cache-remove
+SSSD must not be running. Stop SSSD now? (yes/no) [yes] yes
+Creating backup of local data…
+Removing cache files…
+SSSD needs to be running. Start SSSD now? (yes/no) [yes] yes
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10.3. Verifying that IdM Kerberos KDC can use PKINIT and that the CA certificates are correctly located
+Follow this procedure to verify that IdM Kerberos KDC can use PKINIT and also describes how to verify your CA certificates are correctly located.
+Prerequisites
+You have installed and configured your IdM Server and client for use with smart cards.
+You are able to detect your smart card reader and display the contents of your smart card. See Testing smart card access on the system.
+Procedure
+Run the kinit utility to authenticate as the idmuser1 with the certificate stored on your smart card:
+$ kinit -X X509_user_identity=PKCS11: idmuser1
+MyEID (sctest)                   PIN:
+Enter your smart card PIN. If you are not prompted for your PIN, check that you can detect your smart card reader and display the contents of your smart card. See Testing smart card authentication.
+If your PIN is accepted and you are then prompted for your password, you might be missing your CA signing certificate.
+Verify the CA chain is listed in the default certificate bundle file using openssl commands:
+$ openssl crl2pkcs7 -nocrl -certfile /var/lib/ipa-client/pki/ca-bundle.pem | openssl pkcs7 -print_certs -noout
+subject=O = IDM.EXAMPLE.COM, CN = Certificate Authority
+
+issuer=O = IDM.EXAMPLE.COM, CN = Certificate Authority
+Verify the validity of your certificates:
+Find the user authentication certificate ID for idmuser1:
+$ pkcs11-tool --list-objects --login
+[...]
+Certificate Object; type = X.509 cert
+  label:      Certificate
+  subject:    DN: O=IDM.EXAMPLE.COM, CN=idmuser1
+ ID: 01
+Read the user certificate information from the smart card in DER format:
+$ pkcs11-tool --read-object --id 01 --type cert --output-file cert.der
+Using slot 0 with a present token (0x0)
+Convert the DER certificate to PEM format:
+$ openssl x509 -in cert.der -inform DER -out cert.pem -outform PEM
+Verify the certificate has valid issuer signatures up to the CA:
+$ openssl verify -CAfile /var/lib/ipa-client/pki/ca-bundle.pem <path>/cert.pem
+cert.pem: OK
+If your smart card contains several certificates, kinit might fail to choose the correct certificate for authentication. In this case, you need to specify the certificate ID as an argument to the kinit command using the certid=<ID> option.
+Check how many certificates are stored on the smart card and get the certificate ID for the one you are using:
+$ pkcs11-tool --list-objects --type cert --login
+Using slot 0 with a present token (0x0)
+Logging in to "MyEID (sctest)".
+Please enter User PIN:
+Certificate Object; type = X.509 cert
+  label:      Certificate
+  subject:    DN: O=IDM.EXAMPLE.COM, CN=idmuser1
+  ID:         01
+Certificate Object; type = X.509 cert
+  label:      Second certificate
+  subject:    DN: O=IDM.EXAMPLE.COM, CN=ipauser1
+  ID:         02
+Run kinit with certificate ID 01:
+$ kinit -X kinit -X X509_user_identity=PKCS11:certid=01 idmuser1
+MyEID (sctest)                   PIN:
+Run klist to view the contents of the Kerberos credentials cache:
+$ klist
+Ticket cache: KCM:0:11485
+Default principal: idmuser1@EXAMPLE.COM
+
+Valid starting       Expires              Service principal
+10/04/2021 10:50:04  10/05/2021 10:49:55  krbtgt/EXAMPLE.COM@EXAMPLE.COM
+Destroy your active Kerberos tickets once you have finished:
+$ kdestroy -A
+Additional resources
+See kinit man page on your system.
+See kdestroy man page on your system.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10.4. Increasing SSSD timeouts
+If you are having issues authenticating with a smart card, check the krb5_child.log and the p11_child.log file for timeout entries similar to the following:
+krb5_child: Timeout for child [9607] reached…​..consider increasing value of krb5_auth_timeout.
+If there is a timeout entry in the log file, try increasing the SSSD timeouts as outlined in this procedure.
+Prerequisites
+You have configured your IdM Server and client for smart card authentication.
+Procedure
+Open the sssd.conf file on the IdM client:
+# vim /etc/sssd/sssd.conf
+In your domain section, for example [domain/idm.example.com], add the following option:
+krb5_auth_timeout = 60
+In the [pam] section, add the following:
+p11_child_timeout = 60
+Clear the SSSD cache:
+# sssctl cache-remove
+SSSD must not be running. Stop SSSD now? (yes/no) [yes] yes
+Creating backup of local data…
+Removing cache files…
+SSSD needs to be running. Start SSSD now? (yes/no) [yes] yes
+Once you have increased the timeouts, try authenticating again using your smart card. See Testing smart card authentication for more details.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10.5. Troubleshooting certificate mapping and matching rules
+If you are having issues authenticating with a smart card, check that you have linked your smart card certificate correctly to a user. By default, a certificate is associated with a user when the user entry contains the full certificate as part of the usercertificate attribute. However, if you have defined certificate mapping rules, you may have changed how certificates are associated with users. To troubleshoot certificate mapping and matching rules, refer to the following sections:
+Checking how the certificates are mapped to users
+Checking the user associated with a smart card certificate
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10.5.1. Checking how the certificates are mapped to users
+By default, a certificate is associated with a user when the user entry contains the full certificate as part of the usercertificate attribute. However, if you have defined certificate mapping rules, you may have changed how certificates are associated with users. Follow this procedure to check your certificate mapping rules.
+Prerequisites
+You have installed and configured your Identity Management (IdM) server and client for use with smart cards.
+You are able to detect your smart card reader and display the contents of your smart card. See Testing smart card access on the system.
+You have mapped your smart card certificate to an IdM user. See Certificate mapping rules for configuring authentication on smart cards.
+Procedure
+Verify the certificate mapping rules currently configured for IdM:
+# ipa certmaprule-find
+-------------------------------------------
+1 Certificate Identity Mapping Rule matched
+-------------------------------------------
+  Rule name: smartcardrule
+  Mapping rule: (ipacertmapdata=X509:<I>{issuer_dn!nss_x500}<S>{subject_dn!nss_x500})
+  Matching rule: <ISSUER>CN=Certificate Authority,O=IDM.EXAMPLE.COM
+  Enabled: TRUE
+----------------------------
+Number of entries returned 1
+----------------------------
+You can expect to see one of the following mapping rules defined:
+ipacertmapdata indicates that the IdM user entry certmapdata attribute is used.
+altSecurityIdentities specifies that Active Directory’s user entry name mapping attribute is used.
+userCertificate;binary= indicates that the whole certificate in either IdM or AD is used.
+You can define many matching options but some of the typically configured options are as follows:
+<ISSUER>CN=[…​] specifies the issuer attribute of the certificate being used is checked to make sure it matches this.
+<SUBJECT>.*,DC=MY,DC=DOMAIN indicates the subject of the certificate is checked.
+Enable System Security Services Daemon (SSSD) logging by adding debug_level = 9 to the /etc/sssd/sssd.conf file on the IdM server:
+[domain/idm.example.com]
+...
+debug_level = 9
+Restart SSSD:
+# systemctl restart sssd
+You should see the following entry in the /var/log/sssd/sssd_idm.example.com.log file if the mapping is read correctly:
+[be[idm.example.com]] [sdap_setup_certmap] (0x4000): Trying to add rule [smartcardrule][-1][<ISSUER>CN=Certificate Authority,O=IDM.EXAMPLE.COM][(|(userCertificate;binary={cert!bin})(ipacertmapdata=X509:<I>{issuer_dn!nss_x500}<S>{subject_dn!nss_x500}))].
+If your mapping rule contains an invalid syntax, an entry similar to the following can be seen in the log file:
+[be[idm.example.com]]] [sss_certmap_init] (0x0040): sss_certmap initialized.
+[be[idm.example.com]]] [ipa_certmap_parse_results] (0x4000): Trying to add rule [smartcardrule][-1][<ISSUER>CN=Certificate Authority,O=IDM.EXAMPLE.COM][(ipacertmapdata=X509:<I>{issuer_dn!x509}<S>{subject_dn})].
+[be[idm.example.com]]] [parse_template] (0x0040): Parse template invalid.
+[be[idm.example.com]]] [parse_ldap_mapping_rule] (0x0040): Failed to add template.
+[be[idm.example.com]]] [parse_mapping_rule] (0x0040): Failed to parse LDAP mapping rule.
+[be[idm.example.com]]] [ipa_certmap_parse_results] (0x0020): sss_certmap_add_rule failed for rule [smartcardrule], skipping. Please check for typos and if rule syntax is supported.
+[be[idm.example.com]]] [ipa_subdomains_certmap_done] (0x0040): Unable to parse certmap results [22]: Invalid argument
+[be[idm.example.com]]] [ipa_subdomains_refresh_certmap_done] (0x0020): Failed to read certificate mapping rules [22]: Invalid argument
+Check your mapping rule syntax.
+# ipa certmaprule-show smartcardrule
+  Rule name: smartcardrule
+  Mapping rule: (|(userCertificate;binary={cert!bin})(ipacertmapdata=X509:<I>{issuer_dn!nss_x500}<S>{subject_dn!nss_x500}))
+  Matching rule: <ISSUER>CN=Certificate Authority,O=IDM.EXAMPLE.COM
+  Domain name: ipa.test
+  Enabled: TRUE
+If required, modify your certificate mapping rule:
+# ipa certmaprule-mod smartcardrule --maprule '(ipacertmapdata=X509:<I>{issuer_dn!nss_x500}<S>{subject_dn!nss_x500})'
+Additional resources
+See the sss-certmap man page on your system.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10.5.2. Checking the user associated with a smart card certificate
+If you are having issues authenticating with a smart card, verify the correct user is associated with your smart card certificate.
+Prerequisites
+You have installed and configured your Identity Management (IdM) server and client for use with smart cards.
+You are able to detect your smart card reader and display the contents of your smart card. See Testing smart card access on the system.
+You have mapped your smart card certificate to an IdM user. See Certificate mapping rules for configuring authentication on smart cards.
+You have a copy of the certificate from your smart card in PEM format, for example, cert.pem.
+Procedure
+Verify the user is associated with your smart card certificate:
+# ipa certmap-match cert.pem
+--------------
+1 user matched
+--------------
+  Domain: IDM.EXAMPLE.COM
+  User logins: idmuser1
+----------------------------
+Number of entries returned 1
+----------------------------
+If the user or domain are not correct, check how your certificates are mapped to users. See Checking how the certificates are mapped to users.
+Check if the user entry contains the certificate:
+# ipa user-show idmuser1
+  User login: idmuser1
+[...]
+Certificate:MIIEejCCAuKgAwIBAgIBCzANBgkqhkiG9w0BAQsFADAzMREwDwYDVQQKDAhJUEEuVEVTVDEeMBwGA1UEAwwVQ2VydGlmaWNhdGUgQXV0aG9yaXR5MB4XD
+If your user entry does not contain the certificate, add your base-64 encoded certificate to the user entry:
+Create an environment variable containing the certificate with the header and footer removed and concatenated into a single line, which is the format expected by the ipa user-add-cert command:
+$ export CERT=`openssl x509 -outform der -in idmuser1.crt | base64 -w0 -`
+Note that the certificate in the idmuser1.crt file must be in PEM format.
+Add the certificate to the profile of idmuser1 using the ipa user-add-cert command:
+$ ipa user-add-cert idmuser1 --certificate=$CERT
+Clear the System Security Services Daemon (SSSD) cache.
+# sssctl cache-remove
+SSSD must not be running. Stop SSSD now? (yes/no) [yes] yes
+Creating backup of local data…
+Removing cache files…
+SSSD needs to be running. Start SSSD now? (yes/no) [yes] yes
+Run ipa certmap-match again to confirm the user is associated with your smart card certificate.

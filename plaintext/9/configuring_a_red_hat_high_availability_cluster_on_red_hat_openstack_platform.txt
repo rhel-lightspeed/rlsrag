@@ -1,0 +1,336 @@
+Abstract
+You can use the Red Hat High Availability Add-On to configure a high availability (HA) cluster on Red Hat OpenStack Platform (RHOSP) instances. This title provides instructions for installing the required packages and agents, as well as examples that configure a basic cluster, fencing resources, and HA cluster resources.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 1. Preface
+You can use the Red Hat High Availability Add-On to configure a Red Hat High Availability (HA) cluster on Red Hat OpenStack Platform (RHOSP) instances. This requires that you install the required packages and agents, configure a basic cluster, configure fencing resources, and configure HA cluster resources.
+For RHOSP documentation, see Product Documentation for Red Hat Openstack Platform.
+For Red Hat’s policies, requirements, and limitations applicable to the use of RHOSP instances in a RHEL High Availability cluster, see Support Policies for RHEL High Availability Clusters - OpenStack Virtual Machines as Cluster Members - Red Hat Customer Portal.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 2. RHOSP server group configuration for HA instances
+Create an instance server group before you create the RHOSP HA cluster node instances. Group the instances by affinity policy. If you configure multiple clusters, ensure that you have only one server group per cluster.
+The affinity policy you set for the server group can determine whether the cluster remains operational if the hypervisor fails.
+The default affinity policy is affinity. With this affinity policy, all of the cluster nodes could be created on the same RHOSP hypervisor. In this case, if the hypervisor fails the entire cluster fails. For this reason, set an affinity policy for the server group of anti-affinity or soft-anti-affinity.
+With an affinity policy of anti-affinity, the server group allows only one cluster node per Compute node. Attempting to create more cluster nodes than Compute nodes generates an error. While this configuration provides the highest protection against RHOSP hypervisor failures, it may require more resources to deploy large clusters than you have available.
+With an affinity policy of soft-anti-affinity, the server group distributes cluster nodes as evenly as possible across all Compute nodes. Although this provides less protection against hypervisor failures than a policy of anti-affinity, it provides a greater level of high availability than an affinity policy of affinity.
+Determining the server group affinity policy for your deployment requires balancing your cluster needs against the resources you have available by taking the following cluster components into account:
+The number of nodes in the cluster
+The number of RHOSP Compute nodes available
+The number of nodes required for cluster quorum to retain cluster operations
+For information about affinity and creating an instance server group, Compute scheduler filters and the Command Line Interface Reference.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 3. Installing the high availability and RHOSP packages and agents
+Install the packages required for configuring a Red Hat High Availability cluster on Red Hat OpenStack Platform (RHOSP). You must install the packages on each of the nodes you will use as cluster members.
+Prerequisites
+A server group for the RHOSP instances to use as HA cluster nodes, configured as described in RHOSP server group configuration for HA instances
+An RHOSP instance for each HA cluster node
+The instances are members of a server group
+The instances are configured as nodes running RHEL 9.1 or later
+Procedure
+Enable the RHEL HA repositories and the RHOSP tools channel.
+# subscription-manager repos --enable=rhel-9-for-x86_64-highavailability-rpms
+# subscription-manager repos --enable=openstack-17-tools-for-rhel-9-x86_64-rpms
+Install the Red Hat High Availability Add-On software packages and the packages that are required for the RHOSP cluster resource agents and the RHOSP fence agents.
+# dnf install pcs pacemaker python3-openstackclient python3-novaclient fence-agents-openstack
+Installing the pcs and pacemaker packages on each node creates the user hacluster, which is the pcs administration account. Create a password for user hacluster on all cluster nodes. Using the same password for all nodes simplifies cluster administration.
+# passwd hacluster
+If firewalld.service is installed, add the high-availability service to the RHEL firewall.
+# firewall-cmd --permanent --add-service=high-availability
+# firewall-cmd --add-service=high-availability
+Start the pcs service and enable it to start on boot.
+# systemctl start pcsd.service
+# systemctl enable pcsd.service
+Verify that the pcs service is running.
+# systemctl status pcsd.service
+pcsd.service - PCS GUI and remote configuration interface
+Loaded: loaded (/usr/lib/systemd/system/pcsd.service; enabled; vendor preset: disabled)
+Active: active (running) since Thu 2018-03-01 14:53:28 UTC; 28min ago
+Docs: man:pcsd(8)
+man:pcs(8)
+Main PID: 5437 (pcsd)
+CGroup: /system.slice/pcsd.service
+     └─5437 /usr/bin/ruby /usr/lib/pcsd/pcsd > /dev/null &
+Mar 01 14:53:27 ip-10-0-0-48.ec2.internal systemd[1]: Starting PCS GUI and remote configuration interface…
+Mar 01 14:53:28 ip-10-0-0-48.ec2.internal systemd[1]: Started PCS GUI and remote configuration interface.
+Edit the /etc/hosts file and add RHEL host names and internal IP addresses. For information about /etc/hosts, see the Red Hat Knowledgebase solution: How should the /etc/hosts file be set up on RHEL cluster nodes?.
+Additional resources
+For further information about configuring and managing Red Hat high availability clusters, see Configuring and managing high availability clusters.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 4. Setting up an authentication method for RHOSP
+The high availability fence agents and resource agents support three authentication methods for communicating with RHOSP:
+Authentication with a clouds.yaml configuration file
+Authentication with an OpenRC environment script
+Authentication with a username and password through Pacemaker
+After determining the authentication method to use for the cluster, specify the appropriate authentication parameters when creating a fencing or cluster resource.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.1. Authenticating with RHOSP by using a clouds.yaml file
+The procedures in this document that use a a clouds.yaml file for authentication use the clouds.yaml file shown in this procedure. Those procedures specify ha-example for the cloud= parameter, as defined in this file.
+Procedure
+On each node that will be part of your cluster, create a clouds.yaml file, as in the following example. For information about creating a clouds.yaml file, see Users and Identity Management Guide.
+$ cat .config/openstack/clouds.yaml
+clouds:
+  ha-example:
+    auth:
+      auth_url: https://<ip_address>:13000/
+      project_name: rainbow
+      username: unicorns
+      password: <password>
+      user_domain_name: Default
+      project_domain_name: Default
+  <. . . additional options . . .>
+  region_name: regionOne
+  verify: False
+Test whether authentication is successful and you have access to the RHOSP API with the following basic RHOSP command, substituting the name of the cloud you specified in the clouds.yaml file you created for ha-example. If this command does not display a server list, contact your RHOSP administrator.
+$ openstack --os-cloud=ha-example server list
+Specify the cloud parameter when creating a cluster resource or a fencing resource.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.2. Authenticating with RHOSP by using an OpenRC environment script
+To use an OpenRC environment script to authenticate with RHOSP, perform the following steps.
+Procedure
+On each node that will be part of your cluster, configure an OpenRC environment script. For information about creating an OpenRC environment script, see Set environment variables using the OpenStack RC file.
+Test whether authentication is successful and you have access to the RHOSP API with the following basic RHOSP command. If this command does not display a server list, contact your RHOSP administrator.
+$ openstack server list
+Specify the openrc parameter when creating a cluster resource or a fencing resource.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.3. Authenticating with RHOSP by means of a username and password
+To authenticate with RHOSP by means of a username and password, specify the username, password, and auth_url parameters for a cluster resource or a fencing resource when you create the resource. Additional authentication parameters may be required, depending on the RHOSP configuration. The RHOSP administrator provides the authentication parameters to use.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 5. Creating a basic cluster on Red Hat OpenStack Platform
+This procedure creates a high availability cluster on an RHOSP platform with no fencing or resources configured.
+Prerequisites
+An RHOSP instance is configured for each HA cluster node
+The HAcluster node is running RHEL 9.1 or later
+High Availability and RHOSP packages are installed on each node, as described in Installing the high availability and RHOSP packages and agents.
+Procedure
+On one of the cluster nodes, enter the following command to authenticate the pcs user hacluster. Specify the name of each node in the cluster. In this example, the nodes for the cluster are node01, node02, and node03.
+[root@node01 ~]# pcs host auth node01 node02 node03
+Username: hacluster
+Password:
+node01: Authorized
+node02: Authorized
+node03: Authorized
+Create the cluster. In this example, the cluster is named newcluster.
+[root@node01 ~]# pcs cluster setup newcluster node01 node02 node03
+
+...
+
+Synchronizing pcsd certificates on nodes node01, node02, node03…
+node02: Success
+node03: Success
+node01: Success
+Restarting pcsd on the nodes in order to reload the certificates…
+node02: Success
+node03: Success
+node01: Success
+Verification
+Enable the cluster.
+[root@node01 ~]# pcs cluster enable --all
+node01: Cluster Enabled
+node02: Cluster Enabled
+node03: Cluster Enabled
+Start the cluster. The command’s output indicates whether the cluster has started on each node.
+[root@node01 ~]# pcs cluster start --all
+node02: Starting Cluster…
+node03: Starting Cluster…
+node01: Starting Cluster...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 6. Configuring fencing for an HA cluster on Red Hat OpenStack Platform
+Fencing configuration ensures that a malfunctioning node on your HA cluster is automatically isolated. This prevents the node from consuming the cluster’s resources or compromising the cluster’s functionality.
+Use the fence_openstack fence agent to configure a fence device for an HA cluster on RHOSP. You can view the options for the RHOSP fence agent with the following command.
+# pcs stonith describe fence_openstack
+Prerequisites
+A configured HA cluster running on RHOSP
+Access to the RHOSP APIs, using the RHOSP authentication method you will use for cluster configuration, as described in Setting up an authentication method for RHOSP
+The cluster property stonith-enabled set to true, which is the default value. Red Hat does not support clusters when fencing is disabled, as it is not suitable for a production environment. Run the following command to ensure that fencing is enbaled.
+# pcs property config --all
+Cluster Properties:
+. . .
+stonith-enabled: true
+Procedure
+Complete the following steps from any node in the cluster.
+Determine the UUID for each node in your cluster.
+The following command displays the full list of all of the RHOSP instance names within the ha-example project along with the UUID for the cluster node associated with that RHOSP instance, under the heading ID. The node host name might not match the RHOSP instance name.
+# openstack --os-cloud="ha-example" server list
+…
+| ID                                  | Name             |...
+| 6d86fa7d-b31f-4f8a-895e-b3558df9decb|testnode-node03-vm|...
+| 43ed5fe8-6cc7-4af0-8acd-a4fea293bc62|testnode-node02-vm|...
+| 4df08e9d-2fa6-4c04-9e66-36a6f002250e|testnode-node01-vm|...
+Create the fencing device, using the pcmk_host_map parameter to map each node in the cluster to the UUID for that node. Each of the following example fence device creation commands uses a different authentication method.
+The following command creates a fence_openstack fencing device for a 3-node cluster, using a clouds.yaml configuration file for authentication. For the cloud= parameter, specify the name of the cloud in your clouds.yaml` file.
+# pcs stonith create fenceopenstack fence_openstack pcmk_host_map="node01:4df08e9d-2fa6-4c04-9e66-36a6f002250e;node02:43ed5fe8-6cc7-4af0-8acd-a4fea293bc62;node03:6d86fa7d-b31f-4f8a-895e-b3558df9decb" power_timeout="240" pcmk_reboot_timeout="480" pcmk_reboot_retries="4" cloud="ha-example"
+The following command creates a fence_openstack fencing device, using an OpenRC environment script for authentication.
+# pcs stonith create fenceopenstack fence_openstack pcmk_host_map="node01:4df08e9d-2fa6-4c04-9e66-36a6f002250e;node02:43ed5fe8-6cc7-4af0-8acd-a4fea293bc62;node03:6d86fa7d-b31f-4f8a-895e-b3558df9decb" power_timeout="240" pcmk_reboot_timeout="480" pcmk_reboot_retries="4" openrc="/root/openrc"
+The following command creates a fence_openstack fencing device, using a user name and password for authentication. The authentication parameters, including username, password, project_name, and auth_url, are provided by the RHOSP administrator.
+# pcs stonith create fenceopenstack fence_openstack pcmk_host_map="node01:4df08e9d-2fa6-4c04-9e66-36a6f002250e;node02:43ed5fe8-6cc7-4af0-8acd-a4fea293bc62;node03:6d86fa7d-b31f-4f8a-895e-b3558df9decb" power_timeout="240" pcmk_reboot_timeout="480" pcmk_reboot_retries="4" username="XXX" password="XXX" project_name="rhelha" auth_url="XXX" user_domain_name="Default"
+Verification
+From one node in the cluster, fence a different node in the cluster and check the cluster status. If the fenced node is offline, the fencing operation was successful.
+[root@node01 ~] # pcs stonith fence node02
+[root@node01 ~] # pcs status
+Restart the node that you fenced and check the status to verify that the node started.
+[root@node01 ~] # pcs cluster start node02
+[root@node01 ~] # pcs status
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 7. Configuring HA cluster resources on Red Hat OpenStack Platform
+The following table lists the RHOSP-specific resource agents you use to configure resources for an HA cluster on RHOSP.
+When configuring other cluster resources, use the standard Pacemaker resource agents.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.1. Configuring an openstack-info resource in an HA cluster on Red Hat OpenStack Platform (required)
+You must configure an openstack-info resource in order to run any other RHOSP-specific resource agent except for the fence_openstack fence agent.
+This procedure to create an openstack-info resource uses a clouds.yaml file for RHOSP authentication.
+Prerequisites
+A configured HA cluster running on RHOSP
+Access to the RHOSP APIs, using the RHOSP authentication method you will use for cluster configuration, as described in Setting up an authentication method for RHOSP
+Procedure
+Complete the following steps from any node in the cluster.
+To view the options for the openstack-info resource agent, run the following command.
+# pcs resource describe openstack-info
+Create the openstack-info resource as a clone resource. In this example, the resource is also named openstack-info. This example uses a clouds.yaml configuration file and the cloud= parameter is set to the name of the cloud in your clouds.yaml file.
+# pcs resource create openstack-info openstack-info cloud="ha-example" clone
+Check the cluster status to verify that the resource is running.
+# pcs status
+
+Full List of Resources:
+
+       * Clone Set: openstack-info-clone [openstack-info]:
+         * Started: [ node01 node02 node03 ]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.2. Configuring a virtual IP address in an HA cluster on Red Hat Openstack Platform
+This procedure to create an RHOSP virtual IP address resource for an HA cluster on an RHOSP platform uses a clouds.yaml file for RHOSP authentication.
+The RHOSP virtual IP resource operates in conjunction with an IPaddr2 cluster resource. When you configure an RHOSP virtual IP address resource, the resource agent ensures that the RHOSP infrastructure associates the virtual IP address with a cluster node on the network. This allows an IPaddr2 resource to function on that node.
+Prerequisites
+A configured HA cluster running on RHOSP
+An assigned IP address to use as the virtual IP address
+Access to the RHOSP APIs, using the RHOSP authentication method you will use for cluster configuration, as described in Setting up an authentication method for RHOSP
+Procedure
+Complete the following steps from any node in the cluster.
+To view the options for the openstack-virtual-ip resource agent, run the following command.
+# pcs resource describe openstack-virtual-ip
+Run the following command to determine the subnet ID for the virtual IP address you are using. In this example, the virtual IP address is 172.16.0.119.
+# openstack --os-cloud=ha-example subnet list
++--------------------------------------+ ...  +----------------+
+| ID                                   | ...  | Subnet         |
++--------------------------------------+ ...  +----------------+
+| 723c5a77-156d-4c3b-b53c-ee73a4f75185 | ...  | 172.16.0.0/24  |
++--------------------------------------+ ...  +----------------+
+Create the RHOSP virtual IP address resource.
+The following command creates an RHOSP virtual IP address resource for an IP address of 172.16.0.119, specifying the subnet ID you determined in the previous step.
+# pcs resource create ClusterIP-osp ocf:heartbeat:openstack-virtual-ip cloud=ha-example ip=172.16.0.119 subnet_id=723c5a77-156d-4c3b-b53c-ee73a4f75185
+Configure ordering and location constraints:
+Ensure that the openstack-info resource starts before the virtual IP address resource.
+Ensure that the Virtual IP address resource runs on the same node as the openstack-info resource.
+# pcs constraint order start openstack-info-clone then ClusterIP-osp
+Adding openstack-info-clone ClusterIP-osp (kind: Mandatory) (Options: first-action=start then-action=start)
+# pcs constraint colocation add ClusterIP-osp with openstack-info-clone score=INFINITY
+Create an IPaddr2 resource for the virtual IP address.
+# pcs resource create ClusterIP ocf:heartbeat:IPaddr2 ip=172.16.0.119
+Configure ordering and location constraints to ensure that the openstack-virtual-ip resource starts before the IPaddr2 resource and that the IPaddr2 resource runs on the same node as the openstack-virtual-ip resource.
+# pcs constraint order start ClusterIP-osp then ClusterIP
+Adding ClusterIP-osp ClusterIP (kind: Mandatory) (Options: first-action=start then-action=start)
+# pcs constraint colocation add ClusterIP with ClusterIP-osp
+Verification
+Verify the resource constraint configuration.
+# pcs constraint config
+Location Constraints:
+Ordering Constraints:
+  start ClusterIP-osp then start ClusterIP (kind:Mandatory)
+  start openstack-info-clone then start ClusterIP-osp (kind:Mandatory)
+Colocation Constraints:
+  ClusterIP with ClusterIP-osp (score:INFINITY)
+  ClusterIP-osp with openstack-info-clone (score:INFINITY)
+Check the cluster status to verify that the resources are running.
+# pcs status
+. . .
+
+Full List of Resources:
+  * fenceopenstack      (stonith:fence_openstack):       Started node01
+  * Clone Set: openstack-info-clone [openstack-info]:
+    * Started: [ node01 node02 node03 ]
+  * ClusterIP-osp       (ocf::heartbeat:openstack-virtual-ip):   Started node03
+  * ClusterIP   (ocf::heartbeat:IPaddr2):        Started node03
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.3. Configuring a floating IP address in an HA cluster on Red Hat OpenStack Platform
+The following procedure creates a floating IP address resource for an HA cluster on RHOSP. This procedure uses a clouds.yaml file for RHOSP authentication.
+Prerequisites
+A configured HA cluster running on RHOSP
+An IP address on the public network to use as the floating IP address, assigned by the RHOSP administrator
+Access to the RHOSP APIs, using the RHOSP authentication method you will use for cluster configuration, as described in Setting up an authentication method for RHOSP
+Procedure
+Complete the following steps from any node in the cluster.
+To view the options for the openstack-floating-ip resource agent, run the following command.
+# pcs resource describe openstack-floating-ip
+Find the subnet ID for the address on the public network that you will use to create the floating IP address resource.
+The public network is usually the network with the default gateway. Run the following command to display the default gateway address.
+# route -n | grep ^0.0.0.0 | awk '{print $2}'
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+172.16.0.1
+Run the following command to find the subnet ID for the public network. This command generates a table with ID and Subnet headings.
+# openstack --os-cloud=ha-example subnet list
++-------------------------------------+---+---------------+
+| ID                                   |   | Subnet
++-------------------------------------+---+---------------+
+| 723c5a77-156d-4c3b-b53c-ee73a4f75185 |   | 172.16.0.0/24 |
++--------------------------------------+------------------+
+Create the floating IP address resource, specifying the public IP address for the resource and the subnet ID for that address. When you configure the floating IP address resource, the resource agent configures a virtual IP address on the public network and associates it with a cluster node.
+# pcs resource create float-ip openstack-floating-ip cloud="ha-example" ip_id="10.19.227.211" subnet_id="723c5a77-156d-4c3b-b53c-ee73a4f75185"
+Configure an ordering constraint to ensure that the openstack-info resource starts before the floating IP address resource.
+# pcs constraint order start openstack-info-clone then float-ip
+Adding openstack-info-clone float-ip (kind: Mandatory) (Options: first-action=start then-action=start
+Configure a location constraint to ensure that the floating IP address resource runs on the same node as the openstack-info resource.
+# pcs constraint colocation add float-ip with openstack-info-clone score=INFINITY
+Verification
+Verify the resource constraint configuration.
+# pcs constraint config
+Location Constraints:
+Ordering Constraints:
+  start openstack-info-clone then start float-ip (kind:Mandatory)
+Colocation Constraints:
+  float-ip with openstack-info-clone (score:INFINITY)
+Check the cluster status to verify that the resources are running.
+# pcs status
+. . .
+Full List of Resources:
+  * fenceopenstack      (stonith:fence_openstack):       Started node01
+  * Clone Set: openstack-info-clone [openstack-info]:
+    * Started: [ node01 node02 node03 ]
+  * float-ip    (ocf::heartbeat:openstack-floating-ip):  Started node02
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.4. Configuring a block storage resource in an HA cluster on Red Hat OpenStack Platform
+The following procedure creates a block storage resource for an HA cluster on RHOSP. This procedure uses a clouds.yaml file for RHOSP authentication.
+Prerequisites
+A configured HA cluster running on RHOSP
+A block storage volume created by the RHOSP administrator
+Access to the RHOSP APIs, using the RHOSP authentication method you will use for cluster configuration, as described in Setting up an authentication method for RHOSP
+Procedure
+Complete the following steps from any node in the cluster.
+To view the options for the openstack-cinder-volume resource agent, run the following command.
+# pcs resource describe openstack-cinder-volume
+Determine the volume ID of the block storage volume you are configuring as a cluster resource.
+Run the following command to display a table of available volumes that includes the UUID and name of each volume.
+# openstack --os-cloud=ha-example volume list
+| ID                                  | Name                        |
+| 23f67c9f-b530-4d44-8ce5-ad5d056ba926| testvolume-cinder-data-disk |
+If you already know the volume name, you can run the following command, specifying the volume you are configuring. This displays a table with an ID field.
+# openstack --os-cloud=ha-example volume show testvolume-cinder-data-disk
+Create the block storage resource, specifying the ID for the volume.
+# pcs resource create cinder-vol openstack-cinder-volume volume_id="23f67c9f-b530-4d44-8ce5-ad5d056ba926" cloud="ha-example"
+Configure an ordering constraint to ensure that the openstack-info resource starts before the block storage resource.
+# pcs constraint order start openstack-info-clone then cinder-vol
+Adding openstack-info-clone cinder-vol (kind: Mandatory) (Options: first-action=start then-action=start
+Configure a location constraint to ensure that the block storage resource runs on the same node as the openstack-info resource.
+# pcs constraint colocation add cinder-vol with openstack-info-clone score=INFINITY
+Verification
+Verify the resource constraint configuration.
+# pcs constraint config
+Location Constraints:
+Ordering Constraints:
+  start openstack-info-clone then start cinder-vol (kind:Mandatory)
+Colocation Constraints:
+  cinder-vol with openstack-info-clone (score:INFINITY)
+Check the cluster status to verify that the resource is running.
+# pcs status
+. . .
+Full List of Resources:
+  * Clone Set: openstack-info-clone [openstack-info]:
+    * Started: [ node01 node02 node03 ]
+  * cinder-vol  (ocf::heartbeat:openstack-cinder-volume):        Started node03
+  * fenceopenstack      (stonith:fence_openstack):       Started node01

@@ -1,0 +1,776 @@
+Abstract
+This document describes how to use GNOME, which is the only desktop environment available in RHEL 9. It explains the basics of using GNOME Shell and certain GNOME applications.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 1. Overview of GNOME environments
+You can switch between several user interfaces and graphics back ends in GNOME.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.1. GNOME environments, back ends, and display protocols
+In RHEL 9, there are two available GNOME environments:
+GNOME Standard
+GNOME Classic
+Both environments can use two different protocols as their graphical back ends:
+The Wayland protocol, which uses GNOME Shell as the Wayland compositor and display server.
+This solution of display server is further referred as GNOME Shell on Wayland.
+The X11 protocol, which uses X.Org as the display server.
+The default combination in RHEL 9 is the GNOME Standard environment using GNOME Shell on Wayland as the display server. However, due to certain Wayland limitations, you might want to switch the graphics protocol stack to X11. You can also switch from GNOME Standard to GNOME Classic.
+Thus, you can select from the following combinations of back ends and environments when logging in:
+GNOME Shell on Wayland (the default combination in RHEL 9)
+GNOME Shell on X11
+GNOME Classic on Wayland
+GNOME Classic on X11
+Additional resources
+For information about how to switch the environments, see Selecting GNOME environment and display protocol.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.2. GNOME Standard
+The GNOME Standard user interface includes these major components:
+The GNOME Standard desktop
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.3. GNOME Classic
+GNOME Classic represents a mode for users who prefer a more traditional desktop experience that is similar to the GNOME 2 environment used with RHEL 6. It is based on GNOME 3 technologies, and at the same time it includes multiple features similar to GNOME 2.
+The GNOME Classic user interface consists of these major components:
+The GNOME Classic desktop with the Favorites submenu of the Applications menu
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.4. Enabling window overview in GNOME Classic
+In GNOME Classic, the overview of open windows is not available by default. This procedure enables the window overview for all users on the system.
+Procedure
+Open the /usr/share/gnome-shell/modes/classic.json file as the root user.
+Find the following line in the file:
+"hasOverview": false
+Change the line to the following:
+"hasOverview": true
+Save changes, and close the /usr/share/gnome-shell/modes/classic.json file.
+Restart the user session.
+Verification
+In your GNOME Classic session, open multiple windows.
+Press the Super key to open the window overview.
+In the overview, check that:
+The Dash (the horizontal panel on the bottom of the screen) is displayed.
+The bottom panel is not displayed.
+Window overview with "hasOverview": true
+With the default settings ("hasOverview": false), the overview has the following features:
+The Dash is not displayed.
+The bottom panel is displayed. It includes the Window picker button in its left part and the workspace switcher in its right part.
+Window overview with "hasOverview": false
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.5. Graphics back ends in RHEL 9
+In RHEL 9, you can choose between two protocols to build a graphical user interface:
+New installations of RHEL 9 automatically select GNOME Shell on Wayland. However, you can switch to X.Org, or select the required combination of GNOME environment and display server.
+X11 applications
+Client applications need to be ported to the Wayland protocol or use a graphical toolkit that has a Wayland backend, such as GTK, to be able to work natively with the compositor and display server based on Wayland.
+Legacy X11 applications that cannot be ported to Wayland automatically use Xwayland as a proxy between the X11 legacy clients and the Wayland compositor. Xwayland functions both as an X11 server and a Wayland client. The role of Xwayland is to translate the X11 protocol into the Wayland protocol and reversely, so that X11 legacy applications can work with the display server based on Wayland.
+On GNOME Shell on Wayland, Xwayland starts automatically at login, which ensures that most X11 legacy applications work as expected when using GNOME Shell on Wayland. However, the X11 and Wayland protocols are different, and certain clients that rely on features specific to X11 might behave differently under Xwayland. For such specific clients, you can switch to the X.Org display server.
+Input devices
+RHEL 9 uses a unified input stack, libinput, which manages all common device types, such as mice, touchpads, touchscreens, tablets, trackballs and pointing sticks. This unified stack is used both by the X.Org and by the GNOME Shell on Wayland compositor.
+GNOME Shell on Wayland uses libinput directly for all devices, and no switchable driver support is available. Under X.Org, libinput is implemented as the X.Org libinput driver, and you can optionally enable the legacy X.Org evdev driver if libinput does not support your input device.
+Additional resources
+You can find the current list of environments for which Wayland is not available in the /usr/lib/udev/rules.d/61-gdm.rules file.
+For additional information about the Wayland project, see Wayland documentation.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.6. Selecting GNOME environment and display protocol
+The default desktop environment for RHEL 9 is GNOME Standard with GNOME Shell on Wayland as the display server. However, due to certain limitations of Wayland, you might want to switch the graphics protocol stack. You might also want to switch from GNOME Standard to GNOME Classic.
+The change of GNOME environment and graphics protocol stack is persistent across user logouts, and also when powering off or rebooting the computer.
+Procedure
+From the login screen (GDM), click the gear button in the right bottom corner of the screen.
+From the drop-down menu that appears, select the option that you prefer.
+In the menu, the X.Org display server is also marked as X11.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.7. Disabling Wayland for all users
+You can disable the Wayland session for all users on the system, so that they always log in with the X11 session.
+Procedure
+Open the /etc/gdm/custom.conf file as the root user.
+Locate the following line in the [daemon] section of the file:
+#WaylandEnable=false
+Uncomment the line by remove the # character. As a result, the line says:
+WaylandEnable=false
+Reboot the system.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 2. Launching applications in GNOME
+You can launch installed applications using several different methods in the GNOME desktop environment.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.1. Launching an application in the standard GNOME session
+This procedure launches a graphical application in the GNOME desktop environment.
+Prerequisites
+You are using the standard GNOME session.
+Procedure
+Open the Activities Overview screen using either of the following ways:
+Click Activities in the top panel.
+Press the Super key, which is usually labeled with the Windows logo, ⌘, or 🔍.
+Find the application using either of the following ways:
+Click the Show Applications icon in the bottom horizontal bar.
+Type the name of the required application in the search entry.
+Click the application in the displayed list.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.2. Launching an application in GNOME Classic
+This procedure launches a graphical application in the GNOME Classic desktop environment.
+Prerequisites
+You are using the GNOME Classic session.
+Procedure
+Open the Applications menu in the top panel.
+Choose the required application from the available categories, which can include:
+Favorites
+Accessories
+Graphics
+Internet
+Office
+Sound & Video
+System Tools
+Utilities
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.3. Launching an application in GNOME using a command
+This procedure launches a graphical application in GNOME by entering a command.
+Prerequisites
+You know the command that starts the application.
+Procedure
+Open a command prompt using either of the following ways:
+Open a terminal.
+Press the Alt+F2 shortcut to open the Enter a Command screen.
+Type the application command in the command prompt.
+Confirm the command by pressing Enter.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.4. Launching an application automatically on login
+You can set applications to launch automatically on login using the Tweaks tool. Tweaks is a tool to customize the GNOME Shell environment for a particular user.
+Prerequisites
+You have installed gnome-tweaks on your system. For more details, see Installing software in GNOME
+You have installed the application that you want to launch at login.
+Procedure
+Open Tweaks. For more details see Launching applications in GNOME.
+Select Startup Applications in the left side bar.
+Click the plus sign button (+).
+Select an application from the list of available applications and click Add.
+Verification
+Open Tweaks.
+Select Startup Applications in the left side bar.
+List of applications launched at start will be present in the center section.
+Additional resources
+For more information about lauching applications, see Launching applications in GNOME
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 3. Disabling the hot corner functionality on GNOME Shell
+The GNOME environment provides the hot corner functionality, which is enabled by default. This means that when you move the cursor to the area of the upper-left corner and push the cursor to the screen corner, the Activities Overview menu opens automatically.
+However, you may want to disable this feature to not open Activities Overview unintentionally.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.1. Disabling hot corner using Settings
+To disable the hot corner functionality using the Settings application, follow this procedure.
+Procedure
+Open the Settings application by clicking the gear button.
+In the Settings application, go to Multitasking.
+In the General section, disable the Hot Corner button.
+Disabling hot corner using the Settings application
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.2. Disabling hot corner using gsettings
+To disable the hot corner functionality using the gsettings command-line utility, follow this procedure.
+Procedure
+Disable the hot corner feature:
+$ gsettings set org.gnome.desktop.interface enable-hot-corners false
+Verification
+Optionally, verify that the hot corner feature is disabled:
+$ gsettings get org.gnome.desktop.interface enable-hot-corners
+
+false
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.3. Disabling the hot corner functionality for all users
+To disable the hot corner functionality for all users, you need to create a dconf profile.
+Procedure
+Create the user profile in the /etc/dconf/profile/user file.
+user-db:user
+system-db:local
+Create the /etc/dconf/db/local.d/locks/00-interface file with the following content.
+# Specify the dconf path
+[org/gnome/desktop/interface]
+
+# GSettings key names and their corresponding values
+enable-hot-corners='FALSE'
+Create a file in the /etc/dconf/db/local.d/locks directory, for example /etc/dconf/db/local.d/locks/00-interface, with the following content.
+# Prevent users from changing values for the following keys:
+/org/gnome/desktop/interface/enable-hot-corners
+The configuration file locks down the /org/gnome/desktop/interface/enable-hot-corners key for all users. This key controls whether the hot corner is enabled.
+Update the system databases for the changes to take effect.
+# dconf update
+Ensure that all users log out. The changes take effect when users log back in.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 4. Searching for files in GNOME
+As a user in the GNOME environment, you can search for files using the Files application.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.1. Performing a basic file search
+You can search for files in GNOME. This basic search looks for files in your home directory and all folders in it, based on a file name.
+Procedure
+Open the Files application.
+Press the Search button.
+In the text field, type the file name or a part of the file name that you are searching for.
+The window now lists all files in your home directory that match the file name.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.2. Performing an advanced file search
+You can search for files in GNOME. This advanced search looks for files in a specific location, based on a file name, a time of access, a time of modification, or a file type.
+Procedure
+Open the Files application.
+Navigate to the folder where you want to search for a file.
+The search recursively descends into all folders contained in this location.
+Press the Search button.
+Optionally, type the file name or a part of the file name that you are searching for in the text field.
+If you do not provide a file name, the search lists all files that match the other criteria, regardless of their file names.
+Click the triangle button next to the text field.
+In this menu, you can select other search criteria.
+To specify the access or modification time, click Select dates… next to the When label. Enter a date or select a time point from the list.
+Below the time list, you can switch between Last modified and Last used.
+To specify the file type, click Anything next to the What label. Select a file type from the list.
+To switch between a search based on file content or file names, use the Full Text and File Name buttons, respectively.
+Click the triangle button next to the text field to hide the menu.
+The window now lists all files in the specified directory that match your search criteria.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 5. Bookmarking files and locations
+In GNOME, applications and dialogs that manage files list bookmarks in the left side bar. You can add, remove, and edit the bookmarks.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.1. Adding a bookmark
+You can save a reference to a folder by bookmarking it in the Files application.
+Prerequisite
+Locate the folder in the Files application.
+Procedure
+Add the folder to bookmarks using either of the following methods:
+By dragging:
+Drag the folder to the left side bar.
+Drop it over the New bookmark item.
+Using a keyboard shortcut:
+Open the folder.
+Press Ctrl+D.
+Using a menu:
+Open the folder.
+In the navigation bar at the top of the window, click the name of the folder.
+Select Add to Bookmarks.
+Verification
+Check that the bookmark now appears in the side bar.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.2. Removing a bookmark
+You can delete an existing bookmark in the Files application.
+Procedure
+Right-click the bookmark in the side bar.
+Select Remove from the menu.
+Verification
+Check that the bookmark no longer appears in the side bar.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.3. Renaming a bookmark
+You can rename a bookmark to distinguish it from other bookmarks. If you have bookmarks to several folders that all share the same name, you can tell the bookmarks apart if you rename them.
+Renaming the bookmark does not rename the folder.
+Procedure
+Right-click the bookmark in the side bar.
+Select Rename….
+In the Name field, enter the new name for the bookmark.
+Click Rename.
+Verification
+Check that the side bar lists the bookmark under the new name.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.4. Adding a bookmark for all users
+As a system administrator, you can set a bookmark for several users at once so that file shares are easily accessible to all the users.
+Procedure
+In the home directory of each existing user, edit the ~user/.config/gtk-3.0/bookmarks file.
+In the file, add a Uniform Resource Identifiers (URI) line that identifies the bookmark.
+For example, the following lines add bookmarks to the /usr/share/doc/ directory and to the GNOME FTP network share:
+file:///usr/share/doc/
+ftp://ftp.gnome.org/
+Optional: To also add the bookmarks for every newly created user on the system:
+Create the /etc/skel/.config/gtk-3.0/bookmarks file.
+Enter the bookmark URI lines in the file.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 6. Typing emoji characters
+You can type emoji characters using several different methods in GNOME, depending on the type of the application.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.1. Typing emoji characters in GTK applications
+This procedure inserts an emoji character in an application that uses the GTK graphical toolkit, such as in native GNOME applications.
+Prerequisites
+Make sure that the application is built on the GTK toolkit.
+Procedure
+Open a GTK application.
+Make sure that a text field is active.
+Press Ctrl+;.
+The emoji selection menu opens.
+Browse the emoji characters or type a keyword that identifies the emoji character that you want to insert, such as smile.
+For the full list of keywords associated with emoji characters, see the Other Keywords column on the Emoji List page.
+Click the selected character, or navigate to it using the cursor keys and press Enter.
+Verification
+Check that the intended emoji character now appears at your cursor.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.2. Typing emoji characters in any applications
+This procedure inserts an emoji character in any application, regardless of the graphical toolkit that the application uses.
+Procedure
+Open an application.
+Make sure that a text field is active.
+Press Ctrl+..
+The underscored letter e appears at your cursor.
+Type a keyword that identifies the emoji character that you want to insert, such as smile.
+For the full list of keywords associated with emoji characters, see the Other Keywords column on the Emoji List page.
+Repeatedly press Space to browse the emoji characters that match your keyword.
+Confirm the selected emoji character by pressing Enter.
+Verification
+Check that the intended emoji character now appears at your cursor.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 7. Enabling Chinese, Japanese, or Korean text input
+If you write with Chinese, Japanese, or Korean characters, you can configure RHEL to input text in your language.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.1. Input methods
+Certain scripts, such as Chinese, Japanese, or Korean, require keyboard input to go through an Input Method Engine (IME) to enter native text.
+An input method is a set of conversion rules between the text input and the selected script. An IME is a software that performs the input conversion specified by the input method.
+To input text in these scripts, you must set up an IME. If you installed the system in your native language and selected your language at the GNOME Initial Setup screen, the input method for your language is enabled by default.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.2. Available input method engines
+The following input method engines (IMEs) are available on RHEL from the listed packages:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.3. Installing input method engines
+This procedure installs input method engines (IMEs) that you can use to input Chinese, Japanese, and Korean text.
+Procedure
+Install all available input method packages:
+# dnf install @input-methods
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.4. Switching the input method in GNOME
+This procedure sets up the input method for your script, such as for Chinese, Japanese, or Korean scripts.
+Prerequisites
+The input method packages are installed.
+Procedure
+Go to the system menu, which is accessible from the top-right screen corner, and click Settings.
+Select the Keyboard section.
+In the Input Sources list, review the currently enabled input methods.
+If your input method is missing:
+Click the + button under the Input Sources list.
+Select your language.
+Select the input method that you want to use. A cog wheel icon marks all input methods to distinguish them from simple keyboard layouts.
+Confirm your selection by clicking Add.
+Switch the active input method using one of the following ways:
+Click the input method indicator on the right side of the top panel and select your input method.
+Switch between the enabled input methods using the Super+Space keyboard shortcut.
+Verification
+Open a text editor.
+Type text in your language.
+Verify that the text appears in your native script.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.5. Additional resources
+Installing a font for the Chinese standard GB 18030 character set
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 8. GNOME Screen Recording
+GNOME Screen Recording is a built-in feature in the GNOME desktop environment that allows users to record their desktop or specific application activities. The recordings are saved as video files in the WebM format.
+Procedure
+To start the recording, press the Ctrl+Alt+Shift+R keyboard shortcut.
+Once the recording begins, a red circle indicator appears in the upper-right corner of the screen, indicating that the recording is active.
+To stop the recording, press the same Ctrl+Alt+Shift+R keyboard shortcut again.
+The red circle indicator disappears, signaling the end of the recording.
+The recorded video files are saved in the ~/Videos directory. The filenames of recorded videos start with Screencast and include the date and time of the recording.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 9. Enabling authentication with enterprise credentials in GNOME
+If your workplace uses a system called Active Directory or IPA, and you have an account there, you can use that account to log into the GNOME desktop environment.
+Logging in using enterprise credentials provides centralized account management, streamlines access to work-related resources, and gives the convenience of Single Sign-On (SSO).
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.1. Configuring enterprise credentials in GNOME
+You can configure your system to use enterprise credentials using Settings.
+Procedure
+Open Settings.
+Click Online Accounts.
+Select Enterprise Login (Kerberos).
+In the Principal field, enter your domain username in the username@domain.com format.
+Click Connect.
+Enter your enterprise password and click Continue.
+Depending on the configuration of your domain, you might be asked for the domain administrator credentials.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.2. Adding enterprise users in GNOME
+You can add an enterprise user to GNOME using Settings.
+Prerequisites
+Administrative access.
+You have configured Enterprise credentials.
+Procedure
+Open Settings.
+Click Users.
+Select the Unlock button and enter your password.
+Click Add User.
+Choose Enterprise Login
+Enter the domain, username, and password for your Enterprise account.
+Click Add.
+Depending on the domain configuration, you might need to enter administrator credentials.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.3. Logging in to GNOME with enterprise credentials
+If your network has an Active Directory or IPA domain available, and you have a domain account, you can log in to GNOME using your enterprise credentials.
+Procedure
+At the GNOME login prompt, type your domain username followed by an @ sign and then your domain name.
+username@domain.com
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.4. Additional resources
+For troubleshooting, see the realm man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 10. Remotely accessing the desktop as a single user
+You can remotely connect to the desktop on a RHEL server using graphical GNOME applications. Only a single user can connect to the desktop on the server at a given time.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10.1. Enabling desktop sharing on the server using GNOME
+This procedure configures a RHEL server to enable a remote desktop connection from a single client.
+Prerequisites
+The GNOME Remote Desktop service is installed:
+# dnf install gnome-remote-desktop
+Procedure
+Configure a firewall rule to enable VNC access to the server:
+# firewall-cmd --permanent --add-service=vnc-server
+success
+Reload firewall rules:
+# firewall-cmd --reload
+success
+Open Settings in GNOME.
+Navigate to the Sharing menu:
+Click Screen Sharing.
+The screen sharing configuration opens:
+Click the switch button in the window header to enable screen sharing:
+Select the Allow connections to control the screen check box.
+Under Access Options, select the Require a password option.
+Set a password in the Password field.
+Remote clients must enter this password when connecting to the desktop on the server.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10.2. Connecting to a shared desktop using GNOME
+This procedure connects to a remote desktop session using the Connections application. It connects to the graphical session of the user that is currently logged in on the server.
+Prerequisites
+A user is logged into the GNOME graphical session on the server.
+The desktop sharing is enabled on the server.
+Procedure
+Install the Connections application on the client:
+# dnf install gnome-connections
+Launch the Connections application.
+Click the + button to open a new connection.
+Enter the IP address of the server.
+Choose the connection type based on the operating system you want to connect to.
+Click Connect.
+Verification
+On the client, check that you can see the shared server desktop.
+On the server, a screen sharing indicator appears on the right side of the top panel:
+You can control the screen sharing in the system menu.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10.3. Disabling encryption in GNOME VNC
+You can disable encryption in the GNOME remote desktop solution. This enables VNC clients that do not support the encryption to connect to the server.
+Procedure
+As the server user, set the encryption key of org.gnome.desktop.remote-desktop.vnc GSettings schema to ['none'].
+$ gsettings set org.gnome.desktop.remote-desktop.vnc encryption "['none']"
+Optional: Red Hat recommends that you tunnel the VNC connection over SSH to your VNC port. As a result, the SSH tunnel keeps the connection encrypted.
+For example:
+On the client, configure the port forwarding.
+# ssh -N -T -L 5901:server-ip-address:5901 user@server-ip-address
+Connect to the VNC session on the localhost:5901 address.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 11. Remotely accessing the desktop as multiple users
+You can remotely connect to the desktop on a RHEL server and open multiple sessions as different users at the same time.
+Prerequisites
+Install the VNC server:
+# dnf install tigervnc-server
+Install the VNC client:
+# dnf install tigervnc
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11.1. The mapping of port and display numbers to users in VNC
+With VNC, the client can connect to the desktop sessions of different users on the server. A display number and a TCP port number are attached to each server user that exports a VNC session. The client uses the port number to specify which server user it connects to.
+If several clients connect using the same port number, they all open a VNC session to the same server user.
+You must configure a mapping for each server user that exports a VNC session. For every such user, you must pick a unique port and display number.
+The recommended mapping
+Red Hat recommends that you start with port number 5902 and display number 2 for the first user, and increment the numbers by one for each additional server user.
+Port number 5900 and display number 0 represent the server user that is currently logged into the graphical session. You cannot start a VNC server for the user who is already logged into the graphical session.
+Firewall rules
+You must open the selected ports in your firewall configuration. Allowing the vnc-server service in your firewall opens ports from 5900 to 5903. If you need to enable access to additional server users, you must open ports above 5903 by manually specifying the port numbers.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11.2. VNC server configuration files
+Several configuration files affect the behavior of the VNC server. You can configure the user mapping and various global options.
+General options
+You can configure general options of the VNC server in the /etc/tigervnc/vncserver-config-defaults configuration file. The file uses the following format:
+option1=value
+option2
+For example:
+session=gnome
+alwaysshared
+securitytypes=vncauth,tlsvnc
+desktop=sandbox
+geometry=2000x1200
+The priority of configuration files
+The VNC server reads the following files for general options, in order from most important to least important:
+/etc/tigervnc/vncserver-config-mandatory
+This file replaces the default configuration and has a higher priority than the per-user configuration. It is intended for system administrators who want to enforce particular VNC options.
+$HOME/.vnc/config
+Individual users can override the default VNC configuration in this file.
+/etc/tigervnc/vncserver-config-defaults
+This file stores the default VNC configuration.
+User mapping
+You can configure the mapping between users and their associated port and display numbers in the /etc/tigervnc/vncserver.users configuration file. The file uses the following format:
+:number=user
+For example:
+:2=test
+:3=vncuser
+Additional resources
+For a list of available configuration options, see the Xvnc(1) man page.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11.3. Enabling multi-user VNC access on the server
+This procedure configures a RHEL server so that multiple users can open VNC sessions on it at the same time.
+Prerequisites
+If you previously configured VNC using systemd unit files, remove any outdated VNC configuration:
+[root]# rm /etc/systemd/system/vncserver@.service
+Procedure
+Map users to display and port numbers.
+In the /etc/tigervnc/vncserver.users configuration file, add a line for each server user that will export a VNC session:
+:user-number=user-name
+Replace user-number with the port and display number mapped to the selected existing user.
+Replace user-name with the user name of the selected existing user.
+For example:
+:2=vncuser
+Open TCP ports 5900 to 5903 in the firewall:
+[root]# firewall-cmd --permanent --add-service=vnc-server
+Reload the firewall rules:
+[root]# firewall-cmd --reload
+Add the following lines to the /etc/tigervnc/vncserver-config-defaults configuration file:
+session=gnome
+alwaysshared
+This configuration has the following effects:
+The VNC server starts the GNOME session when a remote user logs in.
+Multiple users can connect to the VNC server at the same time.
+As each server user that exports a VNC session, set the VNC password for the user:
+[regular-user]$ vncpasswd
+Remote clients must enter this password when connecting to the desktop on the server.
+If you previously configured VNC for the user, ensure that the configuration files have the correct SELinux context:
+[regular-user]$ restorecon -RFv ~/.vnc
+Enable and start the VNC server unit for the regular user:
+[root]# systemctl enable --now vncserver@:user-number
+If the server uses the proprietary Nvidia driver, disable Wayland:
+Uncomment the WaylandEnable=False line in the /etc/gdm/custom.conf configuration file.
+Add the DefaultSession=gnome-xorg.desktop option to the [daemon] section of the configuration file.
+Reboot the server.
+Additional resources
+To enable VNC access to more than two server users, open TCP ports above 5903. For details, see Controlling traffic with predefined services using the CLI or Controlling traffic with predefined services using the GUI.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11.4. Connecting to the VNC server as multiple users
+This procedure connects to a remote desktop session using the vncviewer application. You can open multiple connections to the remote desktop at the same time.
+Prerequisites
+Remote desktop access for multiple users is enabled on the server. For details, see Section 11.3, “Enabling multi-user VNC access on the server”.
+Procedure
+Connect to the VNC server:
+$ vncviewer --shared server-ip:display
+Replace server-ip with the IP address of the server that you are connecting to.
+Replace display with the display number where the server user exports the VNC session.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 12. Remotely accessing an X11-based application
+You can remotely launch a graphical X11-based application on a RHEL server and use it from the remote client using X11 forwarding.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+12.1. Enabling X11 forwarding on the server
+Configure a RHEL server so that remote clients can use graphical applications on the server over SSH.
+Procedure
+Install basic X11 packages:
+# dnf install xorg-x11-xauth xorg-x11-fonts-\* xorg-x11-utils dbus-x11
+Enable the X11Forwarding option in the /etc/ssh/sshd_config configuration file:
+X11Forwarding yes
+The option is disabled by default in RHEL.
+Restart the sshd service:
+# systemctl restart sshd.service
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+12.2. Launching an application remotely using X11 forwarding
+Access a graphical application on a RHEL server from a remote client using SSH.
+Prerequisites
+X11 forwarding over SSH is enabled on the server. For details, see Section 12.1, “Enabling X11 forwarding on the server”.
+Ensure that an X11 display server is running on your system:
+On RHEL, X11 is available by default in the graphical interface.
+On Microsoft Windows, install an X11 server such as Xming.
+On macOS, install the XQuartz X11 server.
+You have configured and restarted an OpenSSH server. For details, see Configuring and starting an OpenSSH server.
+Procedure
+Log in to the server using SSH:
+[local-user]$ ssh -X -Y remote-server
+The authenticity of host 'remote-server (192.168.122.120)' can't be established.
+ECDSA key fingerprint is SHA256:uYwFlgtP/2YABMHKv5BtN7nHK9SHRL4hdYxAPJVK/kY.
+Are you sure you want to continue connecting (yes/no/[fingerprint])?
+Confirm that a server key is valid by checking its fingerprint.
+Continue connecting by typing yes.
+Warning: Permanently added 'remote-server' (ECDSA) to the list of known hosts.
+When prompted, type the server password.
+local-user's password:
+[local-user ~]$
+Launch the application from the command line:
+[remote-user]$ application-binary
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+12.3. Additional resources
+Remotely accessing an individual application on Wayland.
+Key differences between the Wayland and X11 protocol.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 13. Remotely accessing a Wayland-based application
+You can remotely launch a graphical Wayland-based application on a RHEL server and use it from the remote client on Wayland using waypipe.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+13.1. Enabling waypipe on the client and server
+To be able to launch an individual application on Wayland, you need to install the waypipe package.
+Prerequisite
+Both the client and server use the RHEL 9 operating system.
+Procedure
+Install the waypipe package on the local system.
+# dnf install waypipe
+Install the waypipe package on the remote system.
+# dnf install waypipe
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+13.2. Launching an application remotely using waypipe
+You can accesses a graphical application on Wayland on a RHEL server from a remote client using SSH and waypipe.
+Prerequisites
+A Wayland display server is running on your system. On RHEL 9, GNOME as a Wayland compositor is the default.
+The waypipe package is installed on both the client and the remote system.
+The application is capable of running natively on Wayland.
+Procedure
+Launch the application remotely through waypipe and SSH.
+[local-user]$ waypipe -c lz4=9 ssh remote-server application-binary
+
+The authenticity of host 'remote-server (192.168.122.120)' can't be established.
+ECDSA key fingerprint is SHA256:uYwFlgtP/2YABMHKv5BtN7nHK9SHRL4hdYxAPJVK/kY.
+Are you sure you want to continue connecting (yes/no/[fingerprint])?
+Confirm that a server key is valid by checking its fingerprint.
+Continue connecting by typing yes.
+Warning: Permanently added 'remote-server' (ECDSA) to the list of known hosts.
+When prompted, type the server password.
+remote-user's password:
+[remote-user]$
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+13.3. Additional resources
+Remotely accessing an individual application on X11.
+Key differences between the Wayland and X11 protocol.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 14. Browsing files on a network share
+You can connect to a network share provided by a server and browse the files on the server like local files. You can download or upload files using the file browser.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+14.1. GVFS URI format for network shares
+GNOME uses the GVFS URI format to refer to network shares and files on them. When you connect to a network share from GNOME, you provide the address to the network share in the following format.
+A URL, or uniform resource locator, is a form of address that refers to a location or file on a network. The address is formatted like this:
+The basic GVFS URI format takes the following syntax:
+protocol://server.example.com/folder/file
+The scheme specifies the protocol or type of server. The example.com portion of the address is called the domain name. If a username is required, it is inserted before the server name:
+You can also specify the user name or the port number to the network share:
+protocol://user@server.example.com:port/folder/file
+Additional resources
+The GVFS system
+The format of the GVFS URI string
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+14.2. Mounting a storage volume in GNOME
+You can manually mount a local storage volume or a network share in the Files application.
+Procedure
+Open the Files application.
+Click Other Locations in the side bar.
+The window lists all connected storage volumes and all network shares that are publicly available on your local area network.
+If you can see the volume or network share in this list, mount it by clicking the item.
+If you want to connect to a different network share, use the following steps.
+Enter the GVFS URI string to the network share in the Connect to Server field.
+Press Connect.
+If the dialog asks you for login credentials, enter your name and password into the relevant fields.
+When the mounting process finishes, you can browse the files on the volume or network share.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+14.3. Unmounting a storage volume in GNOME
+You can unmount a storage volume, a network share, or another resource in the Files application.
+Procedure
+Open the Files application.
+In the side bar, click the Unmount (⏏) icon next to the chosen mount.
+Wait until the mount disappears from the side bar or a notification about the safe removal appears.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+14.4. Additional resources (or Next steps)
+Managing storage volumes in GNOME
+Mounting NFS shares
+Mounting an SMB Share on Red Hat Enterprise Linux
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 15. Configuring GNOME to store user settings on home directories hosted on an NFS share
+If you use GNOME on a system with home directories hosted on an NFS server, you must change the keyfile backend of the dconf database. Otherwise, dconf might not work correctly.
+This change affects all users on the host, as it alters the way dconf manages user settings and configurations stored in the home directories.
+Procedure
+Create the /etc/dconf/profile/user file and add the following to it:
+service-db:keyfile/user
+With this setting, dconf polls the keyfile back end to determine whether updates have been made, so settings might not be updated immediately.
+The changes take effect when the users logs out and in.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 16. Tablets
+To manage Wacom tablets connected to your system, use the following tools:
+The gnome-settings-daemon service
+The Wacom Tablet settings panel in the GNOME environment
+The Wacom Tablet settings panel for a tablet
+The Wacom Tablet settings panel for a grip pen
+Both these tools, as well as the libinput stack, use the libwacom tablet client library, which stores the data about Wacom tablets.
+If you want to add support for a new tablet into the libwacom library, you must ensure that a definition file for this new tablet exists.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+16.1. Preparing a tablet definition file
+You must prepare a definition file for the tablet you want to add.
+Prerequisites
+List all local devices recognized by libwacom:
+$ libwacom-list-local-devices
+Make sure that your device is recognized in the output.
+If your device is not listed, the device is missing from the libwacom database. However, the device might still be visible as an event device in the kernel under /proc/bus/input/devices, and if you use the X.Org display server, in the X11 session on the xinput list.
+Procedure
+Install the package that provides tablet definition files:
+# dnf install libwacom-data
+The package installs tablet definitions in the /usr/share/libwacom/ directory.
+Check whether the definition file is available in the /usr/share/libwacom/ directory.
+To use the screen mapping correctly, support for your tablet must be included in the libwacom database and in the udev rules file.
+If the definition file for your device is not available in /usr/share/libwacom/, you have these options:
+The required definition file may already be available in the linuxwacom/libwacom upstream repository. You can try to find the definition file there. If you find your tablet model in the list, copy the file to the local machine.
+You can create a new tablet definition file. Use the data/wacom.example file below, and edit particular lines based on the characteristics of your device.
+Example 16.1. Example model file description for a tablet
+[Device]
+
+# The product is the product name announced by the kernel
+Product=Intuos 4 WL 6x9
+
+# Vendor name of this tablet
+Vendor=Wacom
+
+# DeviceMatch includes the bus (usb, serial), the vendor ID and the actual
+# product ID
+DeviceMatch=usb:056a:00bc
+
+# Class of the tablet. Valid classes include Intuos3, Intuos4, Graphire, Bamboo, Cintiq
+Class=Intuos4
+
+# Exact model of the tablet, not including the size.
+Model=Intuos 4 Wireless
+
+# Width in inches, as advertised by the manufacturer
+Width=9
+
+# Height in inches, as advertised by the manufacturer
+Height=6
+
+# Optional features that this tablet supports
+# Some features are dependent on the actual tool used, e.g. not all styli
+# have an eraser and some styli have additional custom axes (e.g. the
+# airbrush pen). These features describe those available on the tablet.
+#
+# Features not set in a file default to false/0
+
+[Features]
+# This tablet supports styli (and erasers, if present on the actual stylus)
+Stylus=true
+
+# This tablet supports touch.
+Touch=false
+
+# This tablet has a touch ring (Intuos4 and Cintiq 24HD)
+Ring=true
+# This tablet has a second touch ring (Cintiq 24HD)
+Ring2=false
+
+# This tablet has a vertical/horizontal scroll strip
+VStrip=false
+HStrip=false
+
+# Number of buttons on the tablet
+Buttons=9
+
+# This tablet is built-in (most serial tablets, Cintiqs)
+BuiltIn=false
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+16.2. Adding support for a new tablet
+You can add support for a new tablet into the libwacom tablet information client library by adding the definition file for the tablet that you want to add.
+Prerequisites
+The definition file for the tablet that you want to add exists.
+For more information about ensuring that the definition file exists, see Section 16.1, “Preparing a tablet definition file”.
+Procedure
+Add and install the definition file with the .tablet suffix:
+# cp the-new-file.tablet /usr/share/libwacom/
+Once installed, the tablet is part of the libwacom database. The tablet is then available through libwacom-list-local-devices.
+Create a new /etc/udev/rules/99-libwacom-override.rules file with the following content so that your settings are not overwritten:
+ACTION!="add|change", GOTO="libwacom_end"
+KERNEL!="event[0-9]*", GOTO="libwacom_end"
+
+[new tablet match entries go here]
+
+LABEL="libwacom_end"
+Reboot your system.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+16.3. Where is the Wacom tablet configuration stored
+Location for the Wacom tablet and stylus configuration:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+16.4. Listing available Wacom tablet configuration paths
+You can get the full list of tablet configuration paths by using the gsd-list-wacom tool, which is provided by the gnome-settings-daemon package.`
+Prerequisites
+Make sure that the gnome-settings-daemon package is installed on your system.
+# dnf install gnome-settings-daemon
+Procedure
+To get the full list of tablet configuration paths used on your machine, run the following command:
+$ /usr/libexec/gsd-list-wacom

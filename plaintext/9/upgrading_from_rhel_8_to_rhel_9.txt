@@ -1,0 +1,779 @@
+Abstract
+This document provides instructions on how to perform an in-place upgrade from Red Hat Enterprise Linux 8 to Red Hat Enterprise Linux 9 using the Leapp utility. During the in-place upgrade, the existing RHEL 8 operating system is replaced by a RHEL 9 version.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 1. Supported upgrade paths
+The in-place upgrade replaces the RHEL 8 operating system on your system with a RHEL 9 version.
+Currently, it is possible to perform an in-place upgrade from the following source RHEL 8 minor versions to the following target RHEL 9 minor versions:
+For more information about supported upgrade paths, see Supported in-place upgrade paths for Red Hat Enterprise Linux and the In-place upgrade Support Policy.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 2. Planning an upgrade to RHEL 9
+Before beginning your upgrade from RHEL 8 to RHEL 9, review system requirements, limitations, and other considerations.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.1. Planning an upgrade from RHEL 8.10 to RHEL 9.4 and RHEL 9.5
+An in-place upgrade is the recommended and supported way to upgrade your system to the next major version of RHEL.
+You should consider the following before upgrading to RHEL 9:
+Operating system - The operating system is upgradable by the Leapp utility under the following conditions:
+The source OS version is installed on a system with one of the following supported architectures:
+64-bit Intel, AMD, and ARM
+IBM POWER (little endian)
+64-bit IBM Z
+For more information, see Red Hat certified hardware.
+Minimum hardware requirements for RHEL 9 are met.
+You have access to up-to-date content for the selected source and target OS versions. See Preparing a RHEL 8 system for the upgrade for more information.
+Applications - You can migrate applications installed on your system using Leapp. However, in certain cases, you have to create custom actors, which specify actions to be performed by Leapp during the upgrade, for example, reconfiguring an application or installing a specific hardware driver. For more information, see Handling the migration of your custom and third-party applications. Note that custom actors are unsupported by Red Hat.
+Security - You should evaluate this aspect before the upgrade and take additional steps when the upgrade process completes. Consider especially the following:
+Before the upgrade, define the security standard your system has to comply with and understand the security changes in RHEL 9.
+During the upgrade process, the Leapp utility sets SELinux mode to permissive.
+Leapp supports in-place upgrades of RHEL 8.8 and later systems in Federal Information Processing Standard (FIPS) 140 mode to RHEL 9 FIPS-mode-enabled systems. FIPS mode stays enabled during the complete upgrade process.
+After the upgrade is finished, re-evaluate and re-apply your security policies. For information about applying and updating security policies, see Applying security policies.
+Storage and file systems - You should always back up your system prior to upgrading. For example, you can use the Relax-and-Recover (ReaR) utility, LVM snapshots, RAID splitting, or a virtual machine snapshot.
+High Availability - If you are using the High Availability add-on, follow the Recommended Practices for Applying Software Updates to a RHEL High Availability or Resilient Storage Cluster Knowledgebase article.
+Downtime - The upgrade process can take from several minutes to several hours.
+Satellite
+Client - If you manage your hosts through Satellite, you can upgrade multiple hosts simultaneously from RHEL 8 to RHEL 9 using the Satellite web UI. For more information, see Upgrading Hosts to Next Major Red Hat Enterprise Linux Release.
+Server and Capsule - You can upgrade Satellite Servers and Capsules starting in Satellite 6.16. For more information, see Upgrading Satellite or Capsule to RHEL 9 in-place by using Leapp.
+SAP HANA - If you are using SAP HANA, follow the Upgrading SAP environments from RHEL 8 to RHEL 9 guide instead. Note that the upgrade path for RHEL with SAP HANA might differ.
+RHEL for Real Time - Upgrades on real-time systems are supported.
+Real Time for Network Functions Virtualization (NFV) in Red Hat OpenStack Platform - Upgrades on real-time systems are supported.
+Red Hat JBoss Enterprise Application Platform (EAP) - JBoss EAP is not supported for the upgrade to RHEL 9. You must manually install and configure JBoss EAP on your system after the upgrade. For more information, see In-place Migrating of Jboss EAP and websphere servers along with Linux using leapp utility.
+Public clouds - The in-place upgrade is supported for on-demand Pay-As-You-Go (PAYG) instances using Red Hat Update Infrastructure (RHUI) only on Amazon Web Services (AWS), Microsoft Azure, and Google Cloud Platform. The in-place upgrade is also supported for Bring Your Own Subscription instances on all public clouds that use RHSM for a RHEL subscription.
+Language - All Leapp reports, logs, and other generated documentation are in English, regardless of the language configuration.
+Bootloader - It is not possible to switch the bootloader from BIOS to UEFI on RHEL 8 or RHEL 9. If your RHEL 8 system uses BIOS and you want your RHEL 9 system to use UEFI, perform a fresh install of RHEL 9 instead of an in-place upgrade. For more information, see Is it possible to switch the BIOS boot to UEFI boot on preinstalled Red Hat Enterprise Linux machine?
+Known limitations - Notable known limitations of Leapp currently include:
+Encryption of the whole disk or a partition, or file-system encryption currently cannot be used on a system targeted for an in-place upgrade.
+Network based multipath and network storage that use Ethernet or Infiniband are not supported for the upgrade. This includes SAN using FCoE and booting from SAN using FC. Note that SAN using FC are supported.
+The in-place upgrade is currently unsupported for on-demand PAYG instances on the remaining Public Clouds that use Red Hat Update Infrastructure but not Red Hat Subscription Manager (RHSM) for a RHEL subscription.
+The in-place upgrade is not supported for systems with any Ansible products, including Ansible Tower, installed. To use a RHEL 8 Ansible Tower installation on RHEL 9, see the How do I migrate my Ansible Automation Platform installation from one environment to another? Knowledgebase solution.
+See also Known Issues.
+You can use Red Hat Insights to determine which of the systems you have registered to Insights is on a supported upgrade path to RHEL 9. To do so, navigate to the respective Advisor recommendation in Insights, enable the recommendation under the Actions drop-down menu, and inspect the list under the Affected systems heading. Note that the Advisor recommendation considers only the RHEL 8 minor version and does not perform a pre-upgrade assessment of the system. See also Advisor-service recommendations overview.
+Additional resources
+The best practices and recommendations for performing RHEL Upgrade using Leapp
+Leapp upgrade FAQ (Frequently Asked Questions)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.2. Planning an upgrade from RHEL 8.8 to RHEL 9.2
+An in-place upgrade is the recommended and supported way to upgrade your system to the next major version of RHEL.
+You should consider the following before upgrading to RHEL 9.2:
+Operating system - The operating system is upgradable by the Leapp utility under the following conditions:
+The source OS version is installed on a system with one of the following supported architectures:
+64-bit Intel, AMD, and ARM
+IBM POWER (little endian)
+64-bit IBM Z
+For more information, see Red Hat certified hardware.
+Minimum hardware requirements for RHEL 9 are met.
+You have access to up-to-date content for the selected source and target OS versions. See Preparing a RHEL 8 system for the upgrade for more information.
+Applications - You can migrate applications installed on your system using Leapp. However, in certain cases, you have to create custom actors, which specify actions to be performed by Leapp during the upgrade, for example, reconfiguring an application or installing a specific hardware driver. For more information, see Handling the migration of your custom and third-party applications. Note that custom actors are unsupported by Red Hat.
+Security - You should evaluate this aspect before the upgrade and take additional steps when the upgrade process completes. Consider especially the following:
+Before the upgrade, define the security standard your system has to comply with and understand the security changes in RHEL 9.
+During the upgrade process, the Leapp utility sets SELinux mode to permissive.
+Leapp supports in-place upgrades of RHEL 8.8 and later systems in Federal Information Processing Standard (FIPS) 140 mode to RHEL 9 FIPS-mode-enabled systems. FIPS mode stays enabled during the complete upgrade process.
+After the upgrade is finished, re-evaluate and re-apply your security policies. For information about applying and updating security policies, see Applying security policies.
+Storage and file systems - You should always back up your system prior to upgrading. For example, you can use the Relax-and-Recover (ReaR) utility, LVM snapshots, RAID splitting, or a virtual machine snapshot.
+High Availability - If you are using the High Availability add-on, follow the Recommended Practices for Applying Software Updates to a RHEL High Availability or Resilient Storage Cluster Knowledgebase article.
+Downtime - The upgrade process can take from several minutes to several hours.
+Satellite
+Client - If you manage your hosts through Satellite, you can upgrade multiple hosts simultaneously from RHEL 8 to RHEL 9 using the Satellite web UI. For more information, see Upgrading Hosts to Next Major Red Hat Enterprise Linux Release.
+Server and Capsule - You can upgrade Satellite Servers and Capsules starting in Satellite 6.16. For more information, see Upgrading Satellite or Capsule to RHEL 9 in-place by using Leapp.
+SAP HANA - If you are using SAP HANA, follow the Upgrading SAP environments from RHEL 8 to RHEL 9 guide instead. Note that the upgrade path for RHEL with SAP HANA might differ.
+Red Hat JBoss Enterprise Application Platform (EAP) - JBoss EAP is not supported for the upgrade to RHEL 9. You must manually install and configure JBoss EAP on your system after the upgrade. For more information, see In-place Migrating of Jboss EAP and websphere servers along with Linux using leapp utility.
+Public clouds - The in-place upgrade is supported for on-demand Pay-As-You-Go (PAYG) instances using Red Hat Update Infrastructure (RHUI) only on Amazon Web Services (AWS), Microsoft Azure, and Google Cloud Platform. The in-place upgrade is also supported for Bring Your Own Subscription instances on all public clouds that use RHSM for a RHEL subscription.
+Language - All Leapp reports, logs, and other generated documentation are in English, regardless of the language configuration.
+Bootloader - It is not possible to switch the bootloader from BIOS to UEFI on RHEL 8 or RHEL 9. If your RHEL 8 system uses BIOS and you want your RHEL 9 system to use UEFI, perform a fresh install of RHEL 9 instead of an in-place upgrade. For more information, see Is it possible to switch the BIOS boot to UEFI boot on preinstalled Red Hat Enterprise Linux machine?
+Known limitations - Notable known limitations of Leapp currently include:
+Encryption of the whole disk or a partition, or file-system encryption currently cannot be used on a system targeted for an in-place upgrade.
+Network based multipath and network storage that use Ethernet or Infiniband are not supported for the upgrade. This includes SAN using FCoE and booting from SAN using FC. Note that SAN using FC are supported.
+The in-place upgrade is currently unsupported for on-demand PAYG instances on the remaining Public Clouds that use Red Hat Update Infrastructure but not Red Hat Subscription Manager (RHSM) for a RHEL subscription.
+The in-place upgrade is not supported for systems with any Ansible products, including Ansible Tower, installed. To use a RHEL 8 Ansible Tower installation on RHEL 9, see the How do I migrate my Ansible Automation Platform installation from one environment to another? Knowledgebase solution.
+See also Known Issues.
+You can use Red Hat Insights to determine which of the systems you have registered to Insights is on a supported upgrade path to RHEL 9. To do so, navigate to the respective Advisor recommendation in Insights, enable the recommendation under the Actions drop-down menu, and inspect the list under the Affected systems heading. Note that the Advisor recommendation considers only the RHEL 8 minor version and does not perform a pre-upgrade assessment of the system. See also Advisor-service recommendations overview.
+Additional resources
+The best practices and recommendations for performing RHEL Upgrade using Leapp
+Leapp upgrade FAQ (Frequently Asked Questions)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 3. Preparing for the upgrade
+To prevent issues after the upgrade and to ensure that your system is ready to be upgraded to the next major version of RHEL, complete all necessary preparation steps before upgrading.
+You must perform the preparation steps described in Preparing a RHEL 8 system for the upgrade on all systems. In addition, on systems that are registered to Satellite Server, you must also perform the preparation steps described in Preparing a Satellite-registered system for the upgrade.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.1. Preparing a RHEL 8 system for the upgrade
+This procedure describes the steps that are necessary before performing an in-place upgrade to RHEL 9 by using the Leapp utility.
+If you do not plan to use Red Hat Subscription Manager (RHSM) during the upgrade process, follow instructions in Upgrading to RHEL 9 without Red Hat Subscription Manager.
+Prerequisites
+The system meets conditions listed in Planning an upgrade.
+If the system has been previously upgraded from RHEL 7 to RHEL 8, ensure that all required post-upgrade steps have been completed. For more information, see Performing post-upgrade tasks in the Upgrading from RHEL 7 to RHEL 8 guide.
+Procedure
+Optional: Review the best practices in The best practices and recommendations for performing RHEL Upgrade using Leapp Knowledgebase article.
+Ensure your system has been successfully registered to the Red Hat Content Delivery Network (CDN) or Red Hat Satellite by using the Red Hat Subscription Manager.
+If you have registered your system to Satellite Server, complete the steps in Preparing a Satellite-registered system for the upgrade to ensure that your system meets the requirements for the upgrade.
+Optional: Unmount non-system OS file systems that are not required for the upgrade, such as file systems containing only data files unrelated to the system itself, and comment them out from the /etc/fstab file. This can reduce the amount of time needed for the upgrade process and prevent potential issues related to third-party applications that are not migrated properly during the upgrade by custom or third-party actors.
+Verify that the system is subscribed using subscription-manager:
+If your system is registered by using an account with Simple Content Access (SCA) enabled, verify that the Content Access Mode is set to Simple Content Access message appears:
+# subscription-manager status
++-------------------------------------------+
+   System Status Details
++-------------------------------------------+
+Overall Status: Disabled
+Content Access Mode is set to Simple Content Access. This host has access to content, regardless of subscription status.
+System Purpose Status: Disabled
+If your system is registered by using an account with SCA disabled, verify that the Red Hat Linux Server subscription is attached, the product name is Server, and the status is Subscribed. For example:
+# subscription-manager list --installed
++-------------------------------------------+
+    	  Installed Product Status
++-------------------------------------------+
+Product Name:   Red Hat Enterprise Linux for x86_64
+Product ID:     479
+Version:        8.10
+Arch:           x86_64
+Status:         Subscribed
+Ensure you have appropriate repositories enabled. The following command enables the Base and AppStream repositories for the 64-bit Intel architecture; for other architectures, see RHEL 8 repositories.
+# subscription-manager repos --enable rhel-8-for-x86_64-baseos-rpms --enable rhel-8-for-x86_64-appstream-rpms
+Set the system release version:
+For systems subscribed using RHSM, lock the system to the desired source OS version:
+# subscription-manager release --set <source_os_version>
+If you are upgrading by using Red Hat Update Infrastructure (RHUI) on a public cloud, set the expected system release version manually:
+# rhui-set-release --set <source_os_version>
+Replace source_os_version with the source OS version, for example 8.8.
+Optional: To use custom repositories, see the Configuring custom repositories Knowledgebase article.
+If you use the dnf versionlock plugin to lock packages to a specific version, clear the lock by running:
+# dnf versionlock clear
+See How to restrict dnf to install or upgrade a package to a fixed specific package version? for more information.
+If you are upgrading by using Red Hat Update Infrastructure (RHUI) on a public cloud, enable required RHUI repositories and install required RHUI packages to ensure your system is ready for upgrade:
+For AWS:
+# dnf config-manager --set-enabled rhui-client-config-server-8
+# dnf -y install leapp-rhui-aws
+For Microsoft Azure:
+# dnf config-manager --set-enabled rhui-microsoft-azure-rhel8
+# dnf -y install rhui-azure-rhel8 leapp-rhui-azure
+For Google Cloud Platform, follow the Leapp RHUI packages for Google Cloud Platform (GCP) Knowledgebase article.
+Install the Leapp utility:
+# dnf install leapp-upgrade
+Note that you need up-to-date leapp and leapp-repository packages, which differ based on which version of RHEL 8 is installed. The following are the current up-to-date package versions:
+RHEL 8.8: version 0.15.1 the leapp package and version 0.18.0 of the leapp-repository package
+RHEL 8.10: leapp version 0.18.0 of the leapp package and version 0.21.0 of the leapp-repository package
+Update all packages to the latest RHEL 8 version and reboot:
+# dnf update
+# reboot
+The latest release of the leapp-upgrade-el8toel9 package contains all required data files. If you have replaced these data files with older versions, remove all JSON files in the /etc/leapp/files directory and reinstall the leapp-upgrade-el8toel9 package to ensure your data files are up-to-date.
+Optional: Review, remediate, and then remove the rpmnew and rpmsave files. For more information, see What are rpmnew & rpmsave files?
+Temporarily disable antivirus software to prevent the upgrade from failing.
+Ensure that any configuration management system does not interfere with the in-place upgrade process:
+If you use a configuration management system with a client-server architecture, such as Puppet, Salt, or Chef, disable the system before running the leapp preupgrade command. Do not enable the configuration management system until after the upgrade is complete to prevent issues during the upgrade.
+If you use a configuration management system with agentless architecture, such as Ansible, do not execute the configuration and deployment file, such as an Ansible playbook, during the in-place upgrade as described in Performing the upgrade.
+Automation of the pre-upgrade and upgrade process by using a configuration management system is not supported by Red Hat. For more information, see Using configuration management systems to automate parts of the Leapp pre-upgrade and upgrade process on Red Hat Enterprise Linux.
+Ensure your system does not use more than one Network Interface Card (NIC) with a name based on the prefix used by the kernel (eth). For instructions on how to migrate to another naming scheme before an in-place upgrade to RHEL 9, see How to perform an in-place upgrade to RHEL 8 when using kernel NIC names on RHEL 7. The process for migrating naming schemes is the same for both the RHEL 7 to RHEL 8 upgrade and the RHEL 8 to RHEL 9 upgrade.
+If your NSS database was created in RHEL 7 or earlier, verify that the database has been converted from the DBM database format to SQLite. For more information, see Updating NSS databases from DBM to SQLite.
+RHEL 9 does not support the legacy network-scripts package, which was deprecated in RHEL 8. Before upgrading, move your custom network scripts and write a NetworkManager dispatcher script that executes your existing custom scripts. For more information, see Migrating custom network scripts to NetworkManager dispatcher scripts.
+If you are upgrading using an ISO image, verify that the ISO image contains the target OS version, for example, RHEL 9.4, and is saved to a persistent local mount point to ensure that the Leapp utility can access the image throughout the upgrade process.
+Ensure that you have a full system backup or a virtual machine snapshot. You should be able to get your system to the pre-upgrade state if you follow standard disaster recovery procedures within your environment. You can use the following backup options:
+Create a full backup of your system by using the Relax-and-Recover (ReaR) utility. For more information, see the ReaR documentation and What is Relax and Recover (ReaR) and how can I use it for disaster recovery?.
+Create a snapshot of your system by using LVM snapshots or RAID splitting. In case of upgrading a virtual machine, you can create a snapshot of the whole VM. You can also manage snapshot and rollback boot entries by using the Boom utility. For more information, see What is BOOM and how to install it? and Managing system upgrades with snapshots.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.2. Preparing a Satellite-registered system for the upgrade
+This procedure describes the steps that are necessary to prepare a system that is registered to Satellite for the upgrade to RHEL 9. There steps are performed on the Satellite Server.
+Prerequisites
+You have administrative privileges for the Satellite Server.
+Procedure
+Verify that Satellite is on a version in full or maintenance support. For more information, see Red Hat Satellite Product Life Cycle.
+Import a subscription manifest with RHEL 9 repositories into Satellite Server. For more information, see the Managing Red Hat Subscriptions chapter in the Managing Content Guide for the particular version of Red Hat Satellite, for example, for version 6.12.
+Enable and synchronize all required RHEL 8 and RHEL 9 repositories on the Satellite Server with the latest updates for the source and target OS versions. Required repositories must be available in the Content View and enabled in the associated activation key.
+For example, for the Intel architecture without an Extended Update Support (EUS) subscription, enable at minimum the following repositories:
+Red Hat Enterprise Linux 8 for x86_64 - AppStream (RPMs)
+rhel-8-for-x86_64-appstream-rpms
+x86_64 <source_os_version>
+Red Hat Enterprise Linux 8 for x86_64 - BaseOS (RPMs)
+rhel-8-for-x86_64-baseos-rpms
+x86_64 <source_os_version>
+Red Hat Enterprise Linux 9 for x86_64 - AppStream (RPMs)
+rhel-9-for-x86_64-appstream-rpms
+x86_64 <target_os_version>
+Red Hat Enterprise Linux 9 for x86_64 - BaseOS (RPMs)
+rhel-9-for-x86_64-baseos-rpms
+x86_64 <target_os_version>
+Replace <source_os_version> and <target_os_version> with the source OS version and target OS version respectively, for example, 8.10 and 9.4.
+For other architectures, see RHEL 8 repositories and RHEL 9 repositories.
+For more information, see the Importing Content chapter in the Managing Content Guide for the particular version of Red Hat Satellite, for example, for version 6.12.
+Attach the content host to a Content View containing the required RHEL 8 and RHEL 9 repositories.
+For more information, see the Managing Content Views chapter in the Managing Content Guide for the particular version of Red Hat Satellite, for example, for version 6.12.
+Verification
+Verify that the correct RHEL 8 and RHEL 9 repositories have been added to the correct Content View on Satellite Server.
+In the Satellite web UI, navigate to Content > Lifecycle > Content Views and click the name of the Content View.
+Click the Repositories tab and verify that the repositories appear as expected.
+Verify that the correct RHEL 9 repositories are enabled in the activation key associated with the Content View:
+In Satellite web UI navigate to Content > Lifecycle > Activation Keys and click the name of the activation key.
+Click the Repository Sets tab and verify that the statuses of the required repositories are Enabled.
+. Verify that all expected RHEL 8 repositories are enabled in the host. For example:
+# subscription-manager repos --list-enabled | grep "^Repo ID"
+Repo ID:   rhel-8-for-x86_64-baseos-rpms
+Repo ID:   rhel-8-for-x86_64-appstream-rpms
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 4. Reviewing the pre-upgrade report
+To assess upgradability of your system, start the pre-upgrade process by using the leapp preupgrade command. During this phase, the Leapp utility collects data about the system, assesses upgradability, and generates a pre-upgrade report. The pre-upgrade report summarizes potential problems and suggests recommended solutions. The report also helps you decide whether it is possible or advisable to proceed with the upgrade.
+You can assess upgradability in the pre-upgrade phase using either of the following ways:
+Review the pre-upgrade report in the generated leapp-report.txt file and manually resolve reported problems using the command-line interface.
+Use the web console to review the report, apply automated remediations where available, and fix remaining problems using the suggested remediation hints.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.1. Assessing upgradability of RHEL 8.10 to RHEL 9.4 or RHEL 9.5 from the command line from the command line
+Identify potential upgrade problems during the pre-upgrade phase before the upgrade by using the command-line interface.
+Prerequisites
+The steps listed in Preparing for the upgrade have been completed.
+You are logged in to root with the unconfined SELinux role. If you are using sudo, you must use the -r unconfined_r -t unconfined_t options when running each leapp command, for example:
+$ sudo -r unconfined_r -t unconfined_t leapp preupgrade
+Procedure
+On your RHEL 8 system, perform the pre-upgrade phase:
+# leapp preupgrade
+If you are using custom repositories from the /etc/yum.repos.d/ directory for the upgrade, enable the selected repositories as follows:
+# leapp preupgrade --enablerepo <repository_id1> --enablerepo <repository_id2> ...
+If you are upgrading without RHSM or by using RHUI, add the --no-rhsm option.
+If you have an Extended Upgrade Support (EUS), Advanced Update Support (AUS), or Update Services for SAP Solutions (E4S) subscription, add the --channel <channel> option. Replace <channel> with the channel name, for example, eus, aus, or e4s. Note that SAP HANA customers must perform the in-place upgrade by using the Upgrading SAP environments from RHEL 8 to RHEL 9 guide.
+If you are using RHEL for Real Time or the Real Time for Network Functions Virtualization (NFV) in your Red Hat OpenStack Platform, enable the deployment by using the --enablerepo option. For example:
+# leapp preupgrade --enablerepo rhel-9-for-x86_64-rt-rpms
+For more information, see Configuring Real-Time Compute.
+Examine the report in the /var/log/leapp/leapp-report.txt file and manually resolve all the reported problems. Some reported problems contain remediation suggestions. Inhibitor problems prevent you from upgrading until you have resolved them.
+The report contains the following risk factor levels:
+In certain system configurations, the Leapp utility generates true or false questions that you must answer manually. If the pre-upgrade report contains a Missing required answers in the answer file message, complete the following steps:
+Open the /var/log/leapp/answerfile file and review the true or false questions.
+Manually edit the /var/log/leapp/answerfile file, uncomment the confirm line of the file by deleting the # symbol, and confirm your answer as True or False. For more information, see the Leapp answerfile.
+Repeat the previous steps to rerun the pre-upgrade report to verify that you have resolved all critical issues.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.2. Assessing upgradability of RHEL 8.8 to RHEL 9.2 from the command line
+Identify potential upgrade problems during the pre-upgrade phase before the upgrade from RHEL 8.8 to RHEL 9.2 by using the command-line interface.
+Prerequisites
+The steps listed in Preparing for the upgrade have been completed.
+You are logged in to root with the unconfined SELinux role. If you are using sudo, you must use the -r unconfined_r -t unconfined_t options when running each leapp command, for example:
+$ sudo -r unconfined_r -t unconfined_t leapp preupgrade
+Procedure
+On your RHEL 8 system, perform the pre-upgrade phase:
+# leapp preupgrade
+If you are using custom repositories from the /etc/yum.repos.d/ directory for the upgrade, enable the selected repositories as follows:
+# leapp preupgrade --enablerepo <repository_id1> --enablerepo <repository_id2> ...
+If you are upgrading without RHSM or by using RHUI, add the --no-rhsm option.
+If you have an Extended Upgrade Support (EUS), Advanced Update Support (AUS), or Update Services for SAP Solutions (E4S) subscription, add the --channel <channel> option. Replace <channel> with the channel name, for example, eus, aus, or e4s. Note that SAP HANA customers must perform the in-place upgrade by using the Upgrading SAP environments from RHEL 8 to RHEL 9 guide.
+Examine the report in the /var/log/leapp/leapp-report.txt file and manually resolve all the reported problems. Some reported problems contain remediation suggestions. Inhibitor problems prevent you from upgrading until you have resolved them.
+The report contains the following risk factor levels:
+In certain system configurations, the Leapp utility generates true or false questions that you must answer manually. If the pre-upgrade report contains a Missing required answers in the answer file message, complete the following steps:
+Open the /var/log/leapp/answerfile file and review the true or false questions.
+Manually edit the /var/log/leapp/answerfile file, uncomment the confirm line of the file by deleting the # symbol, and confirm your answer as True or False. For more information, see the Leapp answerfile.
+Repeat the previous steps to rerun the pre-upgrade report to verify that you have resolved all critical issues.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.3. Assessing upgradability of RHEL 8.10 to RHEL 9.4 and 9.5 and applying automated remediations through the web console
+Identify potential problems in the pre-upgrade phase before the upgrade and apply automated remediations by using the web console.
+Prerequisites
+You have completed the steps listed in Preparing for the upgrade.
+You are logged in to root with the unconfined SELinux role. If you are using sudo, you must use the -r unconfined_r -t unconfined_t options when running each leapp command, for example:
+$ sudo -r unconfined_r -t unconfined_t leapp preupgrade
+Procedure
+Install the cockpit-leapp plug-in:
+# dnf install cockpit-leapp
+Log in to the web console as root or as a user that has permissions to enter administrative commands with sudo. See Managing systems using the RHEL 8 web console for more information about the web console.
+On your RHEL 8 system, perform the pre-upgrade phase either from the command-line interface or from the web console terminal:
+# leapp preupgrade
+If you are using custom repositories from the /etc/yum.repos.d/ directory for the upgrade, enable the selected repositories as follows:
+# leapp preupgrade --enablerepo <repository_id1> --enablerepo <repository_id2> ...
+If you are upgrading without RHSM or by using RHUI, add the --no-rhsm option.
+If you have an Extended Upgrade Support (EUS), Advanced Update Support (AUS), or Update Services for SAP Solutions (E4S) subscription, add the --channel <channel> option. Replace <channel> with the channel name, for example, eus, aus, or e4s. Note that SAP HANA customers should perform the in-place upgrade using the Upgrading SAP environments from RHEL 8 to RHEL 9 guide.
+If you are using RHEL for Real Time or the Real Time for Network Functions Virtualization (NFV) in your Red Hat OpenStack Platform, enable the deployment by using the --enablerepo option. For example:
+# leapp preupgrade --enablerepo rhel-9-for-x86_64-rt-rpms
+For more information, see Configuring Real-Time Compute.
+In the web console, select Upgrade Report from the navigation menu to review all reported problems. Inhibitor problems prevent you from upgrading until you have resolved them. To view a problem in detail, select the row to open the Detail pane.
+Figure 4.1. In-place upgrade report in the web console
+The report contains the following risk factor levels:
+In certain configurations, the Leapp utility generates true or false questions that you must answer manually. If the Upgrade Report contains a Missing required answers in the answer file row, complete the following steps:
+Select the Missing required answers in the answer file row to open the Detail pane. The default answer is stated at the end of the remediation command.
+To confirm the default answer, select Add to Remediation Plan to execute the remediation later or Run Remediation to execute the remediation immediately.
+To select the non-default answer instead, execute the leapp answer command in the terminal, specifying the question you are responding to and your confirmed answer.
+# leapp answer --section <question_section>.<field_name>=<answer>
+For example, to confirm a True response to the question Are all VDO devices, if any, successfully converted to LVM management?, execute the following command:
+# leapp answer --section check_vdo.confirm=True
+Some problems have remediation commands that you can run to automatically resolve the problems. You can run remediation commands individually or all together in the remediation command.
+To run a single remediation command, open the Detail pane for the problem and click Run Remediation.
+To add a remediation command to the remediation plan, open the Detail pane for the problem and click Add to Remediation Plan.
+Figure 4.2. Detail pane
+To run the remediation plan containing all added remediation commands, click the Remediation plan link in the top right corner above the report. Click Execute Remediation Plan to execute all listed commands.
+After reviewing the report and resolving all reported problems, repeat steps 3-7 to rerun the report to verify that you have resolved all critical issues.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.4. Assessing upgradability of RHEL 8.8 to RHEL 9.2 and applying automated remediations through the web console
+Identify potential problems in the pre-upgrade phase before the upgrade from RHEL 8.8 to RHEL 9.2 and apply automated remediations by using the web console.
+Prerequisites
+You have completed the steps listed in Preparing for the upgrade.
+You are logged in to root with the unconfined SELinux role. If you are using sudo, you must use the -r unconfined_r -t unconfined_t options when running each leapp command, for example:
+$ sudo -r unconfined_r -t unconfined_t leapp preupgrade
+Procedure
+Install the cockpit-leapp plug-in:
+# dnf install cockpit-leapp
+Log in to the web console as root or as a user that has permissions to enter administrative commands with sudo. See Managing systems using the RHEL 8 web console for more information about the web console.
+On your RHEL 8 system, perform the pre-upgrade phase either from the command-line interface or from the web console terminal:
+# leapp preupgrade
+If you are using custom repositories from the /etc/yum.repos.d/ directory for the upgrade, enable the selected repositories as follows:
+# leapp preupgrade --enablerepo <repository_id1> --enablerepo <repository_id2> ...
+If you are upgrading without RHSM or by using RHUI, add the --no-rhsm option.
+If you have an Extended Upgrade Support (EUS), Advanced Update Support (AUS), or Update Services for SAP Solutions (E4S) subscription, add the --channel <channel> option. Replace <channel> with the channel name, for example, eus, aus, or e4s. Note that SAP HANA customers should perform the in-place upgrade using the Upgrading SAP environments from RHEL 8 to RHEL 9 guide.
+In the web console, select Upgrade Report from the navigation menu to review all reported problems. Inhibitor problems prevent you from upgrading until you have resolved them. To view a problem in detail, select the row to open the Detail pane.
+Figure 4.3. In-place upgrade report in the web console
+The report contains the following risk factor levels:
+In certain configurations, the Leapp utility generates true or false questions that you must answer manually. If the Upgrade Report contains a Missing required answers in the answer file row, complete the following steps:
+Select the Missing required answers in the answer file row to open the Detail pane. The default answer is stated at the end of the remediation command.
+To confirm the default answer, select Add to Remediation Plan to execute the remediation later or Run Remediation to execute the remediation immediately.
+To select the non-default answer instead, execute the leapp answer command in the terminal, specifying the question you are responding to and your confirmed answer.
+# leapp answer --section <question_section>.<field_name>=<answer>
+For example, to confirm a True response to the question Are all VDO devices, if any, successfully converted to LVM management?, execute the following command:
+# leapp answer --section check_vdo.confirm=True
+Some problems have remediation commands that you can run to automatically resolve the problems. You can run remediation commands individually or all together in the remediation command.
+To run a single remediation command, open the Detail pane for the problem and click Run Remediation.
+To add a remediation command to the remediation plan, open the Detail pane for the problem and click Add to Remediation Plan.
+Figure 4.4. Detail pane
+To run the remediation plan containing all added remediation commands, click the Remediation plan link in the top right corner above the report. Click Execute Remediation Plan to execute all listed commands.
+After reviewing the report and resolving all reported problems, repeat steps 3-7 to rerun the report to verify that you have resolved all critical issues.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 5. Performing the upgrade
+After you have completed the preparatory steps and reviewed and resolved the problems found in the pre-upgrade report, you can perform the in-place upgrade on your system.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.1. Performing the upgrade from RHEL 8.10 to RHEL 9.4 and 9.5
+This procedure lists steps required to perform the upgrade by using the Leapp utility.
+Prerequisites
+The steps listed in Preparing for the upgrade have been completed, including a full system backup.
+The steps listed in Reviewing the pre-upgrade report have been completed and all reported issues resolved.
+Procedure
+On your RHEL 8 system, start the upgrade process:
+# leapp upgrade
+If you are using custom repositories from the /etc/yum.repos.d/ directory for the upgrade, enable the selected repositories as follows:
+# leapp upgrade --enablerepo <repository_id1> --enablerepo <repository_id2> ...
+If you are upgrading without RHSM or using RHUI, add the --no-rhsm option.
+If you are upgrading by using an ISO image, add the --no-rhsm and --iso <file_path> options. Replace <file_path> with the file path to the saved ISO image, for example /home/rhel9.iso.
+If you have an Extended Upgrade Support (EUS), Advanced Update Support (AUS), or Update Services for SAP Solutions (E4S) subscription, add the --channel channel option. Replace channel with the value you used with the leapp preupgrade command, for example, eus, aus, or e4s. Note that you must use the same value with the --channel option in both the leapp preupgrade and leapp upgrade commands.
+If you are using RHEL for Real Time or the Real Time for Network Functions Virtualization (NFV) in your Red Hat OpenStack Platform, enable the deployment by using the --enablerepo option. For example:
+# leapp upgrade --enablerepo rhel-9-for-x86_64-rt-rpms
+For more information, see Configuring Real-Time Compute.
+At the beginning of the upgrade process, Leapp performs the pre-upgrade phase described in Reviewing the pre-upgrade report.
+If the system is upgradable, Leapp downloads necessary data and prepares an RPM transaction for the upgrade.
+If your system does not meet the parameters for a reliable upgrade, Leapp terminates the upgrade process and provides a record describing the issue and a recommended solution in the /var/log/leapp/leapp-report.txt file. For more information, see Troubleshooting.
+Manually reboot the system:
+# reboot
+In this phase, the system boots into a RHEL 9-based initial RAM disk image, initramfs. Leapp upgrades all packages and automatically reboots to the RHEL 9 system.
+Alternatively, you can run the leapp upgrade command with the --reboot option and skip this manual step.
+If a failure occurs, investigate logs and known issues as described in Troubleshooting.
+Log in to the RHEL 9 system and verify its state as described in Verifying the post-upgrade state.
+Perform all post-upgrade tasks described in the upgrade report and in Performing post-upgrade tasks.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.2. Performing the upgrade from RHEL 8.8 to RHEL 9.2
+This procedure lists steps required to perform the upgrade from RHEL 8.8 to RHEL 9.2 by using the Leapp utility.
+Prerequisites
+The steps listed in Preparing for the upgrade have been completed, including a full system backup.
+The steps listed in Reviewing the pre-upgrade report have been completed and all reported issues resolved.
+Procedure
+On your RHEL 8 system, start the upgrade process:
+# leapp upgrade
+If you are using custom repositories from the /etc/yum.repos.d/ directory for the upgrade, enable the selected repositories as follows:
+# leapp upgrade --enablerepo <repository_id1> --enablerepo <repository_id2> ...
+If you are upgrading without RHSM or using RHUI, add the --no-rhsm option.
+If you are upgrading by using an ISO image, add the --no-rhsm and --iso <file_path> options. Replace <file_path> with the file path to the saved ISO image, for example /home/rhel9.iso.
+If you have an Extended Upgrade Support (EUS), Advanced Update Support (AUS), or Update Services for SAP Solutions (E4S) subscription, add the --channel channel option. Replace channel with the value you used with the leapp preupgrade command, for example, eus, aus, or e4s. Note that you must use the same value with the --channel option in both the leapp preupgrade and leapp upgrade commands.
+At the beginning of the upgrade process, Leapp performs the pre-upgrade phase described in Reviewing the pre-upgrade report.
+If the system is upgradable, Leapp downloads necessary data and prepares an RPM transaction for the upgrade.
+If your system does not meet the parameters for a reliable upgrade, Leapp terminates the upgrade process and provides a record describing the issue and a recommended solution in the /var/log/leapp/leapp-report.txt file. For more information, see Troubleshooting.
+Manually reboot the system:
+# reboot
+In this phase, the system boots into a RHEL 9-based initial RAM disk image, initramfs. Leapp upgrades all packages and automatically reboots to the RHEL 9 system.
+Alternatively, you can run the leapp upgrade command with the --reboot option and skip this manual step.
+If a failure occurs, investigate logs and known issues as described in Troubleshooting.
+Log in to the RHEL 9 system and verify its state as described in Verifying the post-upgrade state.
+Perform all post-upgrade tasks described in the upgrade report and in Performing post-upgrade tasks.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 6. Verifying the post-upgrade state
+After performing the in-place upgrade to RHEL 9, verify that the system is in the correct state. Doing so allows you to identify and correct any critical errors that could impact your system.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.1. Verifying the post-upgrade state of the RHEL 9 system
+This procedure lists Verification recommended to perform after an in-place upgrade to RHEL 9.
+Prerequisites
+The system has been upgraded following the steps described in Performing the upgrade and you have been able to log in to RHEL 9.
+Procedure
+After the upgrade completes, determine whether the system is in the required state, at least:
+Verify that the current OS version is RHEL 9. For example:
+# cat /etc/redhat-release
+Red Hat Enterprise Linux release 9.4 (Plow)
+Check the OS kernel version. For example:
+# uname -r
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.14.0-70.10.1.el9_0.x86_64
+Note that .el9 is important and the version should not be earlier than 5.14.0.
+If you are using the Red Hat Subscription Manager:
+Verify that the correct product is installed. For example:
+# subscription-manager list --installed
++-----------------------------------------+
+    	  Installed Product Status
++-----------------------------------------+
+Product Name: Red Hat Enterprise Linux for x86_64
+Product ID:   479
+Version:      9.4
+Arch:         x86_64
+Status:       Subscribed
+Verify that the release version is set to the expected target OS version immediately after the upgrade. For example:
+# subscription-manager release
+Release: 9.4
+Verify that network services are operational, for example, try to connect to a server using SSH.
+Check the post-upgrade status of your applications. In some cases, you may need to perform migration and configuration changes manually. For example, to migrate your databases, follow instructions in Configuring and using database servers.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 7. Performing post-upgrade tasks on the RHEL 9 system
+After the in-place upgrade, clean up your RHEL 9 system by remove unneeded packages, disable incompatible repositories, and update the rescue kernel and initial RAM disk.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.1. Performing post-upgrade tasks
+This procedure lists major tasks recommended to perform after an in-place upgrade to RHEL 9.
+Prerequisites
+The system has been upgraded following the steps described in Performing the upgrade
+and you have been able to log in to RHEL 9.
+The status of the in-place upgrade has been verified following the steps described in Verifying the post-upgrade state.
+Procedure
+After performing the upgrade, complete the following tasks:
+Remove any remaining Leapp packages from the exclude list in the /etc/dnf/dnf.conf configuration file, including the snactor package, which is a tool for upgrade extension development. During the in-place upgrade, Leapp packages that were installed with the Leapp utility are automatically added to the exclude list to prevent critical files from being removed or updated. After the in-place upgrade, these Leapp packages must be removed from the exclude list before they can be removed from the system.
+To manually remove packages from the exclude list, edit the /etc/dnf/dnf.conf configuration file and remove the desired Leapp packages from the exclude list.
+To remove all packages from the exclude list:
+# dnf config-manager --save --setopt exclude=''
+Remove remaining RHEL 8 packages, including remaining Leapp packages.
+Remove the old kernel packages from the RHEL 9 system. For more information on removing kernel packages, see What is the proper method to remove old kernels from a Red Hat Enterprise Linux system?
+Locate remaining RHEL 8 packages:
+# rpm -qa | grep -e '\.el[78]' | grep -vE '^(gpg-pubkey|libmodulemd|katello-ca-consumer)' | sort
+Remove remaining RHEL 8 packages from your RHEL 9 system. To ensure that RPM dependencies are maintained, use DNF when performing this action. Review the transaction before accepting to ensure no packages are unintentionally removed.
+For example:
+# dnf remove $(rpm -qa | grep \.el[78] | grep -vE 'gpg-pubkey|libmodulemd|katello-ca-consumer')
+Remove remaining Leapp dependency packages:
+# dnf remove leapp-deps-el9 leapp-repository-deps-el9
+Optional: Remove all remaining upgrade-related data from the system:
+# rm -rf /var/log/leapp /root/tmp_leapp_py3 /var/lib/leapp
+Disable DNF repositories whose packages are not RHEL 9-compatible. Repositories managed by RHSM are handled automatically. To disable these repositories:
+# dnf config-manager --set-disabled <repository_id>
+Replace repository_id with the repository ID.
+Replace the old rescue kernel and initial RAM disk with the current kernel and disk:
+Remove the existing rescue kernel and initial RAM disk:
+# rm /boot/vmlinuz-*rescue* /boot/initramfs-*rescue*
+Reinstall the rescue kernel and related initial RAM disk:
+# /usr/lib/kernel/install.d/51-dracut-rescue.install add "$(uname -r)" /boot "/boot/vmlinuz-$(uname -r)"
+If your system is on the IBM Z architecture, update the zipl bootloader:
+# zipl
+. Optional: Check existing configuration files:
+Review, remediate, and then remove the rpmnew, rpmsave, and leappsave files. Note that rpmsave and leappsave are equivalent and can be handled similarly. For more information, see What are rpmnew & rpmsave files?
+Remove configuration files for RHEL 8 DNF modules from the /etc/dnf/modules.d/ directory that are no longer valid. Note that these files have no effect on the system when related DNF modules do not exist.
+Re-evaluate and re-apply your security policies. Especially, change the SELinux mode to enforcing. For details, see Applying security policies.
+Verification
+Verify that the previously removed rescue kernel and rescue initial RAM disk files have been created for the current kernel:
+# ls /boot/vmlinuz-*rescue* /boot/initramfs-*rescue*
+# lsinitrd /boot/initramfs-*rescue*.img | grep -qm1 "$(uname -r)/kernel/" && echo "OK" || echo "FAIL"
+Verify the rescue boot entry refers to the existing rescue files. See the grubby output:
+# grubby --info $(ls /boot/vmlinuz-*rescue*)
+Review the grubby output and verify that no RHEL 8 boot entries are configured:
+# grubby --info ALL
+Verify that no files related to previous RHEL are present in the /boot/loader/entries file:
+# grep -r ".el8" "/boot/loader/entries/" || echo "Everything seems ok."
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 8. Applying security policies
+During the in-place upgrade process, the SELinux policy must be switched to permissive mode. Furthermore, security profiles might contain changes between major releases. To restore system security, switch SELinux to enforcing mode again and verify the system-wide cryptographic policy. You may also want to remediate the system to be compliant with a specific security profile. Also, some security-related components require pre-update steps for a correct upgrade.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.1. Changing SELinux mode to enforcing
+During the in-place upgrade process, the Leapp utility sets SELinux mode to permissive. When the system is successfully upgraded, you have to manually change SELinux mode to enforcing.
+Prerequisites
+The system has been upgraded and you have performed the Verification described in Verifying the post-upgrade state.
+Procedure
+Ensure that there are no SELinux denials, for example, by using the ausearch utility:
+# ausearch -m AVC,USER_AVC -ts boot
+Note that the previous step covers only the most common scenario. To check for all possible SELinux denials, see the Identifying SELinux denials section in the Using SELinux title, which provides a complete procedure.
+Open the /etc/selinux/config file in a text editor of your choice, for example:
+# vi /etc/selinux/config
+Configure the SELINUX=enforcing option:
+# This file controls the state of SELinux on the system.
+# SELINUX= can take one of these three values:
+#       enforcing - SELinux security policy is enforced.
+#       permissive - SELinux prints warnings instead of enforcing.
+#       disabled - No SELinux policy is loaded.
+SELINUX=enforcing
+# SELINUXTYPE= can take one of these two values:
+#       targeted - Targeted processes are protected,
+#       mls - Multi Level Security protection.
+SELINUXTYPE=targeted
+Save the change, and restart the system:
+# reboot
+Verification
+After the system restarts, confirm that the getenforce command returns Enforcing:
+$ getenforce
+Enforcing
+Additional resources
+Troubleshooting problems related to SELinux
+Changing SELinux states and modes
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.2. System-wide cryptographic policies
+The system-wide cryptographic policies is a system component that configures the core cryptographic subsystems, covering the TLS, IPSec, SSH, DNSSec, and Kerberos protocols.
+The in-place upgrade process preserves the cryptographic policy you used in RHEL 8. For example, if you used the DEFAULT cryptographic policy in RHEL 8, your system upgraded to RHEL 9 also uses DEFAULT. Note that specific settings in predefined policies differ, and RHEL 9 cryptographic policies contain more strict and more secure default values. For example, the RHEL 9 DEFAULT cryptographic policy restricts SHA-1 usage for signatures and the LEGACY policy no longer allows DH and RSA ciphers with less than 2048 bits. See the Using system-wide cryptographic policies section in the Security hardening document for more information. Custom cryptographic policies are preserved across the in-place upgrade.
+To view or change the current system-wide cryptographic policy, use the update-crypto-policies tool:
+$ update-crypto-policies --show
+DEFAULT
+For example, the following command switches the system-wide crypto policy level to FUTURE, which should withstand any near-term future attacks:
+# update-crypto-policies --set FUTURE
+Setting system policy to FUTURE
+If your scenario requires the use of SHA-1 for verifying existing or third-party cryptographic signatures, you can enable it by entering the following command:
+# update-crypto-policies --set DEFAULT:SHA1
+Alternatively, you can switch the system-wide crypto policies to the LEGACY policy. However, LEGACY also enables many other algorithms that are not secure.
+You can also customize system-wide cryptographic policies. For details, see the Customizing system-wide cryptographic policies with subpolicies and Creating and setting a custom system-wide cryptographic policy sections. If you use a custom cryptographic policy, consider reviewing and updating the policy to mitigate threats brought by advances in cryptography and computer hardware.
+Additional resources
+Using system-wide cryptographic policies
+update-crypto-policies(8) man page on your system
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.3. Upgrading a system hardened to a security baseline
+To get a fully hardened system after a successful upgrade to RHEL 9, you can use automated remediation provided by the OpenSCAP suite. OpenSCAP remediations align your system with security baselines, such as PCI-DSS, OSPP, or ACSC Essential Eight. The configuration compliance recommendations differ among major versions of RHEL due to the evolution of the security offering.
+When upgrading a hardened RHEL 8 system, the Leapp tool does not provide direct means to retain the full hardening. Depending on the changes in the component configuration, the system might diverge from the recommendations for the RHEL 9 during the upgrade.
+As an alternative to automated remediations, you can make the changes manually by following an OpenSCAP-generated report. For information about generating a compliance report, see Scanning the system for security compliance and vulnerabilities.
+The following example procedure hardens your system settings according to the PCI-DSS profile.
+Prerequisites
+The scap-security-guide package is installed on your RHEL 9 system.
+Procedure
+Find the appropriate security compliance data stream .xml file:
+$ ls /usr/share/xml/scap/ssg/content/
+...
+ssg-rhel9-ds.xml
+...
+See the Viewing compliance profiles section for more information.
+Remediate the system according to the selected profile from the appropriate data stream:
+# oscap xccdf eval --profile pci-dss --remediate /usr/share/xml/scap/ssg/content/ssg-rhel9-ds.xml
+You can replace the pci-dss value in the --profile argument with the ID of the profile according to which you want to harden your system. For a full list of profiles supported in RHEL 9, see SCAP security profiles supported in RHEL.
+Restart your system:
+# reboot
+Verification
+Verify that the system is compliant with the profile, and save the results in an HTML file:
+$ oscap xccdf eval --report pcidss_report.html --profile pci-dss /usr/share/xml/scap/ssg/content/ssg-rhel9-ds.xml
+Additional resources
+scap-security-guide(8) and oscap(8) man pages on your system
+Scanning the system for security compliance and vulnerabilities
+Red Hat Insights Security Policy
+Red Hat Satellite Security Policy
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.4. Verifying USBGuard policies
+With the USBGuard software framework, you can protect your systems against intrusive USB devices by using lists of permitted and forbidden devices based on the USB device authorization feature in the kernel.
+Prerequisites
+You have created a rule set for USB devices that reflected the requirements of your scenario before the upgrade.
+The usbguard service is installed and running on your RHEL 9 system.
+Procedure
+Back up your *.conf files stored in the /etc/usbguard/ directory.
+Use the usbguard generate-policy to generate a new policy file. Note that the command generates rules for the currently present USB devices only.
+Compare the newly generated rules against the rules in the previous policy:
+If you identify differences in the rules for the devices that were present when you generated the new policy and the pre-upgrade rules for the same devices, modify the original rules correspondingly also for devices that might be inserted later.
+If there are no differences between the newly generated and the pre-upgrade rules, you can use the policy files created in RHEL 8 without any modification.
+Additional resources
+Protecting systems against intrusive USB devices
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.5. Updating fapolicyd databases
+The fapolicyd software framework controls the execution of applications based on a user-defined policy.
+In rare cases, a problem with the fapolicyd trust database format can occur. To rebuild the database:
+Stop the service:
+# systemctl stop fapolicyd
+Delete the database:
+# fapolicyd-cli --delete-db
+Start the service:
+# systemctl start fapolicyd
+If you added custom trust files to the trust database, update them either individually by using the fapolicyd-cli -f update <FILE> command or altogether by using fapolicyd-cli -f update. To apply the changes, use either the fapolicyd-cli --update command or restart the fapolicyd service.
+Additionally, custom binaries might require a rebuild for the new RHEL version. Perform any such updates before you update the fapolicyd database.
+Additional resources
+Blocking and allowing applications using fapolicyd
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.6. Updating NSS databases from DBM to SQLite
+Many applications automatically convert the NSS database format from DBM to SQLite after you set the NSS_DEFAULT_DB_TYPE environment variable to the sql value on the system. You can ensure that all databases are converted by using the certutil tool.
+Prerequisites
+The nss-tools package is installed on your system.
+Procedure
+Set NSS_DEFAULT_DB_TYPE to sql on the system:
+# export NSS_DEFAULT_DB_TYPE=sql
+Use the conversion command in every directory[1] that contains NSS database files in the DBM format, for example:
+# certutil -K -X -d /etc/ipsec.d/
+Note that you have to provide a password or a path to a password file as a value of the -f option if your database file is password-protected, for example:
+# certutil -K -X -f /etc/ipsec.d/nsspassword -d /etc/ipsec.d/
+Additional resources
+certutil(1) man page on your system
+[1] RHEL contains a system-wide NSS database in the /etc/pki/nssdb directory. Other locations depend on applications you use. For example, Libreswan stores its database in the /etc/ipsec.d/ directory and Firefox uses the /home/<username>/.mozilla/firefox/ directory.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.7. Migrating Cyrus SASL databases from the Berkeley DB format to GDBM
+The RHEL 9 cyrus-sasl package is built without the libdb dependency, and the sasldb plugin uses the GDBM database format instead of Berkeley DB.
+Prerequisites
+The cyrus-sasl-lib package is installed on your system.
+Procedure
+To migrate your existing Simple Authentication and Security Layer (SASL) databases stored in the old Berkeley DB format, use the cyrusbdb2current tool with the following syntax:
+# cyrusbdb2current <sasldb_path> <new_path>
+Additional resources
+cyrusbdb2current(1) man page on your system
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 9. Troubleshooting
+You can refer to the following tips to troubleshoot upgrading from RHEL 8 to RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.1. Troubleshooting resources
+You can refer to the following troubleshooting resources.
+Console output
+By default, only error and critical log level messages are printed to the console output by the Leapp utility. To change the log level, use the --verbose or --debug options with the leapp upgrade command.
+In verbose mode, Leapp prints info, warning, error, and critical messages.
+In debug mode, Leapp prints debug, info, warning, error, and critical messages.
+Logs
+The /var/log/leapp/leapp-upgrade.log file lists issues found during the initramfs phase.
+The /var/log/leapp/dnf-debugdata/ directory contains transaction debug data. This directory is present only if the leapp upgrade command is executed with the --debug option.
+The /var/log/leapp/answerfile contains questions required to be answered by Leapp.
+The journalctl utility provides complete logs.
+Reports
+The /var/log/leapp/leapp-report.txt file lists issues found during the pre-upgrade phase. The report is also available in the web console, see Assessing upgradability and applying automated remediations through the web console.
+The /var/log/leapp/leapp-report.json file lists issues found during the pre-upgrade phase in a machine-readable format, which enables you to process the report using custom scripts. For more information, see Automating your Red Hat Enterprise Linux pre-upgrade report workflow.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.2. Troubleshooting tips
+You can refer to the following troubleshooting tips.
+Pre-upgrade phase
+Verify that your system meets all conditions listed in Planning an upgrade.
+Make sure you have followed all steps described in Preparing for the upgrade for example, your system does not use more than one Network Interface Card (NIC) with a name based on the prefix used by the kernel (eth).
+Make sure you have answered all questions required by Leapp in the /var/log/leapp/answerfile file. If any answers are missing, Leapp inhibits the upgrade. For example:
+Are there no VDO devices on the system?
+Make sure you have resolved all problems identified in the pre-upgrade report, located at /var/log/leapp/leapp-report.txt. To achieve this, you can also use the web console, as described in Assessing upgradability and applying automated remediations through the web console.
+Example 9.1. Leapp answerfile
+The following is an example of an unedited /var/log/leapp/answerfile file that has one unanswered question:
+[check_vdo]
+# Title:              None
+# Reason:             Confirmation
+# ============================= check_vdo.confirm =============================
+# Label:              Are all VDO devices, if any, successfully converted to LVM management?
+# Description:        Enter True if no VDO devices are present on the system or all VDO devices on the system have been successfully converted to LVM management. Entering True will circumvent check of failures and undetermined devices. Recognized VDO devices that have not been converted to LVM management can still block the upgrade despite the answer.All VDO devices must be converted to LVM management before upgrading.
+# Reason:             To maximize safety all block devices on a system that meet the criteria as possible VDO devices are checked to verify that, if VDOs, they have been converted to LVM management. If the devices are not converted and the upgrade proceeds the data on unconverted VDO devices will be inaccessible. In order to perform checking the 'vdo' package must be installed. If the 'vdo' package is not installed and there are any doubts the 'vdo' package should be installed and the upgrade process re-run to check for unconverted VDO devices. If the check of any device fails for any reason an upgrade inhibiting report is generated. This may be problematic if devices are dynamically removed from the system subsequent to having been identified during device discovery. If it is certain that all VDO devices have been successfully converted to LVM management this dialog may be answered in the affirmative which will circumvent block device checking.
+# Type:               bool
+# Default:            None
+# Available choices: True/False
+# Unanswered question. Uncomment the following line with your answer
+# confirm =
+The Label field specifies the question that requires an answer. In this example, the question is Are all VDO devices, if any, successfully converted to LVM management?
+To answer the question, uncomment the last line and enter an answer of True or False. In this example, the selected answer is True:
+[check_vdo]
+...
+# Available choices: True/False
+# Unanswered question. Uncomment the following line with your answer
+confirm = True
+Download phase
+If a problem occurs during downloading RPM packages, examine transaction debug data located in the /var/log/leapp/dnf-debugdata/ directory.
+Initramfs phase
+During this phase, potential failures redirect you to the Dracut shell. Check the Journal log:
+# journalctl
+Alternatively, restart the system from the Dracut shell using the reboot command and check the /var/log/leapp/leapp-upgrade.log file.
+Post-upgrade phase
+If your system seems to be successfully upgraded but booted with the old RHEL 8 kernel, restart the system and check the kernel version of the default entry in GRUB.
+Make sure you have followed the recommended steps in Verifying the post-upgrade state.
+If your application or a service stops working or behaves incorrectly after you have switched SELinux to enforcing mode, search for denials using the ausearch, journalctl, or dmesg utilities:
+# ausearch -m AVC,USER_AVC -ts boot
+# journalctl -t setroubleshoot
+# dmesg | grep -i -e selinux -e type=1400
+The most common problems are caused by incorrect labeling. See Troubleshooting problems related to SELinux for more details.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.3. Known issues for the RHEL 8.10 to RHEL 9.4 and 9.5 upgrade
+The following are Known Issues you may encounter when upgrading.
+Network teaming currently does not work when the in-place upgrade is performed while Network Manager is disabled or not installed.
+If your RHEL 8 system uses a device driver that is provided by Red Hat but is not available in RHEL 9, Leapp inhibits the upgrade. However, if the RHEL 8 system uses a third-party device driver that Leapp does not have data for in the /etc/leapp/files/device_driver_deprecation_data.json file, Leapp does not detect such a driver and proceeds with the upgrade. Consequently, the system might fail to boot after the upgrade.
+If the name of a third-party package (not signed by Red Hat) installed on your system is the same as the name of a package provided by Red Hat, the in-place upgrade fails. To work around this problem, choose one of the following options prior to upgrading:
+Remove the third-party package
+Replace the third-party package with the package provided by Red Hat
+In RHEL 8, you can manage Virtual Data Optimizer (VDO) volumes by using either the VDO manager or the Logical Volume Manager (LVM). In RHEL 9, it is only possible to manage VDO volumes by using LVM. To continue using VDO-managed volumes on RHEL 9, import those volumes to LVM-managed VDO volumes before the upgrade. For more information, see Importing existing VDO volumes to LVM.
+The in-place upgrade might fail on systems with Software Redundant Array of Independent Disks (RAID). (BZ#1957192)
+During the in-place upgrade, the Leapp utility usually preserves the network interface controller (NIC) names between RHEL 8 and RHEL 9. However, on some systems, such as systems with network bonding, the NIC names might need to be updated between RHEL 8 and RHEL 9. On those systems, perform the following steps:
+Set the LEAPP_NO_NETWORK_RENAMING=1 environment variable to prevent the Leapp utility from incorrectly preserving the original RHEL 8 NIC names.
+Perform the in-place upgrade.
+Verify that your network is working correctly. If needed, manually update the network configuration.
+(BZ#1919382)
+If your system boots by using BIOS, the in-place upgrade fails when upgrading the GRUB2 bootloader if the boot disk’s embedding area does not contain enough space for the core image installation. This results in a broken system, and can occur when the disk has been partitioned manually, for example using the RHEL 6 fdisk utility. To verify whether this issue affects you, perform the following steps:
+Determine which sector starts the first partition on the disk with the installed bootloader:
+# fdisk -l
+The standard partitioning, which ensures enough space for the core image, starts on sector 2048.
+Determine whether the starting sector provides enough space. The RHEL 9.0 core image requires at least 36 KiB. For example, if the sector size is the standard 512 bytes, then starting on sector 73 or lower would not provide enough space.
+If the embedding area does not contain enough storage space, perform a fresh installation of the RHEL 9 system instead of performing an in-place upgrade.
+(BZ#2181380)
+After the in-place upgrade, SSH keys are no longer auto-generated if the system meets the following conditions:
+The system is on a cloud.
+The cloud-init package is installed.
+The ssh_genkeytypes configuration is set to ~ in the /etc/cloud/cloud.cfg file, which is the default.
+This issue prevents the system from connecting by using SSH if the original keys have been removed. To prevent this issue, see the Unable to SSH to new Virtual Machine after upgrading the template to RHEL 8.7 or 9 Knowledgebase solution. (BZ#2210012)
+VMWare virtual machines that were created at Hardware Level 13 and are booting with UEFI might experience issues during the upgrade because the NVRAM file is too small. For more information about this issue and how to resolve it, see VMWare: Getting "No space left on device" when executing efibootmgr or mokutil command to add entries. (RHEL-3362)
+The upgrade might fail if you are upgrading by using RHUI with an ISO image. You can work around this issue by not using the --iso option with the upgrade or by following the instructions in Offline Leapp upgrade using ISO fails with "Failed to synchronize cache for repo 'rhul-microsoft-azure-rhel8', ignoring this repo. (RHEL-3296)
+If too many file systems are mounted, the pre-upgrade process might fail with the following error message:
+OperationalError: unable to open database file
+If this issue occurs, complete the following steps:
+Unmount any file systems that are not related to the system partitions and are not needed during the upgrade process.
+Comment out the unmounted file systems’ entries in the /etc/fstab file to prevent them from being mounted during the upgrade process.
+Restore the original file system configuration after the upgrade.
+(RHEL-3320)
+If any of the mounted file systems that are defined in the /etc/fstab file do not have the shared propagation flag set, the upgrade might fail. To prevent this issue, remount these file systems to set them as shared:
+# mount -o remount --make-shared <mountpoint>
+Replace mountpoint with the mountpoint of each file system.
+For more information, see Leapp "Can not load RPM file" during the DNF transaction check. (RHEL-23449)
+The upgrade might fail if limited resources have been set for the upgrade process. For example, the maximum number of open files descriptors and maximum size of files written by the process and its children attributes can be reached by the upgrade process if they are set. To prevent these issues, increase or remove these limits before the upgrade process. For more information, see Why does leapp preupgrade fail with sqlite3.OperationalError: unable to open database file traceback error ? and Ensure that there is enough diskspace in /var/lib/leapp/scratch/diskimages/root_boot at least XXX mib are needed. (RHEL-16881, RHEL-26459)
+In-place upgrades using Red Hat Update Infrastructure (RHUI) on Amazon Web Services (AWS) with the ARM architecture are currently experiencing issues. Use the Red Hat Subscription Management (RHSM) instead. (RHEL-38909)
+If you are upgrading by using RHUI, files in the /usr/share/leapp-repository/repositories/system_upgrade/common/files/rhui/ directory are incorrectly reported as custom files in the pre-upgrade report. Unless you modified these files manually, you can ignore the warnings about these files in the report and the in-place upgrade will not be affected. (RHEL-40115)
+By default, the logrotate is not active after the upgrade. The logrotate was previously managed by cron in RHEL 8 and earlier. In RHEL 9, it is managed by systemd. To activate logrotate persistently, run the following command after the upgrade:
+# systemctl enable --now logrotate.timer
+If you use an HTTP proxy, Red Hat Subscription Manager must be configured to use such a proxy, or the subscription-manager command must be executed with the --proxy <hostname> option. Otherwise, an execution of the subscription-manager command fails. If you use the --proxy option instead of the configuration change, the upgrade process fails because Leapp is unable to detect the proxy. To prevent this problem from occurring, manually edit the rhsm.conf file as described in How to configure HTTP Proxy for Red Hat Subscription Management. (BZ#1689294)
+For systems that require a proxy to access RHEL 9 content, you usually need to configure the use of the proxy by DNF in the /etc/dnf/dnf.conf configuration file. If the current DNF configuration is not compatible with the DNF version on the target system, specify the valid target configuration in the /etc/leapp/files/dnf.conf configuration file. For more more information, see How does Leapp work with a proxy?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.4. Known issues for the RHEL 8.8 to RHEL 9.2 upgrade
+The following are Known Issues you may encounter when upgrading from RHEL 8.8 to RHEL 9.2.
+Network teaming currently does not work when the in-place upgrade is performed while Network Manager is disabled or not installed.
+If your RHEL 8 system uses a device driver that is provided by Red Hat but is not available in RHEL 9, Leapp inhibits the upgrade. However, if the RHEL 8 system uses a third-party device driver that Leapp does not have data for in the /etc/leapp/files/device_driver_deprecation_data.json file, Leapp does not detect such a driver and proceeds with the upgrade. Consequently, the system might fail to boot after the upgrade.
+If the name of a third-party package (not signed by Red Hat) installed on your system is the same as the name of a package provided by Red Hat, the in-place upgrade fails. To work around this problem, choose one of the following options prior to upgrading:
+Remove the third-party package
+Replace the third-party package with the package provided by Red Hat
+In RHEL 8, you can manage Virtual Data Optimizer (VDO) volumes by using either the VDO manager or the Logical Volume Manager (LVM). In RHEL 9, it is only possible to manage VDO volumes by using LVM. To continue using VDO-managed volumes on RHEL 9, import those volumes to LVM-managed VDO volumes before the upgrade. For more information, see Importing existing VDO volumes to LVM.
+The in-place upgrade might fail on systems with Software Redundant Array of Independent Disks (RAID). (BZ#1957192)
+During the in-place upgrade, the Leapp utility usually preserves the network interface controller (NIC) names between RHEL 8 and RHEL 9. However, on some systems, such as systems with network bonding, the NIC names might need to be updated between RHEL 8 and RHEL 9. On those systems, perform the following steps:
+Set the LEAPP_NO_NETWORK_RENAMING=1 environment variable to prevent the Leapp utility from incorrectly preserving the original RHEL 8 NIC names.
+Perform the in-place upgrade.
+Verify that your network is working correctly. If needed, manually update the network configuration.
+(BZ#1919382)
+The in-place upgrade might fail if there is not enough available disk space. The error messages and logs might contain misleading or invalid information about the problem and resolution. To resolve this issue, see the leapp fails with "There is not enough space on the file system hosting /var/lib/leapp directory to extract the packages" Knowledgebase solution. (BZ#1832730, BZ#2210300)
+If your system boots by using BIOS, the in-place upgrade fails when upgrading the GRUB2 bootloader if the boot disk’s embedding area does not contain enough space for the core image installation. This results in a broken system, and can occur when the disk has been partitioned manually, for example using the RHEL 6 fdisk utility. To verify whether this issue affects you, perform the following steps:
+Determine which sector starts the first partition on the disk with the installed bootloader:
+# fdisk -l
+The standard partitioning, which ensures enough space for the core image, starts on sector 2048.
+Determine whether the starting sector provides enough space. The RHEL 9.0 core image requires at least 36 KiB. For example, if the sector size is the standard 512 bytes, then starting on sector 73 or lower would not provide enough space.
+If the embedding area does not contain enough storage space, perform a fresh installation of the RHEL 9 system instead of performing an in-place upgrade.
+(BZ#2181380)
+After the in-place upgrade, SSH keys are no longer auto-generated if the system meets the following conditions:
+The system is on a cloud.
+The cloud-init package is installed.
+The ssh_genkeytypes configuration is set to ~ in the /etc/cloud/cloud.cfg file, which is the default.
+This issue prevents the system from connecting by using SSH if the original keys have been removed. To prevent this issue, see the Unable to SSH to new Virtual Machine after upgrading the template to RHEL 8.7 or 9 Knowledgebase solution. (BZ#2210012)
+If too many file systems are mounted, the pre-upgrade process might fail with the following error message:
+OperationalError: unable to open database file
+If this issue occurs, complete the following steps:
+Unmount any file systems that are not related to the system partitions and are not needed during the upgrade process.
+Comment out the unmounted file systems’ entries in the /etc/fstab file to prevent them from being mounted during the upgrade process.
+Restore the original file system configuration after the upgrade.
+(RHEL-3320)
+In-place upgrades using Red Hat Update Infrastructure (RHUI) on Amazon Web Services (AWS) with the ARM architecture are currently experiencing issues. Use the Red Hat Subscription Manager (RHSM) instead. (RHEL-38909)
+In-place upgrades on Microsoft Azure by using RHUI virtual machines might fail. To prevent this issue, verify that you have installed the leapp-rhui-azure-1.0.0-10.el8.noarch package version before upgrading.
+By default, the logrotate is not active after the upgrade. The logrotate was previously managed by cron in RHEL 8 and earlier. In RHEL 9, it is managed by systemd. To activate logrotate persistently, run the following command after the upgrade:
+# systemctl enable --now logrotate.timer
+If you use an HTTP proxy, Red Hat Subscription Manager must be configured to use such a proxy, or the subscription-manager command must be executed with the --proxy <hostname> option. Otherwise, an execution of the subscription-manager command fails. If you use the --proxy option instead of the configuration change, the upgrade process fails because Leapp is unable to detect the proxy. To prevent this problem from occurring, manually edit the rhsm.conf file as described in How to configure HTTP Proxy for Red Hat Subscription Management. (BZ#1689294)
+For systems that require a proxy to access RHEL 9 content, you usually need to configure the use of the proxy by DNF in the /etc/dnf/dnf.conf configuration file. If the current DNF configuration is not compatible with the DNF version on the target system, specify the valid target configuration in the /etc/leapp/files/dnf.conf configuration file. For more more information, see How does Leapp work with a proxy?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.5. Obtaining support
+To open a support case, select RHEL 8 as the product, and provide a sosreport from your system.
+To generate a sosreport on your system, run:
+# sosreport
+Note that you can leave the case ID empty.
+For details on generating a sosreport, see the solution What is an sosreport and how to create one in Red Hat Enterprise Linux?.
+For more information about opening and managing a support case on the Customer Portal, see the article How do I open and manage a support case on the Customer Portal?.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 10. Related information
+You can refer to the following instructional materials:
+Upgrade your Red Hat Enterprise Linux Infrastructure
+Red Hat Enterprise Linux technology capabilities and limits
+Supported in-place upgrade paths for Red Hat Enterprise Linux
+In-place upgrade Support Policy
+Considerations in adopting RHEL 9
+Customizing your Red Hat Enterprise Linux in-place upgrade
+Automating your Red Hat Enterprise Linux pre-upgrade report workflow
+Using configuration management systems to automate parts of the Leapp pre-upgrade and upgrade process on Red Hat Enterprise Linux
+Upgrading from RHEL 7 to RHEL 8
+Converting from a Linux distribution to RHEL using the Convert2RHEL utility
+Upgrading SAP environments from RHEL 8 to RHEL 9
+Red Hat Insights Documentation
+Upgrades-related Knowledgebase articles and solutions (Red Hat Knowledgebase)
+The best practices and recommendations for performing RHEL Upgrade using Leapp
+Leapp upgrade FAQ (Frequently Asked Questions)
+Appendix A. RHEL 8 repositories
+Before the upgrade, ensure you have appropriate repositories enabled as described in step 4 of the procedure in Preparing a RHEL 8 system for the upgrade.
+If you plan to use Red Hat Subscription Manager during the upgrade, you must enable the following repositories before the upgrade by using the subscription-manager repos --enable repository_id command:
+You can enable the following repositories before the upgrade by using the subscription-manager repos --enable repository_id command:
+If you decide to use custom repositories, enable them per instructions in Configuring custom repositories.
+Appendix B. RHEL 9 repositories
+If your system is registered to the Red Hat Content Delivery Network (CDN) using the Red Hat Subscription Manager (RHSM), RHEL 9 repositories are automatically enabled during the in-place upgrade. However, on systems registered to Red Hat Satellite using RHSM, you must manually enable and synchronize both RHEL 8 and RHEL 9 repositories before running the pre-upgrade report.
+If you plan to use Red Hat Satellite during the upgrade, you must enable and synchronize at least the following RHEL 9 repositories before the upgrade using either the Satellite web UI or the hammer repository-set enable and hammer product synchronize commands:
+Replace <target_os_version> with the target OS version, for example 9.4.

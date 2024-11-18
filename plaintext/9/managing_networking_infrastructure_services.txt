@@ -1,0 +1,1078 @@
+Abstract
+This document describes how to set up and manage networking core infrastructure services, such as DNS and DHCP, on Red Hat Enterprise Linux 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 1. Setting up and configuring a BIND DNS server
+BIND is a feature-rich DNS server that is fully compliant with the Internet Engineering Task Force (IETF) DNS standards and draft standards. For example, administrators frequently use BIND as:
+Caching DNS server in the local network
+Authoritative DNS server for zones
+Secondary server to provide high availability for zones
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.1. Considerations about protecting BIND with SELinux or running it in a change-root environment
+To secure a BIND installation, you can:
+Run the named service without a change-root environment. In this case, SELinux in enforcing mode prevents exploitation of known BIND security vulnerabilities. By default, Red Hat Enterprise Linux uses SELinux in enforcing mode.
+Run the named-chroot service in a change-root environment.
+Using the change-root feature, administrators can define that the root directory of a process and its sub-processes is different to the / directory. When you start the named-chroot service, BIND switches its root directory to /var/named/chroot/. As a consequence, the service uses mount --bind commands to make the files and directories listed in /etc/named-chroot.files available in /var/named/chroot/, and the process has no access to files outside of /var/named/chroot/.
+If you decide to use BIND:
+In normal mode, use the named service.
+In a change-root environment, use the named-chroot service. This requires that you install, additionally, the named-chroot package.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.2. Configuring BIND as a caching DNS server
+By default, the BIND DNS server resolves and caches successful and failed lookups. The service then answers requests to the same records from its cache. This significantly improves the speed of DNS lookups.
+Prerequisites
+The IP address of the server is static.
+Procedure
+Install the bind and bind-utils packages:
+# dnf install bind bind-utils
+If you want to run BIND in a change-root environment install the bind-chroot package:
+# dnf install bind-chroot
+Note that running BIND on a host with SELinux in enforcing mode, which is default, is more secure.
+Edit the /etc/named.conf file, and make the following changes in the options statement:
+Update the listen-on and listen-on-v6 statements to specify on which IPv4 and IPv6 interfaces BIND should listen:
+listen-on port 53 { 127.0.0.1; 192.0.2.1; };
+listen-on-v6 port 53 { ::1; 2001:db8:1::1; };
+Update the allow-query statement to configure from which IP addresses and ranges clients can query this DNS server:
+allow-query { localhost; 192.0.2.0/24; 2001:db8:1::/64; };
+Add an allow-recursion statement to define from which IP addresses and ranges BIND accepts recursive queries:
+allow-recursion { localhost; 192.0.2.0/24; 2001:db8:1::/64; };
+By default, BIND resolves queries by recursively querying from the root servers to an authoritative DNS server. Alternatively, you can configure BIND to forward queries to other DNS servers, such as the ones of your provider. In this case, add a forwarders statement with the list of IP addresses of the DNS servers that BIND should forward queries to:
+forwarders { 198.51.100.1; 203.0.113.5; };
+As a fall-back behavior, BIND resolves queries recursively if the forwarder servers do not respond. To disable this behavior, add a forward only; statement.
+Verify the syntax of the /etc/named.conf file:
+# named-checkconf
+If the command displays no output, the syntax is correct.
+Update the firewalld rules to allow incoming DNS traffic:
+# firewall-cmd --permanent --add-service=dns
+# firewall-cmd --reload
+Start and enable BIND:
+# systemctl enable --now named
+If you want to run BIND in a change-root environment, use the systemctl enable --now named-chroot command to enable and start the service.
+Verification
+Use the newly set up DNS server to resolve a domain:
+# dig @localhost www.example.org
+...
+www.example.org.    86400    IN    A    198.51.100.34
+
+;; Query time: 917 msec
+...
+This example assumes that BIND runs on the same host and responds to queries on the localhost interface.
+After querying a record for the first time, BIND adds the entry to its cache.
+Repeat the previous query:
+# dig @localhost www.example.org
+...
+www.example.org.    85332    IN    A    198.51.100.34
+
+;; Query time: 1 msec
+...
+Because of the cached entry, further requests for the same record are significantly faster until the entry expires.
+Next steps
+Configure the clients in your network to use this DNS server. If a DHCP server provides the DNS server setting to the clients, update the DHCP server’s configuration accordingly.
+Additional resources
+Considerations about protecting BIND with SELinux or running it in a change-root environment
+named.conf(5) man page
+/usr/share/doc/bind/sample/etc/named.conf
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.3. Configuring logging on a BIND DNS server
+The configuration in the default /etc/named.conf file, as provided by the bind package, uses the default_debug channel and logs messages to the /var/named/data/named.run file. The default_debug channel only logs entries when the server’s debug level is non-zero.
+Using different channels and categories, you can configure BIND to write different events with a defined severity to separate files.
+Prerequisites
+BIND is already configured, for example, as a caching name server.
+The named or named-chroot service is running.
+Procedure
+Edit the /etc/named.conf file, and add category and channel phrases to the logging statement, for example:
+logging {
+    ...
+
+    category notify { zone_transfer_log; };
+    category xfer-in { zone_transfer_log; };
+    category xfer-out { zone_transfer_log; };
+    channel zone_transfer_log {
+        file "/var/named/log/transfer.log" versions 10 size 50m;
+        print-time yes;
+        print-category yes;
+        print-severity yes;
+        severity info;
+     };
+
+     ...
+};
+With this example configuration, BIND logs messages related to zone transfers to /var/named/log/transfer.log. BIND creates up to 10 versions of the log file and rotates them if they reach a maximum size of 50 MB.
+The category phrase defines to which channels BIND sends messages of a category.
+The channel phrase defines the destination of log messages including the number of versions, the maximum file size, and the severity level BIND should log to a channel. Additional settings, such as enabling logging the time stamp, category, and severity of an event are optional, but useful for debugging purposes.
+Create the log directory if it does not exist, and grant write permissions to the named user on this directory:
+# mkdir /var/named/log/
+# chown named:named /var/named/log/
+# chmod 700 /var/named/log/
+Verify the syntax of the /etc/named.conf file:
+# named-checkconf
+If the command displays no output, the syntax is correct.
+Restart BIND:
+# systemctl restart named
+If you run BIND in a change-root environment, use the systemctl restart named-chroot command to restart the service.
+Verification
+Display the content of the log file:
+# cat /var/named/log/transfer.log
+...
+06-Jul-2022 15:08:51.261 xfer-out: info: client @0x7fecbc0b0700 192.0.2.2#36121/key example-transfer-key (example.com): transfer of 'example.com/IN': AXFR started: TSIG example-transfer-key (serial 2022070603)
+06-Jul-2022 15:08:51.261 xfer-out: info: client @0x7fecbc0b0700 192.0.2.2#36121/key example-transfer-key (example.com): transfer of 'example.com/IN': AXFR ended
+Additional resources
+named.conf(5) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.4. Writing BIND ACLs
+Controlling access to certain features of BIND can prevent unauthorized access and attacks, such as denial of service (DoS). BIND access control list (acl) statements are lists of IP addresses and ranges. Each ACL has a nickname that you can use in several statements, such as allow-query, to refer to the specified IP addresses and ranges.
+BIND has the following built-in ACLs:
+none: Matches no hosts.
+any: Matches all hosts.
+localhost: Matches the loopback addresses 127.0.0.1 and ::1, as well as the IP addresses of all interfaces on the server that runs BIND.
+localnets: Matches the loopback addresses 127.0.0.1 and ::1, as well as all subnets the server that runs BIND is directly connected to.
+Prerequisites
+BIND is already configured, for example, as a caching name server.
+The named or named-chroot service is running.
+Procedure
+Edit the /etc/named.conf file and make the following changes:
+Add acl statements to the file. For example, to create an ACL named internal-networks for 127.0.0.1, 192.0.2.0/24, and 2001:db8:1::/64, enter:
+acl internal-networks { 127.0.0.1; 192.0.2.0/24; 2001:db8:1::/64; };
+acl dmz-networks { 198.51.100.0/24; 2001:db8:2::/64; };
+Use the ACL’s nickname in statements that support them, for example:
+allow-query { internal-networks; dmz-networks; };
+allow-recursion { internal-networks; };
+Verify the syntax of the /etc/named.conf file:
+# named-checkconf
+If the command displays no output, the syntax is correct.
+Reload BIND:
+# systemctl reload named
+If you run BIND in a change-root environment, use the systemctl reload named-chroot command to reload the service.
+Verification
+Execute an action that triggers a feature which uses the configured ACL. For example, the ACL in this procedure allows only recursive queries from the defined IP addresses. In this case, enter the following command on a host that is not within the ACL’s definition to attempt resolving an external domain:
+# dig +short @192.0.2.1 www.example.com
+If the command returns no output, BIND denied access, and the ACL works. For a verbose output on the client, use the command without +short option:
+# dig @192.0.2.1 www.example.com
+...
+;; WARNING: recursion requested but not available
+...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.5. Configuring zones on a BIND DNS server
+A DNS zone is a database with resource records for a specific sub-tree in the domain space. For example, if you are responsible for the example.com domain, you can set up a zone for it in BIND. As a result, clients can, resolve www.example.com to the IP address configured in this zone.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.5.1. The SOA record in zone files
+The start of authority (SOA) record is a required record in a DNS zone. This record is important, for example, if multiple DNS servers are authoritative for a zone but also to DNS resolvers.
+A SOA record in BIND has the following syntax:
+name class type mname rname serial refresh retry expire minimum
+For better readability, administrators typically split the record in zone files into multiple lines with comments that start with a semicolon (;). Note that, if you split a SOA record, parentheses keep the record together:
+@ IN SOA ns1.example.com. hostmaster.example.com. (
+                          2022070601 ; serial number
+                          1d         ; refresh period
+                          3h         ; retry period
+                          3d         ; expire time
+                          3h )       ; minimum TTL
+These are the fields in a SOA record:
+name: The name of the zone, the so-called origin. If you set this field to @, BIND expands it to the zone name defined in /etc/named.conf.
+class: In SOA records, you must set this field always to Internet (IN).
+type: In SOA records, you must set this field always to SOA.
+mname (master name): The hostname of the primary name server of this zone.
+rname (responsible name): The email address of who is responsible for this zone. Note that the format is different. You must replace the at sign (@) with a dot (.).
+serial: The version number of this zone file. Secondary name servers only update their copies of the zone if the serial number on the primary server is higher.
+The format can be any numeric value. A commonly-used format is <year><month><day><two-digit-number>. With this format, you can, theoretically, change the zone file up to a hundred times per day.
+refresh: The amount of time secondary servers should wait before checking the primary server if the zone was updated.
+retry: The amount of time after that a secondary server retries to query the primary server after a failed attempt.
+expire: The amount of time after that a secondary server stops querying the primary server, if all previous attempts failed.
+minimum: RFC 2308 changed the meaning of this field to the negative caching time. Compliant resolvers use it to determine how long to cache NXDOMAIN name errors.
+Additional resources
+RFC 1035: Domain names - implementation and specification
+RFC 1034: Domain names - concepts and facilities
+RFC 2308: Negative caching of DNS queries (DNS cache)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.5.2. Setting up a forward zone on a BIND primary server
+Forward zones map names to IP addresses and other information. For example, if you are responsible for the domain example.com, you can set up a forward zone in BIND to resolve names, such as www.example.com.
+Prerequisites
+BIND is already configured, for example, as a caching name server.
+The named or named-chroot service is running.
+Procedure
+Add a zone definition to the /etc/named.conf file:
+zone "example.com" {
+    type master;
+    file "example.com.zone";
+    allow-query { any; };
+    allow-transfer { none; };
+};
+These settings define:
+This server as the primary server (type master) for the example.com zone.
+The /var/named/example.com.zone file is the zone file. If you set a relative path, as in this example, this path is relative to the directory you set in directory in the options statement.
+Any host can query this zone. Alternatively, specify IP ranges or BIND access control list (ACL) nicknames to limit the access.
+No host can transfer the zone. Allow zone transfers only when you set up secondary servers and only for the IP addresses of the secondary servers.
+Verify the syntax of the /etc/named.conf file:
+# named-checkconf
+If the command displays no output, the syntax is correct.
+Create the /var/named/example.com.zone file, for example, with the following content:
+$TTL 8h
+@ IN SOA ns1.example.com. hostmaster.example.com. (
+                          2022070601 ; serial number
+                          1d         ; refresh period
+                          3h         ; retry period
+                          3d         ; expire time
+                          3h )       ; minimum TTL
+
+                  IN NS   ns1.example.com.
+                  IN MX   10 mail.example.com.
+
+www               IN A    192.0.2.30
+www               IN AAAA 2001:db8:1::30
+ns1               IN A    192.0.2.1
+ns1               IN AAAA 2001:db8:1::1
+mail              IN A    192.0.2.20
+mail              IN AAAA 2001:db8:1::20
+This zone file:
+Sets the default time-to-live (TTL) value for resource records to 8 hours. Without a time suffix, such as h for hour, BIND interprets the value as seconds.
+Contains the required SOA resource record with details about the zone.
+Sets ns1.example.com as an authoritative DNS server for this zone. To be functional, a zone requires at least one name server (NS) record. However, to be compliant with RFC 1912, you require at least two name servers.
+Sets mail.example.com as the mail exchanger (MX) of the example.com domain. The numeric value in front of the host name is the priority of the record. Entries with a lower value have a higher priority.
+Sets the IPv4 and IPv6 addresses of www.example.com, mail.example.com, and ns1.example.com.
+Set secure permissions on the zone file that allow only the named group to read it:
+# chown root:named /var/named/example.com.zone
+# chmod 640 /var/named/example.com.zone
+Verify the syntax of the /var/named/example.com.zone file:
+# named-checkzone example.com /var/named/example.com.zone
+zone example.com/IN: loaded serial 2022070601
+OK
+Reload BIND:
+# systemctl reload named
+If you run BIND in a change-root environment, use the systemctl reload named-chroot command to reload the service.
+Verification
+Query different records from the example.com zone, and verify that the output matches the records you have configured in the zone file:
+# dig +short @localhost AAAA www.example.com
+2001:db8:1::30
+
+# dig +short @localhost NS example.com
+ns1.example.com.
+
+# dig +short @localhost A ns1.example.com
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+192.0.2.1
+This example assumes that BIND runs on the same host and responds to queries on the localhost interface.
+Additional resources
+The SOA record in zone files
+Writing BIND ACLs
+RFC 1912 - Common DNS operational and configuration errors
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.5.3. Setting up a reverse zone on a BIND primary server
+Reverse zones map IP addresses to names. For example, if you are responsible for IP range 192.0.2.0/24, you can set up a reverse zone in BIND to resolve IP addresses from this range to hostnames.
+Prerequisites
+BIND is already configured, for example, as a caching name server.
+The named or named-chroot service is running.
+Procedure
+Add a zone definition to the /etc/named.conf file:
+zone "2.0.192.in-addr.arpa" {
+    type master;
+    file "2.0.192.in-addr.arpa.zone";
+    allow-query { any; };
+    allow-transfer { none; };
+};
+These settings define:
+This server as the primary server (type master) for the 2.0.192.in-addr.arpa reverse zone.
+The /var/named/2.0.192.in-addr.arpa.zone file is the zone file. If you set a relative path, as in this example, this path is relative to the directory you set in directory in the options statement.
+Any host can query this zone. Alternatively, specify IP ranges or BIND access control list (ACL) nicknames to limit the access.
+No host can transfer the zone. Allow zone transfers only when you set up secondary servers and only for the IP addresses of the secondary servers.
+Verify the syntax of the /etc/named.conf file:
+# named-checkconf
+If the command displays no output, the syntax is correct.
+Create the /var/named/2.0.192.in-addr.arpa.zone file, for example, with the following content:
+$TTL 8h
+@ IN SOA ns1.example.com. hostmaster.example.com. (
+                          2022070601 ; serial number
+                          1d         ; refresh period
+                          3h         ; retry period
+                          3d         ; expire time
+                          3h )       ; minimum TTL
+
+                  IN NS   ns1.example.com.
+
+1                 IN PTR  ns1.example.com.
+30                IN PTR  www.example.com.
+This zone file:
+Sets the default time-to-live (TTL) value for resource records to 8 hours. Without a time suffix, such as h for hour, BIND interprets the value as seconds.
+Contains the required SOA resource record with details about the zone.
+Sets ns1.example.com as an authoritative DNS server for this reverse zone. To be functional, a zone requires at least one name server (NS) record. However, to be compliant with RFC 1912, you require at least two name servers.
+Sets the pointer (PTR) record for the 192.0.2.1 and 192.0.2.30 addresses.
+Set secure permissions on the zone file that only allow the named group to read it:
+# chown root:named /var/named/2.0.192.in-addr.arpa.zone
+# chmod 640 /var/named/2.0.192.in-addr.arpa.zone
+Verify the syntax of the /var/named/2.0.192.in-addr.arpa.zone file:
+# named-checkzone 2.0.192.in-addr.arpa /var/named/2.0.192.in-addr.arpa.zone
+zone 2.0.192.in-addr.arpa/IN: loaded serial 2022070601
+OK
+Reload BIND:
+# systemctl reload named
+If you run BIND in a change-root environment, use the systemctl reload named-chroot command to reload the service.
+Verification
+Query different records from the reverse zone, and verify that the output matches the records you have configured in the zone file:
+# dig +short @localhost -x 192.0.2.1
+ns1.example.com.
+
+# dig +short @localhost -x 192.0.2.30
+www.example.com.
+This example assumes that BIND runs on the same host and responds to queries on the localhost interface.
+Additional resources
+The SOA record in zone files
+Writing BIND ACLs
+RFC 1912 - Common DNS operational and configuration errors
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.5.4. Updating a BIND zone file
+In certain situations, for example if an IP address of a server changes, you must update a zone file. If multiple DNS servers are responsible for a zone, perform this procedure only on the primary server. Other DNS servers that store a copy of the zone will receive the update through a zone transfer.
+Prerequisites
+The zone is configured.
+The named or named-chroot service is running.
+Procedure
+Optional: Identify the path to the zone file in the /etc/named.conf file:
+options {
+    ...
+    directory       "/var/named";
+}
+
+zone "example.com" {
+    ...
+    file "example.com.zone";
+};
+You find the path to the zone file in the file statement in the zone’s definition. A relative path is relative to the directory set in directory in the options statement.
+Edit the zone file:
+Make the required changes.
+Increment the serial number in the start of authority (SOA) record.
+Verify the syntax of the zone file:
+# named-checkzone example.com /var/named/example.com.zone
+zone example.com/IN: loaded serial 2022062802
+OK
+Reload BIND:
+# systemctl reload named
+If you run BIND in a change-root environment, use the systemctl reload named-chroot command to reload the service.
+Verification
+Query the record you have added, modified, or removed, for example:
+# dig +short @localhost A ns2.example.com
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+192.0.2.2
+This example assumes that BIND runs on the same host and responds to queries on the localhost interface.
+Additional resources
+The SOA record in zone files
+Setting up a forward zone on a BIND primary server
+Setting up a reverse zone on a BIND primary server
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.5.5. DNSSEC zone signing using the automated key generation and zone maintenance features
+You can sign zones with domain name system security extensions (DNSSEC) to ensure authentication and data integrity. Such zones contain additional resource records. Clients can use them to verify the authenticity of the zone information.
+If you enable the DNSSEC policy feature for a zone, BIND performs the following actions automatically:
+Creates the keys
+Signs the zone
+Maintains the zone, including re-signing and periodically replacing the keys.
+This procedure uses the built-in default DNSSEC policy in BIND. This policy uses single ECDSAP256SHA key signatures. Alternatively, create your own policy to use custom keys, algorithms, and timings.
+Prerequisites
+The zone for which you want to enable DNSSEC is configured.
+The named or named-chroot service is running.
+The server synchronizes the time with a time server. An accurate system time is important for DNSSEC validation.
+Procedure
+Edit the /etc/named.conf file, and add dnssec-policy default; to the zone for which you want to enable DNSSEC:
+zone "example.com" {
+    ...
+    dnssec-policy default;
+};
+Reload BIND:
+# systemctl reload named
+If you run BIND in a change-root environment, use the systemctl reload named-chroot command to reload the service.
+BIND stores the public key in the /var/named/K<zone_name>.+<algorithm>+<key_ID>.key file. Use this file to display the public key of the zone in the format that the parent zone requires:
+DS record format:
+# dnssec-dsfromkey /var/named/Kexample.com.+013+61141.key
+example.com. IN DS 61141 13 2 3E184188CF6D2521EDFDC3F07CFEE8D0195AACBD85E68BAE0620F638B4B1B027
+DNSKEY format:
+# grep DNSKEY /var/named/Kexample.com.+013+61141.key
+example.com. 3600 IN DNSKEY 257 3 13 sjzT3jNEp120aSO4mPEHHSkReHUf7AABNnT8hNRTzD5cKMQSjDJin2I3 5CaKVcWO1pm+HltxUEt+X9dfp8OZkg==
+Request to add the public key of the zone to the parent zone. Contact your domain provider or registry for further details on how to accomplish this.
+Verification
+Query your own DNS server for a record from the zone for which you enabled DNSSEC signing:
+# dig +dnssec +short @localhost A www.example.com
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+192.0.2.30
+A 13 3 28800 20220718081258 20220705120353 61141 example.com. e7Cfh6GuOBMAWsgsHSVTPh+JJSOI/Y6zctzIuqIU1JqEgOOAfL/Qz474 M0sgi54m1Kmnr2ANBKJN9uvOs5eXYw==
+This example assumes that BIND runs on the same host and responds to queries on the localhost interface.
+After the public key has been added to the parent zone and propagated to other servers, verify that the server sets the authenticated data (ad) flag on queries to the signed zone:
+#  dig @localhost example.com +dnssec
+...
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+...
+Additional resources
+Setting up a forward zone on a BIND primary server
+Setting up a reverse zone on a BIND primary server
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.6. Configuring zone transfers among BIND DNS servers
+Zone transfers ensure that all DNS servers that have a copy of the zone use up-to-date data.
+Prerequisites
+On the future primary server, the zone for which you want to set up zone transfers is already configured.
+On the future secondary server, BIND is already configured, for example, as a caching name server.
+On both servers, the named or named-chroot service is running.
+Procedure
+On the existing primary server:
+Create a shared key, and append it to the /etc/named.conf file:
+# tsig-keygen example-transfer-key | tee -a /etc/named.conf
+key "example-transfer-key" {
+        algorithm hmac-sha256;
+        secret "q7ANbnyliDMuvWgnKOxMLi313JGcTZB5ydMW5CyUGXQ=";
+};
+This command displays the output of the tsig-keygen command and automatically appends it to /etc/named.conf.
+You will require the output of the command later on the secondary server as well.
+Edit the zone definition in the /etc/named.conf file:
+In the allow-transfer statement, define that servers must provide the key specified in the example-transfer-key statement to transfer a zone:
+zone "example.com" {
+    ...
+    allow-transfer { key example-transfer-key; };
+};
+Alternatively, use BIND access control list (ACL) nicknames in the allow-transfer statement.
+By default, after a zone has been updated, BIND notifies all name servers which have a name server (NS) record in this zone. If you do not plan to add an NS record for the secondary server to the zone, you can, configure that BIND notifies this server anyway. For that, add the also-notify statement with the IP addresses of this secondary server to the zone:
+zone "example.com" {
+    ...
+    also-notify { 192.0.2.2; 2001:db8:1::2; };
+};
+Verify the syntax of the /etc/named.conf file:
+# named-checkconf
+If the command displays no output, the syntax is correct.
+Reload BIND:
+# systemctl reload named
+If you run BIND in a change-root environment, use the systemctl reload named-chroot command to reload the service.
+On the future secondary server:
+Edit the /etc/named.conf file as follows:
+Add the same key definition as on the primary server:
+key "example-transfer-key" {
+        algorithm hmac-sha256;
+        secret "q7ANbnyliDMuvWgnKOxMLi313JGcTZB5ydMW5CyUGXQ=";
+};
+Add the zone definition to the /etc/named.conf file:
+zone "example.com" {
+    type slave;
+    file "slaves/example.com.zone";
+    allow-query { any; };
+    allow-transfer { none; };
+    masters {
+      192.0.2.1 key example-transfer-key;
+      2001:db8:1::1 key example-transfer-key;
+    };
+};
+These settings state:
+This server is a secondary server (type slave) for the example.com zone.
+The /var/named/slaves/example.com.zone file is the zone file. If you set a relative path, as in this example, this path is relative to the directory you set in directory in the options statement. To separate zone files for which this server is secondary from primary ones, you can store them, for example, in the /var/named/slaves/ directory.
+Any host can query this zone. Alternatively, specify IP ranges or ACL nicknames to limit the access.
+No host can transfer the zone from this server.
+The IP addresses of the primary server of this zone are 192.0.2.1 and 2001:db8:1::2. Alternatively, you can specify ACL nicknames. This secondary server will use the key named example-transfer-key to authenticate to the primary server.
+Verify the syntax of the /etc/named.conf file:
+# named-checkconf
+Reload BIND:
+# systemctl reload named
+If you run BIND in a change-root environment, use the systemctl reload named-chroot command to reload the service.
+Optional: Modify the zone file on the primary server and add an NS record for the new secondary server.
+Verification
+On the secondary server:
+Display the systemd journal entries of the named service:
+# journalctl -u named
+...
+Jul 06 15:08:51 ns2.example.com named[2024]: zone example.com/IN: Transfer started.
+Jul 06 15:08:51 ns2.example.com named[2024]: transfer of 'example.com/IN' from 192.0.2.1#53: connected using 192.0.2.2#45803
+Jul 06 15:08:51 ns2.example.com named[2024]: zone example.com/IN: transferred serial 2022070101
+Jul 06 15:08:51 ns2.example.com named[2024]: transfer of 'example.com/IN' from 192.0.2.1#53: Transfer status: success
+Jul 06 15:08:51 ns2.example.com named[2024]: transfer of 'example.com/IN' from 192.0.2.1#53: Transfer completed: 1 messages, 29 records, 2002 bytes, 0.003 secs (667333 bytes/sec)
+If you run BIND in a change-root environment, use the journalctl -u named-chroot command to display the journal entries.
+Verify that BIND created the zone file:
+# ls -l /var/named/slaves/
+total 4
+-rw-r--r--. 1 named named 2736 Jul  6 15:08 example.com.zone
+Note that, by default, secondary servers store zone files in a binary raw format.
+Query a record of the transferred zone from the secondary server:
+# dig +short @192.0.2.2 AAAA www.example.com
+2001:db8:1::30
+This example assumes that the secondary server you set up in this procedure listens on IP address 192.0.2.2.
+Additional resources
+Setting up a forward zone on a BIND primary server
+Setting up a reverse zone on a BIND primary server
+Writing BIND ACLs
+Updating a BIND zone file
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.7. Configuring response policy zones in BIND to override DNS records
+Using DNS blocking and filtering, administrators can rewrite a DNS response to block access to certain domains or hosts. In BIND, response policy zones (RPZs) provide this feature. You can configure different actions for blocked entries, such as returning an NXDOMAIN error or not responding to the query.
+If you have multiple DNS servers in your environment, use this procedure to configure the RPZ on the primary server, and later configure zone transfers to make the RPZ available on your secondary servers.
+Prerequisites
+BIND is already configured, for example, as a caching name server.
+The named or named-chroot service is running.
+Procedure
+Edit the /etc/named.conf file, and make the following changes:
+Add a response-policy definition to the options statement:
+options {
+    ...
+
+    response-policy {
+        zone "rpz.local";
+    };
+
+    ...
+}
+You can set a custom name for the RPZ in the zone statement in response-policy. However, you must use the same name in the zone definition in the next step.
+Add a zone definition for the RPZ you set in the previous step:
+zone "rpz.local" {
+    type master;
+    file "rpz.local";
+    allow-query { localhost; 192.0.2.0/24; 2001:db8:1::/64; };
+    allow-transfer { none; };
+};
+These settings state:
+This server is the primary server (type master) for the RPZ named rpz.local.
+The /var/named/rpz.local file is the zone file. If you set a relative path, as in this example, this path is relative to the directory you set in directory in the options statement.
+Any hosts defined in allow-query can query this RPZ. Alternatively, specify IP ranges or BIND access control list (ACL) nicknames to limit the access.
+No host can transfer the zone. Allow zone transfers only when you set up secondary servers and only for the IP addresses of the secondary servers.
+Verify the syntax of the /etc/named.conf file:
+# named-checkconf
+If the command displays no output, the syntax is correct.
+Create the /var/named/rpz.local file, for example, with the following content:
+$TTL 10m
+@ IN SOA ns1.example.com. hostmaster.example.com. (
+                          2022070601 ; serial number
+                          1h         ; refresh period
+                          1m         ; retry period
+                          3d         ; expire time
+                          1m )       ; minimum TTL
+
+                 IN NS    ns1.example.com.
+
+example.org      IN CNAME .
+*.example.org    IN CNAME .
+example.net      IN CNAME rpz-drop.
+*.example.net    IN CNAME rpz-drop.
+This zone file:
+Sets the default time-to-live (TTL) value for resource records to 10 minutes. Without a time suffix, such as h for hour, BIND interprets the value as seconds.
+Contains the required start of authority (SOA) resource record with details about the zone.
+Sets ns1.example.com as an authoritative DNS server for this zone. To be functional, a zone requires at least one name server (NS) record. However, to be compliant with RFC 1912, you require at least two name servers.
+Return an NXDOMAIN error for queries to example.org and hosts in this domain.
+Drop queries to example.net and hosts in this domain.
+For a full list of actions and examples, see IETF draft: DNS Response Policy Zones (RPZ).
+Verify the syntax of the /var/named/rpz.local file:
+# named-checkzone rpz.local /var/named/rpz.local
+zone rpz.local/IN: loaded serial 2022070601
+OK
+Reload BIND:
+# systemctl reload named
+If you run BIND in a change-root environment, use the systemctl reload named-chroot command to reload the service.
+Verification
+Attempt to resolve a host in example.org, that is configured in the RPZ to return an NXDOMAIN error:
+# dig @localhost www.example.org
+...
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 30286
+...
+This example assumes that BIND runs on the same host and responds to queries on the localhost interface.
+Attempt to resolve a host in the example.net domain, that is configured in the RPZ to drop queries:
+# dig @localhost www.example.net
+...
+;; connection timed out; no servers could be reached
+...
+Additional resources
+IETF draft: DNS Response Policy Zones (RPZ)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.8. Recording DNS queries by using dnstap
+As a network administrator, you can record Domain Name System (DNS) details to analyze DNS traffic patterns, monitor DNS server performance, and troubleshoot DNS issues. If you want an advanced way to monitor and log details of incoming name queries, use the dnstap interface that records sent messages from the named service. You can capture and record DNS queries to collect information about websites or IP addresses.
+Prerequisites
+The bind-9.16.15-3 package or a later version is installed.
+Procedure
+Enable dnstap and the target file by editing the /etc/named.conf file in the options block:
+options
+{
+# ...
+dnstap { all; }; # Configure filter
+dnstap-output file "/var/named/data/dnstap.bin"; versions 2;
+# ...
+};
+# end of options
+To specify which types of DNS traffic you want to log, add dnstap filters to the dnstap block in the /etc/named.conf file. You can use the following filters:
+auth - Authoritative zone response or answer.
+client - Internal client query or answer.
+forwarder - Forwarded query or response from it.
+resolver - Iterative resolution query or response.
+update - Dynamic zone update requests.
+all - Any from the above options.
+query or response - If you do not specify a query or a response keyword, dnstap records both.
+To customize the behavior of the dnstap utility on the recorded packets, modify the dnstap-output option by providing additional parameters, as follows:
+size (unlimited | <size>) - Enable automatic rolling over of the dnstap file when its size reaches the specified limit.
+versions (unlimited | <integer>) - Specify the number of automatically rolled files to keep.
+suffix (increment | timestamp ) - Choose the naming convention for rolled out files. By default, the increment starts with .0. Alternatively, you can use the UNIX timestamp by setting the timestamp value.
+The following example requests auth responses only, client queries, and both queries and responses of dynamic updates:
+Example:
+
+dnstap {auth response; client query; update;};
+To apply your changes, restart the named service:
+# systemctl restart named.service
+Configure a periodic rollout for active logs
+In the following example, the cron scheduler runs the content of the user-edited script once a day. The roll option with the value 3 specifies that dnstap can create up to three backup log files. The value 3 overrides the version parameter of the dnstap-output variable, and limits the number of backup log files to three. Additionally, the binary log file is moved to another directory and renamed, and it never reaches the .2 suffix, even if three backup log files already exist. You can skip this step if automatic rolling of binary logs based on size limit is sufficient.
+Example:
+
+sudoedit /etc/cron.daily/dnstap
+
+#!/bin/sh
+rndc dnstap -roll 3
+mv /var/named/data/dnstap.bin.1 /var/log/named/dnstap/dnstap-$(date -I).bin
+
+# use dnstap-read to analyze saved logs
+sudo chmod a+x /etc/cron.daily/dnstap
+Handle and analyze logs in a human-readable format by using the dnstap-read utility:
+In the following example, the dnstap-read utility prints the output in the YAML file format.
+Example:
+
+dnstap-read -y [file-name]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 2. Setting up an unbound DNS server
+The unbound DNS server is a validating, recursive, and caching DNS resolver. Additionally, unbound focuses on security and has, for example, Domain Name System Security Extensions (DNSSEC) enabled by default.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.1. Configuring Unbound as a caching DNS server
+By default, the unbound DNS service resolves and caches successful and failed lookups. The service then answers requests to the same records from its cache.
+Procedure
+Install the unbound package:
+# dnf install unbound
+Edit the /etc/unbound/unbound.conf file, and make the following changes in the server clause:
+Add interface parameters to configure on which IP addresses the unbound service listens for queries, for example:
+interface: 127.0.0.1
+interface: 192.0.2.1
+interface: 2001:db8:1::1
+With these settings, unbound only listens on the specified IPv4 and IPv6 addresses.
+Limiting the interfaces to the required ones prevents clients from unauthorized networks, such as the internet, from sending queries to this DNS server.
+Add access-control parameters to configure from which subnets clients can query the DNS service, for example:
+access-control: 127.0.0.0/8 allow
+access-control: 192.0.2.0/24 allow
+access-control: 2001:db8:1::/64 allow
+Create private keys and certificates for remotely managing the unbound service:
+# systemctl restart unbound-keygen
+If you skip this step, verifying the configuration in the next step will report the missing files. However, the unbound service automatically creates the files if they are missing.
+Verify the configuration file:
+# unbound-checkconf
+unbound-checkconf: no errors in /etc/unbound/unbound.conf
+Update the firewalld rules to allow incoming DNS traffic:
+# firewall-cmd --permanent --add-service=dns
+# firewall-cmd --reload
+Enable and start the unbound service:
+# systemctl enable --now unbound
+Verification
+Query the unbound DNS server listening on the localhost interface to resolve a domain:
+# dig @localhost www.example.com
+...
+www.example.com.    86400    IN    A    198.51.100.34
+
+;; Query time: 330 msec
+...
+After querying a record for the first time, unbound adds the entry to its cache.
+Repeat the previous query:
+# dig @localhost www.example.com
+...
+www.example.com.    85332    IN    A    198.51.100.34
+
+;; Query time: 1 msec
+...
+Because of the cached entry, further requests for the same record are significantly faster until the entry expires.
+Next steps
+Configure clients in your network to use this DNS server. For example, use the nmcli utility to set the IP of the DNS server in a NetworkManager connection profile:
+# nmcli connection modify Example_Connection ipv4.dns 192.0.2.1
+# nmcli connection modify Example_Connection ipv6.dns 2001:db8:1::1
+Additional resources
+unbound.conf(5) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 3. Providing DHCP services
+The dynamic host configuration protocol (DHCP) is a network protocol that automatically assigns IP information to clients. You can set up the dhcpd service to provide a DHCP server and DHCP relay in your network.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.1. The difference between static and dynamic IP addressing
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.2. DHCP transaction phases
+The DHCP works in four phases: Discovery, Offer, Request, Acknowledgement, also called the DORA process. DHCP uses this process to provide IP addresses to clients.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.3. The differences when using dhcpd for DHCPv4 and DHCPv6
+The dhcpd service supports providing both DHCPv4 and DHCPv6 on one server. However, you need a separate instance of dhcpd with separate configuration files to provide DHCP for each protocol.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.4. The lease database of the dhcpd service
+A DHCP lease is the period for which the dhcpd service allocates a network address to a client. The dhcpd service stores the DHCP leases in the following databases:
+For DHCPv4: /var/lib/dhcpd/dhcpd.leases
+For DHCPv6: /var/lib/dhcpd/dhcpd6.leases
+The lease databases contain information about the allocated leases, such as the IP address assigned to a media access control (MAC) address or the time stamp when the lease expires. Note that all time stamps in the lease databases are in Coordinated Universal Time (UTC).
+The dhcpd service recreates the databases periodically:
+The service renames the existing files:
+/var/lib/dhcpd/dhcpd.leases to /var/lib/dhcpd/dhcpd.leases~
+/var/lib/dhcpd/dhcpd6.leases to /var/lib/dhcpd/dhcpd6.leases~
+The service writes all known leases to the newly created /var/lib/dhcpd/dhcpd.leases and /var/lib/dhcpd/dhcpd6.leases files.
+Additional resources
+dhcpd.leases(5) man page
+Restoring a corrupt lease database
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.5. Comparison of DHCPv6 to radvd
+In an IPv6 network, only router advertisement messages provide information about an IPv6 default gateway. As a consequence, if you want to use DHCPv6 in subnets that require a default gateway setting, you must additionally configure a router advertisement service, such as Router Advertisement Daemon (radvd).
+The radvd service uses flags in router advertisement packets to announce the availability of a DHCPv6 server.
+The following table compares features of DHCPv6 and radvd:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.6. Configuring the radvd service for IPv6 routers
+The router advertisement daemon (radvd) sends router advertisement messages that are required for IPv6 stateless autoconfiguration. This enables users to automatically configure their addresses, settings, routes, and to choose a default router based on these advertisements.
+Prerequisites
+You are logged in as the root user.
+Procedure
+Install the radvd package:
+# dnf install radvd
+Edit the /etc/radvd.conf file, and add the following configuration:
+interface enp1s0
+{
+  AdvSendAdvert on;
+  AdvManagedFlag on;
+  AdvOtherConfigFlag on;
+
+  prefix 2001:db8:0:1::/64 {
+  };
+};
+These settings configures radvd to send router advertisement messages on the enp1s0 device for the 2001:db8:0:1::/64 subnet. The AdvManagedFlag on setting defines that the client should receive the IP address from a DHCP server, and the AdvOtherConfigFlag parameter set to on defines that clients should receive non-address information from the DHCP server as well.
+Optionally, configure that radvd automatically starts when the system boots:
+# systemctl enable radvd
+Start the radvd service:
+# systemctl start radvd
+Optionally, display the content of router advertisement packages and the configured values radvd sends:
+# radvdump
+Additional resources
+radvd.conf(5) man page
+/usr/share/doc/radvd/radvd.conf.example file
+Can I use a prefix length other than 64 bits in IPv6 Router Advertisements?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.7. Setting network interfaces for the DHCP servers
+By default, the dhcpd service processes requests only on network interfaces that have an IP address in the subnet defined in the configuration file of the service.
+For example, in the following scenario, dhcpd listens only on the enp0s1 network interface:
+You have only a subnet definition for the 192.0.2.0/24 network in the /etc/dhcp/dhcpd.conf file.
+The enp0s1 network interface is connected to the 192.0.2.0/24 subnet.
+The enp7s0 interface is connected to a different subnet.
+Only follow this procedure if the DHCP server contains multiple network interfaces connected to the same network but the service should listen only on specific interfaces.
+Depending on whether you want to provide DHCP for IPv4, IPv6, or both protocols, see the procedure for:
+IPv4 networks
+IPv6 networks
+Prerequisites
+You are logged in as the root user.
+The dhcp-server package is installed.
+Procedure
+For IPv4 networks:
+Copy the /usr/lib/systemd/system/dhcpd.service file to the /etc/systemd/system/ directory:
+# cp /usr/lib/systemd/system/dhcpd.service /etc/systemd/system/
+Do not edit the /usr/lib/systemd/system/dhcpd.service file. Future updates of the dhcp-server package can override the changes.
+Edit the /etc/systemd/system/dhcpd.service file, and append the names of the interface, that dhcpd should listen on to the command in the ExecStart parameter:
+ExecStart=/usr/sbin/dhcpd -f -cf /etc/dhcp/dhcpd.conf -user dhcpd -group dhcpd --no-pid $DHCPDARGS enp0s1 enp7s0
+This example configures that dhcpd listens only on the enp0s1 and enp7s0 interfaces.
+Reload the systemd manager configuration:
+# systemctl daemon-reload
+Restart the dhcpd service:
+# systemctl restart dhcpd.service
+For IPv6 networks:
+Copy the /usr/lib/systemd/system/dhcpd6.service file to the /etc/systemd/system/ directory:
+# cp /usr/lib/systemd/system/dhcpd6.service /etc/systemd/system/
+Do not edit the /usr/lib/systemd/system/dhcpd6.service file. Future updates of the dhcp-server package can override the changes.
+Edit the /etc/systemd/system/dhcpd6.service file, and append the names of the interface, that dhcpd should listen on to the command in the ExecStart parameter:
+ExecStart=/usr/sbin/dhcpd -f -6 -cf /etc/dhcp/dhcpd6.conf -user dhcpd -group dhcpd --no-pid $DHCPDARGS enp0s1 enp7s0
+This example configures that dhcpd listens only on the enp0s1 and enp7s0 interfaces.
+Reload the systemd manager configuration:
+# systemctl daemon-reload
+Restart the dhcpd6 service:
+# systemctl restart dhcpd6.service
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.8. Setting up the DHCP service for subnets directly connected to the DHCP server
+Use the following procedure if the DHCP server is directly connected to the subnet for which the server should answer DHCP requests. This is the case if a network interface of the server has an IP address of this subnet assigned.
+Depending on whether you want to provide DHCP for IPv4, IPv6, or both protocols, see the procedure for:
+IPv4 networks
+IPv6 networks
+Prerequisites
+You are logged in as the root user.
+The dhcp-server package is installed.
+Procedure
+For IPv4 networks:
+Edit the /etc/dhcp/dhcpd.conf file:
+Optionally, add global parameters that dhcpd uses as default if no other directives contain these settings:
+option domain-name "example.com";
+default-lease-time 86400;
+This example sets the default domain name for the connection to example.com, and the default lease time to 86400 seconds (1 day).
+Add the authoritative statement on a new line:
+authoritative;
+For each IPv4 subnet directly connected to an interface of the server, add a subnet declaration:
+subnet 192.0.2.0 netmask 255.255.255.0 {
+  range 192.0.2.20 192.0.2.100;
+  option domain-name-servers 192.0.2.1;
+  option routers 192.0.2.1;
+  option broadcast-address 192.0.2.255;
+  max-lease-time 172800;
+}
+This example adds a subnet declaration for the 192.0.2.0/24 network. With this configuration, the DHCP server assigns the following settings to a client that sends a DHCP request from this subnet:
+A free IPv4 address from the range defined in the range parameter
+IP of the DNS server for this subnet: 192.0.2.1
+Default gateway for this subnet: 192.0.2.1
+Broadcast address for this subnet: 192.0.2.255
+The maximum lease time, after which clients in this subnet release the IP and send a new request to the server: 172800 seconds (2 days)
+Optionally, configure that dhcpd starts automatically when the system boots:
+# systemctl enable dhcpd
+Start the dhcpd service:
+# systemctl start dhcpd
+For IPv6 networks:
+Edit the /etc/dhcp/dhcpd6.conf file:
+Optionally, add global parameters that dhcpd uses as default if no other directives contain these settings:
+option dhcp6.domain-search "example.com";
+default-lease-time 86400;
+This example sets the default domain name for the connection to example.com, and the default lease time to 86400 seconds (1 day).
+Add the authoritative statement on a new line:
+authoritative;
+For each IPv6 subnet directly connected to an interface of the server, add a subnet declaration:
+subnet6 2001:db8:0:1::/64 {
+  range6 2001:db8:0:1::20 2001:db8:0:1::100;
+  option dhcp6.name-servers 2001:db8:0:1::1;
+  max-lease-time 172800;
+}
+This example adds a subnet declaration for the 2001:db8:0:1::/64 network. With this configuration, the DHCP server assigns the following settings to a client that sends a DHCP request from this subnet:
+A free IPv6 address from the range defined in the range6 parameter.
+The IP of the DNS server for this subnet is 2001:db8:0:1::1.
+The maximum lease time, after which clients in this subnet release the IP and send a new request to the server is 172800 seconds (2 days).
+Note that IPv6 requires uses router advertisement messages to identify the default gateway.
+Optionally, configure that dhcpd6 starts automatically when the system boots:
+# systemctl enable dhcpd6
+Start the dhcpd6 service:
+# systemctl start dhcpd6
+Additional resources
+dhcp-options(5) man page
+dhcpd.conf(5) man page
+/usr/share/doc/dhcp-server/dhcpd.conf.example file
+/usr/share/doc/dhcp-server/dhcpd6.conf.example file
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.9. Setting up the DHCP service for subnets that are not directly connected to the DHCP server
+Use the following procedure if the DHCP server is not directly connected to the subnet for which the server should answer DHCP requests. This is the case if a DHCP relay agent forwards requests to the DHCP server, because none of the DHCP server’s interfaces is directly connected to the subnet the server should serve.
+Depending on whether you want to provide DHCP for IPv4, IPv6, or both protocols, see the procedure for:
+IPv4 networks
+IPv6 networks
+Prerequisites
+You are logged in as the root user.
+The dhcp-server package is installed.
+Procedure
+For IPv4 networks:
+Edit the /etc/dhcp/dhcpd.conf file:
+Optionally, add global parameters that dhcpd uses as default if no other directives contain these settings:
+option domain-name "example.com";
+default-lease-time 86400;
+This example sets the default domain name for the connection to example.com, and the default lease time to 86400 seconds (1 day).
+Add the authoritative statement on a new line:
+authoritative;
+Add a shared-network declaration, such as the following, for IPv4 subnets that are not directly connected to an interface of the server:
+shared-network example {
+  option domain-name-servers 192.0.2.1;
+  ...
+
+  subnet 192.0.2.0 netmask 255.255.255.0 {
+    range 192.0.2.20 192.0.2.100;
+    option routers 192.0.2.1;
+  }
+
+  subnet 198.51.100.0 netmask 255.255.255.0 {
+    range 198.51.100.20 198.51.100.100;
+    option routers 198.51.100.1;
+  }
+  ...
+}
+This example adds a shared network declaration, that contains a subnet declaration for both the 192.0.2.0/24 and 198.51.100.0/24 networks. With this configuration, the DHCP server assigns the following settings to a client that sends a DHCP request from one of these subnets:
+The IP of the DNS server for clients from both subnets is: 192.0.2.1.
+A free IPv4 address from the range defined in the range parameter, depending on from which subnet the client sent the request.
+The default gateway is either 192.0.2.1 or 198.51.100.1 depending on from which subnet the client sent the request.
+Add a subnet declaration for the subnet the server is directly connected to and that is used to reach the remote subnets specified in shared-network above:
+subnet 203.0.113.0 netmask 255.255.255.0 {
+}
+Optionally, configure that dhcpd starts automatically when the system boots:
+# systemctl enable dhcpd
+Start the dhcpd service:
+# systemctl start dhcpd
+For IPv6 networks:
+Edit the /etc/dhcp/dhcpd6.conf file:
+Optionally, add global parameters that dhcpd uses as default if no other directives contain these settings:
+option dhcp6.domain-search "example.com";
+default-lease-time 86400;
+This example sets the default domain name for the connection to example.com, and the default lease time to 86400 seconds (1 day).
+Add the authoritative statement on a new line:
+authoritative;
+Add a shared-network declaration, such as the following, for IPv6 subnets that are not directly connected to an interface of the server:
+shared-network example {
+  option domain-name-servers 2001:db8:0:1::1:1
+  ...
+
+  subnet6 2001:db8:0:1::1:0/120 {
+    range6 2001:db8:0:1::1:20 2001:db8:0:1::1:100
+  }
+
+  subnet6 2001:db8:0:1::2:0/120 {
+    range6 2001:db8:0:1::2:20 2001:db8:0:1::2:100
+  }
+  ...
+}
+This example adds a shared network declaration that contains a subnet6 declaration for both the 2001:db8:0:1::1:0/120 and 2001:db8:0:1::2:0/120 networks. With this configuration, the DHCP server assigns the following settings to a client that sends a DHCP request from one of these subnets:
+The IP of the DNS server for clients from both subnets is 2001:db8:0:1::1:1.
+A free IPv6 address from the range defined in the range6 parameter, depending on from which subnet the client sent the request.
+Note that IPv6 requires uses router advertisement messages to identify the default gateway.
+Add a subnet6 declaration for the subnet the server is directly connected to and that is used to reach the remote subnets specified in shared-network above:
+subnet6 2001:db8:0:1::50:0/120 {
+}
+Optionally, configure that dhcpd6 starts automatically when the system boots:
+# systemctl enable dhcpd6
+Start the dhcpd6 service:
+# systemctl start dhcpd6
+Additional resources
+dhcp-options(5) man page
+dhcpd.conf(5) man page
+/usr/share/doc/dhcp-server/dhcpd.conf.example file
+/usr/share/doc/dhcp-server/dhcpd6.conf.example file
+Setting up a DHCP relay agent
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.10. Assigning a static address to a host using DHCP
+Using a host declaration, you can configure the DHCP server to assign a fixed IP address to a media access control (MAC) address of a host. For example, use this method to always assign the same IP address to a server or network device.
+Depending on whether you want to configure fixed addresses for IPv4, IPv6, or both protocols, see the procedure for:
+IPv4 networks
+IPv6 networks
+Prerequisites
+The dhcpd service is configured and running.
+You are logged in as the root user.
+Procedure
+For IPv4 networks:
+Edit the /etc/dhcp/dhcpd.conf file:
+Add a host declaration:
+host server.example.com {
+	hardware ethernet 52:54:00:72:2f:6e;
+	fixed-address 192.0.2.130;
+}
+This example configures the DHCP server to always assign the 192.0.2.130 IP address to the host with the 52:54:00:72:2f:6e MAC address.
+The dhcpd service identifies systems by the MAC address specified in the fixed-address parameter, and not by the name in the host declaration. As a consequence, you can set this name to any string that does not match other host declarations. To configure the same system for multiple networks, use a different name, otherwise, dhcpd fails to start.
+Optionally, add further settings to the host declaration that are specific for this host.
+Restart the dhcpd service:
+# systemctl start dhcpd
+For IPv6 networks:
+Edit the /etc/dhcp/dhcpd6.conf file:
+Add a host declaration:
+host server.example.com {
+	hardware ethernet 52:54:00:72:2f:6e;
+	fixed-address6 2001:db8:0:1::200;
+}
+This example configures the DHCP server to always assign the 2001:db8:0:1::20 IP address to the host with the 52:54:00:72:2f:6e MAC address.
+The dhcpd service identifies systems by the MAC address specified in the fixed-address6 parameter, and not by the name in the host declaration. As a consequence, you can set this name to any string, provided that it is unique to other host declarations. To configure the same system for multiple networks, use a different name because, otherwise, dhcpd fails to start.
+Optionally, add further settings to the host declaration that are specific for this host.
+Restart the dhcpd6 service:
+# systemctl start dhcpd6
+Additional resources
+dhcp-options(5) man page
+/usr/share/doc/dhcp-server/dhcpd.conf.example file
+/usr/share/doc/dhcp-server/dhcpd6.conf.example file
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.11. Using a group declaration to apply parameters to multiple hosts, subnets, and shared networks at the same time
+Using a group declaration, you can apply the same parameters to multiple hosts, subnets, and shared networks.
+Note that the procedure describes using a group declaration for hosts, but the steps are the same for subnets and shared networks.
+Depending on whether you want to configure a group for IPv4, IPv6, or both protocols, see the procedure for:
+IPv4 networks
+IPv6 networks
+Prerequisites
+The dhcpd service is configured and running.
+You are logged in as the root user.
+Procedure
+For IPv4 networks:
+Edit the /etc/dhcp/dhcpd.conf file:
+Add a group declaration:
+group {
+  option domain-name-servers 192.0.2.1;
+
+  host server1.example.com {
+    hardware ethernet 52:54:00:72:2f:6e;
+    fixed-address 192.0.2.130;
+  }
+
+  host server2.example.com {
+    hardware ethernet 52:54:00:1b:f3:cf;
+    fixed-address 192.0.2.140;
+  }
+}
+This group definition groups two host entries. The dhcpd service applies the value set in the option domain-name-servers parameter to both hosts in the group.
+Optionally, add further settings to the group declaration that are specific for these hosts.
+Restart the dhcpd service:
+# systemctl start dhcpd
+For IPv6 networks:
+Edit the /etc/dhcp/dhcpd6.conf file:
+Add a group declaration:
+group {
+  option dhcp6.domain-search "example.com";
+
+  host server1.example.com {
+    hardware ethernet 52:54:00:72:2f:6e;
+    fixed-address 2001:db8:0:1::200;
+  }
+
+  host server2.example.com {
+    hardware ethernet 52:54:00:1b:f3:cf;
+    fixed-address 2001:db8:0:1::ba3;
+  }
+}
+This group definition groups two host entries. The dhcpd service applies the value set in the option dhcp6.domain-search parameter to both hosts in the group.
+Optionally, add further settings to the group declaration that are specific for these hosts.
+Restart the dhcpd6 service:
+# systemctl start dhcpd6
+Additional resources
+dhcp-options(5) man page
+/usr/share/doc/dhcp-server/dhcpd.conf.example file
+/usr/share/doc/dhcp-server/dhcpd6.conf.example file
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.12. Restoring a corrupt lease database
+If the DHCP server logs an error that is related to the lease database, such as Corrupt lease file - possible data loss!,you can restore the lease database from the copy the dhcpd service created. Note that this copy might not reflect the latest status of the database.
+Depending on whether you want to restore the DHCPv4, DHCPv6, or both databases, see the procedure for:
+Restoring the DHCPv4 lease database
+Restoring the DHCPv6 lease database
+Prerequisites
+You are logged in as the root user.
+The lease database is corrupt.
+Procedure
+Restoring the DHCPv4 lease database:
+Stop the dhcpd service:
+# systemctl stop dhcpd
+Rename the corrupt lease database:
+# mv /var/lib/dhcpd/dhcpd.leases /var/lib/dhcpd/dhcpd.leases.corrupt
+Restore the copy of the lease database that the dhcp service created when it refreshed the lease database:
+# cp -p /var/lib/dhcpd/dhcpd.leases~ /var/lib/dhcpd/dhcpd.leases
+Start the dhcpd service:
+# systemctl start dhcpd
+Restoring the DHCPv6 lease database:
+Stop the dhcpd6 service:
+# systemctl stop dhcpd6
+Rename the corrupt lease database:
+# mv /var/lib/dhcpd/dhcpd6.leases /var/lib/dhcpd/dhcpd6.leases.corrupt
+Restore the copy of the lease database that the dhcp service created when it refreshed the lease database:
+# cp -p /var/lib/dhcpd/dhcpd6.leases~ /var/lib/dhcpd/dhcpd6.leases
+Start the dhcpd6 service:
+# systemctl start dhcpd6
+Additional resources
+The lease database of the dhcpd service
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.13. Setting up a DHCP relay agent
+The DHCP Relay Agent (dhcrelay) enables the relay of DHCP and BOOTP requests from a subnet with no DHCP server on it to one or more DHCP servers on other subnets. When a DHCP client requests information, the DHCP Relay Agent forwards the request to the list of DHCP servers specified. When a DHCP server returns a reply, the DHCP Relay Agent forwards this request to the client.
+Depending on whether you want to set up a DHCP relay for IPv4, IPv6, or both protocols, see the procedure for:
+IPv4 networks
+IPv6 networks
+Prerequisites
+You are logged in as the root user.
+Procedure
+For IPv4 networks:
+Install the dhcp-relay package:
+# dnf install dhcp-relay
+Copy the /lib/systemd/system/dhcrelay.service file to the /etc/systemd/system/ directory:
+# cp /lib/systemd/system/dhcrelay.service /etc/systemd/system/
+Do not edit the /usr/lib/systemd/system/dhcrelay.service file. Future updates of the dhcp-relay package can override the changes.
+Edit the /etc/systemd/system/dhcrelay.service file, and append the -i interface parameter, together with a list of IP addresses of DHCPv4 servers that are responsible for the subnet:
+ExecStart=/usr/sbin/dhcrelay -d --no-pid -i enp1s0 192.0.2.1
+With these additional parameters, dhcrelay listens for DHCPv4 requests on the enp1s0 interface and forwards them to the DHCP server with the IP 192.0.2.1.
+Reload the systemd manager configuration:
+# systemctl daemon-reload
+Optionally, configure that the dhcrelay service starts when the system boots:
+# systemctl enable dhcrelay.service
+Start the dhcrelay service:
+# systemctl start dhcrelay.service
+For IPv6 networks:
+Install the dhcp-relay package:
+# dnf install dhcp-relay
+Copy the /lib/systemd/system/dhcrelay.service file to the /etc/systemd/system/ directory and name the file dhcrelay6.service:
+# cp /lib/systemd/system/dhcrelay.service /etc/systemd/system/dhcrelay6.service
+Do not edit the /usr/lib/systemd/system/dhcrelay.service file. Future updates of the dhcp-relay package can override the changes.
+Edit the /etc/systemd/system/dhcrelay6.service file, and append the -l receiving_interface and -u outgoing_interface parameters:
+ExecStart=/usr/sbin/dhcrelay -d --no-pid -l enp1s0 -u enp7s0
+With these additional parameters, dhcrelay listens for DHCPv6 requests on the enp1s0 interface and forwards them to the network connected to the enp7s0 interface.
+Reload the systemd manager configuration:
+# systemctl daemon-reload
+Optionally, configure that the dhcrelay6 service starts when the system boots:
+# systemctl enable dhcrelay6.service
+Start the dhcrelay6 service:
+# systemctl start dhcrelay6.service
+Additional resources
+dhcrelay(8) man page

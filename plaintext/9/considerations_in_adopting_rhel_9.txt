@@ -1,0 +1,1257 @@
+Abstract
+This document provides an overview of changes in RHEL 9 since RHEL 8 to help you evaluate an upgrade to RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 1. Preface
+This document provides an overview of differences between two major versions of Red Hat Enterprise Linux: RHEL 8 and RHEL 9. It provides a list of changes relevant for evaluating an upgrade to RHEL 9 rather than an exhaustive list of all alterations.
+For details regarding RHEL 9 usage, see the RHEL 9 product documentation.
+For guidance regarding an in-place upgrade from RHEL 8 to RHEL 9, see Upgrading from RHEL 8 to RHEL 9.
+For information about major differences between RHEL 7 and RHEL 8, see Considerations in adopting RHEL 8.
+Capabilities and limits of Red Hat Enterprise Linux 9 as compared to other versions of the system are available in the Knowledgebase article Red Hat Enterprise Linux technology capabilities and limits.
+Information regarding the Red Hat Enterprise Linux life cycle is provided in the Red Hat Enterprise Linux Life Cycle document.
+The Package manifest document provides a package listing for RHEL 9, including licenses and application compatibility levels.
+Application compatibility levels are explained in the Red Hat Enterprise Linux 9: Application Compatibility Guide document.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 2. Architectures
+Red Hat Enterprise Linux 9 is distributed with the kernel version 5.14, which provides support for the following architectures at the minimum required version:
+AMD and Intel 64-bit architectures (x86-64-v2)
+The 64-bit ARM architecture (ARMv8.0-A)
+IBM Power Systems, Little Endian (POWER9)
+64-bit IBM Z (z14)
+Make sure you purchase the appropriate subscription for each architecture.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 3. Repositories
+Red Hat Enterprise Linux 9 is distributed through two main repositories:
+BaseOS
+AppStream
+Both repositories are required for a basic RHEL installation, and are available with all RHEL subscriptions.
+Content in the BaseOS repository is intended to provide the core set of the underlying OS functionality that provides the foundation for all installations. This content is available in the RPM format and is subject to support terms similar to those in previous releases of RHEL. For more information, see the Scope of Coverage Details document.
+Content in the AppStream repository includes additional user-space applications, runtime languages, and databases in support of the varied workloads and use cases.
+In addition, the CodeReady Linux Builder repository is available with all RHEL subscriptions. It provides additional packages for use by developers. Packages included in the CodeReady Linux Builder repository are unsupported.
+Additional resources
+Package manifest
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 4. Application Streams
+Multiple versions of user-space components are delivered as Application Streams and updated more frequently than the core operating system packages. This provides greater flexibility to customize RHEL without impacting the underlying stability of the platform or specific deployments.
+Each Application Stream component has a given life cycle, either the same as RHEL 9 or shorter. For RHEL life cycle information, see Red Hat Enterprise Linux Life Cycle and Red Hat Enterprise Linux Application Streams Life Cycle.
+Application Streams are available in the following formats:
+the familiar RPM format
+as an extension to the RPM format called modules
+as Software Collections
+as Flatpaks.
+RHEL 9 improves the Application Streams experience by providing initial Application Stream versions that can be installed as RPM packages using the traditional dnf install command.
+Some additional Application Stream versions will be distributed as modules with a shorter life cycle in future minor RHEL 9 releases. It is recommended to review the Red Hat Enterprise Linux Application Stream Lifecycle definitions for any content life cycle considerations.
+Always determine what version of an Application Stream you want to install and make sure to review the Red Hat Enterprise Linux Application Stream Lifecycle first.
+Content that needs rapid updating, such as alternate compilers and container tools, is available in rolling streams that will not provide alternative versions in parallel. Rolling streams can be packaged as RPMs or modules.
+For information about Application Streams available in RHEL 9 and their application compatibility level, see the Package manifest. Application compatibility levels are explained in the Red Hat Enterprise Linux 9: Application Compatibility Guide document.
+Additional resources
+Red Hat Enterprise Linux Life Cycle
+Red Hat Enterprise Linux Application Stream Lifecycle
+Red Hat Enterprise Linux 9: Application Compatibility Guide
+Managing software with the DNF tool
+Package manifest
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 5. Cloud
+The following chapters contain the most notable changes to public cloud platforms between RHEL 8 and RHEL 9:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.1. Notable changes to Azure
+TDX support is available a Technology Preview for RHEL on Azure
+The Intel Trust Domain Extension (TDX) feature can as a Technology Preview now be used in RHEL 9.4 guest operating systems. If the host system supports TDX, you can deploy hardware-isolated RHEL 9 virtual machines (VMs), called trust domains (TDs). As a result, you will be able to create a CVM image with SecureBoot enabled on the Azure platform.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.2. Notable changes to GCP
+TDX support is available a Technology Preview for RHEL on GCP
+The Intel Trust Domain Extension (TDX) feature can as a Technology Preview now be used in RHEL 9.4 guest operating systems. If the host system supports TDX, you can deploy hardware-isolated RHEL 9 virtual machines (VMs), called trust domains (TDs). With this enhancement, you can use the Intel Trust Domain Extension (TDX) feature in RHEL 9.4 on Google Cloud Platform.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 6. Containers
+The following chapter contains the most notable changes to containers between RHEL 8 and RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.1. Notable changes to containers
+The container-tools meta-package is now available
+The container-tools RPM meta-package, which includes Podman, Buildah, Skopeo, CRIU, Udica, and all required libraries, is available in RHEL 9. The stable streams are not available on RHEL 9. To receive stable access to Podman, Buildah, Skopeo, and others, use the RHEL EUS subscription.
+To install the container-tools meta-package:
+Install the container-tools meta-package:
+$ sudo dnf install container-tools
+Improved control group performance
+The previous version of control groups, cgroup version 1 (cgroup v1), caused performance problems with a variety of applications. The latest release of control groups, cgroup version 2 (cgroup v2) enables system administrators to limit resources for any application without causing performance problems.
+In RHEL 9, the new version of control groups, cgroups v2, is enabled by default.
+Podman now supports secure short names
+Short-name aliases for images can now be configured in the registries.conf file in the [aliases] table. The short-names modes are:
+Enforcing: If no matching alias is found during the image pull, Podman prompts the user to choose one of the unqualified-search registries. If the selected image is pulled successfully, Podman automatically records a new short-name alias in the $HOME/.cache/containers/short-name-aliases.conf file (rootless user) and in the /var/cache/containers/short-name-aliases.conf (root user). If the user cannot be prompted (for example, stdin or stdout are not a TTY), Podman fails. Note that the short-name-aliases.conf file has precedence over registries.conf file if both specify the same alias. The enforcing mode is default in RHEL 9.
+Permissive: Similar to enforcing mode, but Podman does not fail if the user cannot be prompted. Instead, Podman searches in all unqualified-search registries in the given order. Note that no alias is recorded. The permissive mode is default in RHEL 8.
+Example:
+unqualified-search-registries=["registry.fedoraproject.org", "quay.io"]
+[aliases]
+"fedora"="registry.fedoraproject.org/fedora"
+Default container registries in registries.conf
+You can find the list of container registries in the /etc/containers/registries.conf file as a root user and in $HOME/.config/containers/registries.conf as a non-root user. By changing the registries.conf file, you can change the default system-wide search settings.
+For RHEL 8, the unqualified-search-registries is:
+unqualified-search-registries = ["registry.access.redhat.com", "registry.redhat.io", "docker.io"]
+short-name-mode = "permissive"
+For RHEL 9, the unqualified-search-registries is:
+unqualified-search-registries = ["registry.access.redhat.com", "registry.redhat.io", "docker.io"]
+short-name-mode = "enforcing"
+Default OCI runtime change
+The crun OCI runtime is now available for the container-tools:rhel8 module. The crun container runtime supports an annotation that enables the container to access the rootless user’s additional groups. This is useful for container operations when volume mounting in a directory where setgid is set, or when the user only has group access.
+The default container runtime in RHEL 8 is runc.
+The default container runtime in RHEL 9 is crun.
+Running RHEL 9 containers on a RHEL 7 host is not supported
+Running RHEL 9 containers on a RHEL 7 host is not supported.
+For more information, see Red Hat Enterprise Linux Container Compatibility Matrix.
+Default network stacks
+Podman uses CNI as the default network stack in RHEL 8 and Netavark as the default network stack in fresh installs of RHEL 9.
+If you perform an in-place upgrade from RHEL 8 to RHEL 9, Podman’s network stack is set as:
+Netavark if the network_backend parameter in the /etc/containers/containers.conf file is not set or if you manually upgraded Podman’s network stack in RHEL 8 to Netavark.
+CNI if there are containers, images, pods, or networks presented when Podman is first run after an upgrade. You can then manually upgrade to the new Netavark network stack. For instructions on how to switch between the CNI and Netavark network stacks, see 8.6 Switching network stack from CNI to Netavark and 8.7 Switching the network stack from Netavark to CNI.
+Red Hat recommends explicitly specifying the network_backend parameter to ensure that the correct backend is selected.
+The Podman v5.0 deprecations
+In RHEL 9.5, the following is deprecated in Podman v5.0:
+The system connections and farm information stored in the containers.conf file are now read-only. The system connections and farm information will now be stored in the podman.connections.json file, managed only by Podman. Podman continues to support the old configuration options such as [engine.service_destinations] and the [farms] section. You can still add connections or farms manually if needed; however, it is not possible to delete a connection from the containers.conf file with the podman system connection rm command.
+The slirp4netns network mode is deprecated and will be removed in a future major release of RHEL. The pasta network mode is the default network mode for rootless containers.
+The cgroups v1 for rootless containers is deprecated and will be removed in a future major release of RHEL.
+The runc container runtime has been deprecated
+The runc container runtime is deprecated and will be removed in a future major release of RHEL. The default container runtime is crun.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 7. Compilers and development tools
+The following chapter contains the most notable changes to compilers and development tools between RHEL 8 and RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.1. Notable changes to glibc
+All threading APIs now merged into libc.so.6
+In RHEL 8, the system threading library, libpthread.so, was a distinct library. In RHEL 9, all threading APIs have been merged into the core C library libc.so.6. Moving threading into the core C library enables the library to support threads by default. With a single file the in-place upgrade process is also made smoother since the thread APIs and core C, POSIX and BSD APIs are all updated at the same time (no distinct libraries).
+Developers can continue to use the -lpthread option when linking threaded applications, but it is no longer necessary.
+Historically, libraries used a weak reference to pthread_create or pthread_cancel to detect if processes could possibly be multi-threaded. Since this check now always succeeds, because libpthread.so is now in the core C library, libraries should use the __libc_single_threaded symbol for this instead.
+The libdl library now merged into libc.so.6
+In RHEL 8, the libdl library was a distinct library. In RHEL 9, the libdl library has been merged into the core C library libc.so.6. This means that interposing the dlsym function is now much more difficult. Applications that need to control the way how symbol resolution works should switch to the auditor (LD_AUDIT) interfaces.
+Name Service Switch service plugins for dns and files now merged into libc.so.6
+In RHEL 8, the Name Service Switch (NSS) services for files and dns, which provides data to user and group identity management APIs, was a distinct plugin. In RHEL 9, the plugins have been merged into the core C library libc.so.6. Moving the files and dns service providers ensures that applications that need to cross a mount namespace boundary (for example, enter a container) can do so knowing that NSS files and dns access services are always loaded at process startup.
+When calling user and group APIs, where those APIs depend on an nsswitch.conf that references files or dns, developers can expect those services to always be present and provide the underlying service data.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.2. Red Hat build of OpenJDK
+Red Hat build of OpenJDK 17 is the default Java implementation since RHEL 9.5
+The default RHEL 9 Java implementation is being changed from OpenJDK 11, which has reached its End Of Life (EOL), to OpenJDK 17. After this update, the java-17-openjdk packages, which provide the OpenJDK 17 Java Runtime Environment and the OpenJDK 17 Java Software Development Kit, will also provide the java and java-devel packages. For more information, see the OpenJDK documentation.
+Existing packages in RHEL 9 that call java/bin or java-openjdk/bin directly will be immediately able to use OpenJDK 17.
+Existing packages in RHEL 9 that require the java or java-devel packages directly, namely tomcat and systemtap-runtime-java, will pull the appropriate dependency automatically.
+Ant, Maven, and packages that are using Java indirectly through the javapackages-tools package will be fully transitioned in an asynchronous update shortly after the general availability of RHEL 9.5.
+If you need to install OpenJDK for the first time or if the default package is not installed through a dependency chain, use DNF:
+# dnf install java-17-openjdk-devel
+For more information, see Installing multiple minor versions of Red Hat build of OpenJDK on RHEL by using yum.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.3. .NET on RHEL 9
+.NET 7.0 is no longer supported
+.NET 7.0 reached its End Of Life (EOL) in May 2024. Use .NET 8.0 or later instead. For details about usage, see .NET 8.0 documentation. For information about the length of support, see the Red Hat Enterprise Linux Application Streams Life Cycle.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 8. Desktop
+The following chapter contains the most notable changes to desktop between RHEL 8 and RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.1. Notable changes to desktop
+GNOME updated to version 40
+The GNOME environment is now updated from GNOME 3.28 to GNOME 40 with many new features.
+GNOME 40 includes a new and improved Activities Overview design. This gives the overview a more coherent look, and provides an improved experience for navigating the system and launching applications. Workspaces are now arranged horizontally, and the window overview and application grid are accessed vertically.
+Other improvements to GNOME include:
+The performance and resource usage of GNOME has been significantly improved.
+The visual style, including the user interface, the login screen, the icons, and the desktop, has been refreshed.
+GNOME applications no longer use the application menu, which was available from the top panel. The functionality is now located in a primary menu within the application window.
+The Settings application has been redesigned.
+Screen sharing and remote desktop sessions have been improved.
+If you use the proprietary NVIDIA drivers, you can now launch applications using the discrete GPU:
+Open the overview.
+Right-click the application icon in the dash.
+Select the Launch on Discrete GPU item in the menu.
+The Power Off / Log Out menu now includes the Suspend option and a new Restart option, which can reboot the system to the boot loader menu when you hold Alt.
+Flatpak applications now update automatically.
+You can now group application icons in the overview together into folders using drag and drop.
+The Terminal application now supports right-to-left and bi-directional text.
+The Pointer Location accessibility feature now works in the Wayland session. When the feature is enabled, pressing Ctrl highlights the pointer location on the screen.
+GNOME Shell extensions are now managed by the Extensions application, rather than Software. The Extensions application handles updating extensions, configuring extension preferences, and removing or disabling extensions.
+The notifications popover now includes a Do Not Disturb button. When the button enabled, notifications do not appear on the screen.
+System dialogs that require a password now have an option to reveal the password text by clicking the eye (👁) icon.
+The Software application now automatically detects metered networks, such as mobile data networks. When the current network is metered, Software pauses updates in order to reduce data usage.
+Each connected display can now use a different refresh rate in the Wayland session.
+Fractional display scaling is available as an experimental option. It includes several preconfigured fractional ratios.
+To enable the experimental fractional scaling, add the scale-monitor-framebuffer value to the list of enabled experimental features:
+$ gsettings set \
+            org.gnome.mutter experimental-features \
+            "['scale-monitor-framebuffer']"
+As a result, fractional scaling options are accessible on the Display panel in Settings.
+For more details on the changes in GNOME, see versions 3.30 to 40.0 in Release Notes.
+X.org Server is now deprecated
+The X.org display server is deprecated, and will be removed in a future major RHEL release. The default desktop session is now the Wayland session in most cases.
+The X11 protocol remains fully supported using the XWayland back end. As a result, applications that require X11 can run in the Wayland session.
+Red Hat is working on resolving the remaining problems and gaps in the Wayland session.
+You can switch your user session back to the X.org back end. For more information, see Selecting GNOME environment and display protocol.
+The Wayland session is now the default with NVIDIA drivers
+When using the NVIDIA drivers, the desktop session now selects the Wayland display protocol by default, if the driver configuration supports Wayland. In previous RHEL releases, the NVIDIA drivers always disabled Wayland.
+To enable Wayland with the NVIDIA drivers on your system, add the following options to the kernel command line:
+nvidia-drm.modeset=1
+NVreg_PreserveVideoMemoryAllocations=1
+Note that Wayland has been the default display protocol with other graphics drivers since RHEL 8.0.
+Under certain conditions, the NVIDIA drivers disable the Wayland display protocol and revert to the X.org display server:
+If the version of the NVIDIA driver is lower than 470.
+If the system is a laptop that uses hybrid graphics.
+If you have not enabled the required NVIDIA driver options.
+If the NVIDIA driver has not installed the required systemd services.
+Additionally, Wayland is enabled but the desktop session uses X.org by default if the version of the NVIDIA driver is lower than 510.
+Currently, the Wayland session with the NVIDIA drivers is still incomplete and presents certain known issues. Red Hat is actively working with NVIDIA to address these gaps and problems across the GPU stack.
+X.Org X11 video drivers have been replaced by modesetting
+The following X.Org X11 video drivers have been removed and replaced by the generic modesetting driver:
+xorg-x11-drv-ati
+xorg-x11-drv-intel
+xorg-x11-drv-nouveau
+xorg-x11-drv-qxl
+xorg-x11-drv-vesa
+GPUs supported by RHEL now automatically use the modesetting driver.
+If you apply a custom X.Org configuration for any of the removed drivers in RHEL 8 or earlier, your configuration will have no effect in RHEL 9. Before upgrading to RHEL 9, check your X.Org configuration files and directories, such as /etc/X11/xorg.conf.d/.
+This change does not affect the proprietary NVIDIA driver, which is not maintained by Red Hat.
+PipeWire is now the default audio service
+The PipeWire service now manages all audio output and input. PipeWire replaces the PulseAudio service in general use cases and the JACK service in professional use cases. The system now redirects audio from applications that use PulseAudio, JACK, or the ALSA framework into PipeWire.
+Benefits of PipeWire over the previous solutions include:
+A unified solution for consumer and professional users
+A flexible, modular architecture
+High performance and low latency, similar to the JACK service
+Isolation between audio clients for better security
+You no longer have to configure the JACK service for applications that use it. All JACK applications now work in the default RHEL configuration.
+PulseAudio is still available in RHEL, and you can enable it instead of PipeWire. For details, see Switching from PipeWire to PulseAudio.
+GNOME Boxes have been removed
+The GNOME Boxes application has been removed from RHEL 9. Boxes used the SPICE system to connect to virtual machines (VMs). In RHEL 9, SPICE is no longer available, and as a consequence, Boxes have also been removed.
+If you require Boxes, Red Hat suggests to install Boxes from the Flathub repository: Boxes on Flathub. This version of Boxes continues to use SPICE, and as a result, it supports the missing features listed previously.
+For more information about SPICE in RHEL 9, see the SPICE section.
+Power profiles are available in GNOME
+You can now switch between several power profiles in the Power panel of Settings in the GNOME environment. The power profiles optimize various system settings for the selected goal.
+The following power profiles are available:
+Your power profile configuration persists across system reboots.
+The power profiles functionality is available from the power-profiles-daemon package, which is installed by default.
+Lightweight, single-application environment
+For graphical use cases that only present a single application, a lightweight user interface (UI) is now available.
+You can start GNOME in a single-application session, also known as kiosk mode. In this session, GNOME displays only a full-screen window of an application that you have configured.
+The single-application session is significantly less resource intensive than the standard GNOME session.
+For more information, see Restricting the session to a single application.
+Language support is now provided by langpacks
+Support for various languages is now available from langpacks packages. You can customize the level of language support that you want to install using the following package names, where code is the short ISO code for the language, such as es for Spanish:
+Motif has been deprecated
+The Motif widget toolkit has been deprecated in RHEL, because development in the upstream Motif community is inactive.
+The following Motif packages have been deprecated, including their development and debugging variants:
+motif
+openmotif
+openmotif21
+openmotif22
+Additionally, the motif-static package has been removed.
+Red Hat recommends using the GTK toolkit as a replacement. GTK is more maintainable and provides new features compared to Motif.
+Several bitmap fonts have been removed
+The following bitmap font packages have been removed:
+bitmap-console-fonts
+bitmap-fixed-fonts
+bitmap-fonts-compat
+bitmap-lucida-typewriter-fonts
+Red Hat has decided to remove these fonts because bitmap fonts have a limited pixel size. When you try to set a font size that is unavailable, the text might display in a different size or a different font, possibly a scalable one. This also decreases the rendering quality of bitmap fonts and disrupts the user experience.
+Additionally, the fontconfig system ignores the Portable Compiled Format (PCF), one of the major bitmap font formats, because it contains no metadata to estimate the language coverage.
+Note that the bitmap-fangsongti-fonts bitmap font package continues to be available to support the Lorax tool.
+No Sign In button on the login screen
+The login screen has been redesigned in this release. As a consequence, the login screen no longer includes a Sign In button, which was present in previous RHEL releases.
+To confirm your password, press Enter instead.
+Note also that the login options button (⚙) is now located in the lower-right corner of the screen.
+TigerVNC is deprecated
+The TigerVNC remote desktop solution is now deprecated. It will be removed in a future major RHEL release and replaced by a different remote desktop solution.
+TigerVNC provides the server and client implementation of the Virtual Network Computing (VNC) protocol in RHEL 9.
+The following packages are deprecated:
+tigervnc
+tigervnc-icons
+tigervnc-license
+tigervnc-selinux
+tigervnc-server
+tigervnc-server-minimal
+tigervnc-server-module
+The Connections application (gnome-connections) continues to be supported as an alternative VNC client, but it does not provide a VNC server.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 9. Dynamic programming languages, web servers, database servers
+The following chapter contains the most notable changes to dynamic programming languages, web servers, and database servers between RHEL 8 and RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.1. Notable changes to dynamic programming languages, web and database servers
+Initial Application Streams versions in RHEL 9
+RHEL 9 improves the Application Streams experience by providing initial Application Stream versions that can be installed as RPM packages using the traditional dnf install command.
+RHEL 9.0 provides the following dynamic programming languages:
+Node.js 16
+Perl 5.32
+PHP 8.0
+Python 3.9
+Ruby 3.0
+RHEL 9.0 includes the following version control systems:
+Git 2.31
+Subversion 1.14
+The following web servers are distributed with RHEL 9.0:
+Apache HTTP Server 2.4
+nginx 1.20
+The following proxy caching servers are available:
+Varnish Cache 6.6
+Squid 5.2
+RHEL 9.0 offers the following database servers:
+MariaDB 10.5
+MySQL 8.0
+PostgreSQL 13
+Redis 6.2
+Some additional Application Stream versions will be distributed as modules with a shorter life cycle in future minor RHEL 9 releases.
+Major differences in the Python ecosystem since RHEL 8
+The unversioned python command
+The unversioned form of the python command (/usr/bin/python) is available in the python-unversioned-command package. On some systems, this package is not installed by default. To install the unversioned form of the python command manually, use the dnf install /usr/bin/python command.
+In RHEL 9, the unversioned form of the python command points to the default Python 3.9 version and it is an equivalent to the python3 and python3.9 commands. In RHEL 9, you cannot configure the unversioned command to point to a different version than Python 3.9.
+The python command is intended for interactive sessions. In production, it is recommended to use python3, python3.9, or python3.11 explicitly.
+You can uninstall the unversioned python command by using the dnf remove /usr/bin/python command.
+If you need a different python or python3 command, you can create custom symlinks in /usr/local/bin or ~/.local/bin, or use a Python virtual environment.
+Several other unversioned commands are available, such as /usr/bin/pip in the python3-pip package. In RHEL 9, all unversioned commands point to the default Python 3.9 version.
+Architecture-specific Python wheels
+Architecture-specific Python wheels built on RHEL 9 newly adhere to the upstream architecture naming, which allows customers to build their Python wheels on RHEL 9 and install them on non-RHEL systems. Python wheels built on previous releases of RHEL are forward compatible and can be installed on RHEL 9. Note that this affects only wheels containing Python extensions, which are built for each architecture, not Python wheels with pure Python code, which is not architecture-specific.
+Differences between the perl and perl-interpreter packages
+RHEL 9 provides both the perl and perl-interpreter packages. The perl package is suitable for development because it contains the full Perl upstream distribution in dependencies, including GCC. On production systems, use the perl-interpreter package, which contains the main /usr/bin/perl interpreter.
+Notable changes to libdb
+RHEL 8 and RHEL 9 currently provide Berkeley DB (libdb) version 5.3.28, which is distributed under the LGPLv2 license. The upstream Berkeley DB version 6 is available under the AGPLv3 license, which is more restrictive.
+The libdb package is deprecated as of RHEL 9 and might not be available in future major RHEL releases. Cryptographic algorithms have been removed from libdb in RHEL 9. Multiple libdb dependencies have been removed from RHEL 9.
+Users of libdb are advised to migrate to a different key-value database. For more information, see the Knowledgebase article Available replacements for the deprecated Berkeley DB (libdb) in RHEL.
+Tomcat available since RHEL 9.2
+RHEL 9.2 introduces the Apache Tomcat server version 9. Tomcat is the servlet container that is used in the official Reference Implementation for the Java Servlet and JavaServer Pages technologies. The Java Servlet and JavaServer Pages specifications are developed by Sun under the Java Community Process. Tomcat is developed in an open and participatory environment and released under the Apache Software License version 2.0.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 10. Edge
+The following chapter contains the most notable changes to RHEL Edge between RHEL 8 and RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10.1. RHEL for Edge
+RHEL 9.5 introduces the following changes over the previous versions:
+Support to file system customization for the simplified-installer and raw images
+You can add file system customizations to a blueprint when building the the following image types:
+simplified-installer
+edge-raw-image
+edge-ami
+edge-vsphere
+Ability to add SQL backend for storing and querying FDO Owner Vouchers as Technology Preview
+With this Technology Preview, you can select an SQL datastore in the FDO servers options, along with credentials and other parameters, to store the Owner Vouchers for the following FDO servers: You can add file system customizations to a blueprint when building the the following image types:
+manufacturer-server
+onboarding-server
+rendezvous-server
+Ability to build FIPS enabled RHEL for Edge images
+During the image provisioning, you can build FIPS enabled images for the following RHEL for Edge image types:
+edge-installer
+edge-simplified-installer
+simplified-installer
+edge-raw-image
+edge-ami
+edge-vsphere
+Support to build RHEL for Edge AMI images
+You have support to build .ami images for RHEL for Edge, customize the blueprint with Ignition to inject the credentials into the image during boot, and upload the .ami image to AWS and boot an EC2 instance in AWS.
+Support to build RHEL for Edge VMDK images
+You can also build RHEL for RHEL for Edge VMDK images, customize the blueprint with Ignition to inject the credentials into the image during the initial boot, and load the image on vSphere and boot the image in a VM vSphere.
+Support for RHEL for Edge minimal raw image that boots on 64-bit ARM architectures
+The RHEL for Edge minimal raw image type now supports the 64-bit ARM architecture, and AMD and Intel 64-bit architectures.
+New FIDO Device Onboarding Servers container images available
+The following FIDO Device Onboarding Servers container images available in Red Hat Container Catalog:
+rhel9/fdo-manufacturing-server
+rhel9/fdo-owner-onboarding-server
+rhel9/fdo-rendezvous-server
+rhel9/fdo-serviceinfo-api-server
+RHEL for Edge Simplified images have support to the Ignition provisioning utility
+You can customize your blueprints configuration with the Ignition provisioning utility to create your RHEL for Edge images. The Ignition injects the user configuration into the images at an early stage of the boot process. During the first boot into the system, the Ignition utility reads its configuration either from a remote URL or a file embedded in the Simplified Installer image and applies that configuration into the image.
+The FDO customization in blueprints is now optional
+You are no longer required to add the FDO customization section in blueprints to build a Simplified Installer image.
+Support to specify the user configuration directly in blueprints for the following images:
+Simplified Installer images
+FDO images
+Ignition images
+You can create RHEL for Edge Simplified Installer images with RHEL image builder GUI
+Previously, the Simplified Installer images could be created only by using the command-line interface.
+Support for automatic provisioning and onboarding RHEL for Edge images using FDO
+You have support for automatic provisioning and onboarding RHEL for Edge images using the FDO (FIDO device onboarding) process. With this, you can build a RHEL for Edge Simplified Installer image, provision it to a RHEL for Edge image. Then, you can use the FDO process to automatically provision and onboard your Edge devices, exchange data with other devices and systems connected on the networks.
+Support to rpm-ostree upgrades from RHEL 8 to RHEL 9
+You can upgrade RHEL 8 systems to RHEL 9 using rpm-ostree rebase.
+Support to auto-rollbacks
+The health checks run during the boot process and can determine if the nodes are functioning properly. If the health checks fail, a counter tracks the number of attempts and the node uses rpm-ostree to rollback the update. Podman automatically rollbacks the container if a new application version exits when the update fails.
+Support to build a RHEL for Edge Simplified Installer image
+You can use RHEL image builder to build a RHEL for Edge Simplified Installer image. It enables an unattended installation to a device, and provisioning the image to a RHEL for Edge image.
+Support to build a RHEL for Edge Raw image
+You can also build RHEL for RHEL for Edge Raw image. These are compressed raw images, which consist of a file that contains a partition layout with an existing deployed OSTree commit in it. The RHEL for Edge Raw Images can be used to flash on a hard disk drive or boot on a virtual machine.
+The RHEL 9 for Edge minimal installation is much smaller
+The RHEL 9 for Edge minimal installation is much smaller, when compared with RHEL 8:
+Supported RHEL for Edge image types
+With RHEL for Edge, you can compose customized RHEL (rpm-ostree) images using RHEL image builder, and then remotely install and manage the images on Edge servers.
+The following image types are supported in RHEL 9:
+RHEL for Edge Commit (.tar)
+RHEL for Edge Container (.tar)
+RHEL for Edge Installer (.iso)
+RHEL for Edge Raw Image (.raw.xz)
+RHEL for Edge Simplified Installer (.iso)
+Supported RHEL for Edge image names
+Previously, the image types were prefixed by rhel-. This prefix was removed, but the previous image names, such as rhel-edge-container and rhel-edge-installer still work as aliases to the new names. These names are considered deprecated and may be removed completely in future versions. The following RHEL for Edge image names are supported in RHEL 9:
+edge-commit
+edge-container
+edge-installer
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 11. File systems and storage
+The following chapters contain the most notable changes to file systems and storage between RHEL 8 and RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11.1. File systems
+The XFS filesystem now supports bigtime and inobtcount features
+The XFS filesystem now supports two new on-disk features, each of which is enabled by default by mkfs.xfs in RHEL 9. These two new features are:
+Timestamp support beyond the year 2038 (bigtime).
+Inode btree counters (inobtcount), to reduce mount time on large filesystems.
+As a result of this update, filesystems created with default mkfs.xfs parameters will not be mountable on RHEL 8 systems.
+To create a new filesystem that will be compatible with the RHEL 8 kernel, disable these new features by adding -m bigtime=0,inobtcount=0 to the mkfs.xfs command line. A filesystem created in this way will not support timestamps beyond the year 2038.
+A filesystem created in RHEL 8 which does not support these features may be upgraded using the xfs_admin utility on the unmounted block device containing the filesystem. It is recommended to check the filesystem for consistency prior to this operation. The command will also cause an xfs_repair to be run on the device after the change.
+To enable bigtime support:
+xfs_admin -O bigtime=1 /dev/device
+To enable inode btree counters:
+xfs_admin -O inobtcount=1 /dev/device
+To enable both at the same time:
+xfs_admin -O bigtime=1,inobtcount=1 /dev/device
+See the xfs_admin(8) man page for details.
+The exFAT filesystem is now supported in RHEL 9
+The exFAT filesystem is now supported in RHEL 9. This is a filesystem designed for external USB storage and interoperability and data exchange with other operating systems. The filesystem is not intended as a general-purpose, performant, or scalable Linux filesystem. An exFAT filesystem may be created by installing the exfatprogs package and using the mkfs.exfat utility.
+See the mkfs.exfat(8) man page for details.
+ext4 filesystem now supports timestamps beyond the year 2038
+The ext4 filesystem is now supporting timestamps beyond the year 2038. This feature is fully automatic and does not require any user action to leverage it. The only requirement is that the inode size is larger than 128 bytes, which it is by default.
+New nfsv4-client-utils package
+New package nfsv4-client-utils, which contains a minimal set of the demons and tool required to support only NFSv4 has been added. This is a replacement for the standard nfs-utils package.
+GFS2 file systems are now created with format version 1802
+GFS2 file systems in RHEL 9 are created with format version 1802. This enables the following features:
+Extended attributes in the trusted namespace ("trusted.* xattrs") are recognized by gfs2 and gfs2-utils.
+The rgrplvb option is active by default. This allows gfs2 to attach updated resource group data to DLM lock requests, so the node acquiring the lock does not need to update the resource group information from disk. This improves performance in some cases.
+File systems created with the new format version will not be able to be mounted under earlier RHEL versions and older versions of the fsck.gfs2 utility will not be able to check them.
+Users can create a file system with the older format version by running the mkfs.gfs2 command with the option -o format=1801.
+Users can upgrade the format version of an older file system running tunegfs2 -r 1802 device on an unmounted file system. Downgrading the format version is not supported.
+Options in Samba utilities have been renamed and removed for a consistent user experience
+The Samba utilities have been improved to provide a consistent command-line interface. These improvements include renamed and removed options. Therefore, to avoid problems after the update, review your scripts that use Samba utilities, and update them, if necessary.
+Samba 4.15 introduces the following changes to the Samba utilities:
+Previously, Samba command-line utilities silently ignored unknown options. To prevent unexpected behavior, the utilities now consistently reject unknown options.
+Several command-line options now have a corresponding smb.conf variable to control their default value. See the man pages of the utilities to identify if a command-line option has an smb.conf variable name.
+By default, Samba utilities now log to standard error (stderr). Use the --debug-stdout option to change this behavior.
+The --client-protection=off|sign|encrypt option has been added to the common parser.
+The following options have been renamed in all utilities:
+--kerberos to --use-kerberos=required|desired|off
+--krb5-ccache to --use-krb5-ccache=CCACHE
+--scope to --netbios-scope=SCOPE
+--use-ccache to --use-winbind-ccache
+The following options have been removed from all utilities:
+-e and --encrypt
+-C removed from --use-winbind-ccache
+-i removed from --netbios-scope
+-S and --signing
+To avoid duplicate options, certain options have been removed or renamed from the following utilities:
+ndrdump: -l is no longer available for --load-dso
+net: -l is no longer available for --long
+sharesec: -V is no longer available for --viewsddl
+smbcquotas: --user has been renamed to --quota-user
+nmbd: --log-stdout has been renamed to --debug-stdout
+smbd: --log-stdout has been renamed to --debug-stdout
+winbindd: --log-stdout has been renamed to --debug-stdout
+cramfs module has been removed
+Due to lack of users, the cramfs kernel module is removed. squashfs is recommended as an alternative solution.
+Mandatory file locking support has been removed from RHEL 9
+Mandatory file locking is no longer supported in RHEL 9 and later versions. The mand mount option is ignored by this kernel and its use generates a warning in the system log.
+NFSv2 is no longer supported
+RHEL 9 NFS client and server no longer support NFSv2.
+Stratis storage manager is now available
+Stratis is a local storage manager. It provides managed file systems on top of pools of storage with additional features to the user:
+Manage snapshots and thin provisioning
+Automatically grow file system sizes as needed
+Maintain file systems
+Pool Level Encryption
+TMP2 and NBDE Support
+To administer Stratis storage, use the stratis utility, which communicates with the stratisd background service.
+For more information, see the Stratis documentation: Setting up Stratis file systems.
+DAX mount option and reflink are now compatible
+Reflinked files are now generally compatible with DAX mode. The file system DAX mount option -o dax=always is compatible with reflink-enabled file systems. Files that were reflinked can be set to DAX mode using inode flags. For more information see the xfs(5) man page on your system.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11.2. Storage
+NVMe-FC Boot from SAN is now fully supported
+The Non-volatile Memory Express (NVMe) over Fibre Channel (NVMe/FC) Boot, which was introduced in Red Hat Enterprise Linux 9.2 as a Technology Preview, is now fully supported. Some NVMe/FC host bus adapters support a NVMe/FC boot capability. For more information on programming a Host Bus Adapter (HBA) to enable NVMe/FC boot capability, see the NVMe/FC host bus adapter manufacturer’s documentation.
+Converting a standard LV to a thin LV by using lvconvert is now possible
+By specifying a standard logical volume (LV) as a thin pool data volume, you can now convert a standard LV to a thin LV by using the lvconvert command. With this update, you can convert existing LVs to use the thin provisioning facility.
+Integrity targets now generate Audit events
+The integrity target now generates Audit events. You can use these Audit events for logging of additional security-relevant event types.
+dm-verity now supports forward error correction
+The dm-verity target now supports forward error correction (FEC). With FEC, you can use pre-generated error correction data to recover from corrupted blocks.
+NVMe native multipathing is now enabled by default
+Non-volatile Memory Express (NVMe) native multipathing is enabled by default in Red Hat Enterprise Linux 9 and is the recommended multipathing solution. You can now configure multipathing on NVMe without using the DM Multipath framework. NVMe native multipathing provides higher performance.
+The default kernel setting for the nvme_core.multipath option is now set to Y, which means that native NVMe multipathing is enabled.
+VDO Management software has been removed
+The python-based VDO Management software is no longer available in RHEL 9. Instead of this software, use the LVM-VDO implementation for managing VDO volumes.
+Multiple write policies from VDO has been removed
+VDO no longer has multiple write policies. VDO now uses the async write policy exclusively. The 'sync' and 'async-unsafe' write policies have been removed.
+Stratis storage manager is now available
+Stratis is a local storage manager. It provides managed file systems on top of pools of storage with additional features to the user:
+Manage snapshots and thin provisioning
+Automatically grow file system sizes as needed
+Maintain file systems
+Pool Level Encryption
+TMP2 and NBDE Support
+To administer Stratis storage, use the stratis utility, which communicates with the stratisd background service.
+For more information, see the Stratis documentation: Setting up Stratis file systems.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 12. Hardware enablement
+The following chapters contain the most notable changes to hardware enablement between RHEL 8 and RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+12.1. Unmaintained hardware support
+The following devices (drivers, adapters) are available but are no longer tested or updated on a routine basis in Red Hat Enterprise Linux 9. Red Hat may fix serious bugs, including security bugs, at its discretion. These devices should no longer be used in production, and it is possible they will be disabled in the next major release.
+PCI device IDs are in the format of vendor:device:subvendor:subdevice. If no device ID is listed, all devices associated with the corresponding driver are unmaintained. To check the PCI IDs of the hardware on your system, run the lspci -nn command.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+12.2. Removed hardware support
+The following devices (drivers, adapters) have been removed from RHEL 9.
+PCI device IDs are in the format of vendor:device:subvendor:subdevice. If no device ID is listed, all devices associated with the corresponding driver are unmaintained. To check the PCI IDs of the hardware on your system, run the lspci -nn command.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 13. High availability and clusters
+The following chapter contains the most notable changes to high availability and clusters between RHEL 8 and RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+13.1. Notable changes to high availability and clusters
+pcs commands that support the clufter tool have been removed
+The pcs commands that support the clufter tool for analyzing cluster configuration formats have been removed. The following commands have been removed:
+pcs config import-cman for importing CMAN / RHEL6 HA cluster configuration
+pcs config export for exporting cluster configuration to a list of pcs commands which recreate the same cluster
+pcs suppport for OCF Resource Agent API 1.1 standard
+The pcs command-line interface now supports OCF 1.1 resource and STONITH agents. As part of the implementation of this support, any agent’s metadata must comply with the OCF schema, whether the agent is an OCF 1.0 or OCF 1.1 agent. If an agent’s metadata does not comply with the OCF schema, pcs considers the agent invalid and will not create or update a resource of the agent unless the --force option is specified. The pcsd Web UI and pcs commands for listing agents now omit agents with invalid metadata from the listing.
+New pcs parsing requires meta keyword when specifying clone meta attributes
+To ensure consistency in the pcs command format, configuring clone meta attributes with the pcs resource clone, pcs resource promotable, and pcs resource create commands without specifying the meta keyword is now deprecated.
+Previously, the meta keyword was ignored in the pcs resource clone and pcs resource promotable commands. In the pcs resource create command, however, the meta attributes specified after the meta keyword when it followed the clone keyword were assigned to the resource rather than to the clone. With this updated parsing algorithm, meta attributes specified after the meta keyword when it follows the clone keyword are assigned to the clone. To maintain compatibility with existing scripts which rely on the older format, you must specify the --future command option to enable this new argument processing when creating a cloned resource with the pcs resource create command.
+The following command now creates a resource with the meta attribute mv=v1 and a clone with the meta attribute mv=v2:
+pcs resource create dummy1 ocf:pacemaker:Dummy meta m1=v1 clone meta m2=v2 --future
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 14. Identity Management
+The following chapters contain the most notable changes to Identity Management (IdM) between RHEL 8 and RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+14.1. New features
+A new passwordless authentication method is available in SSSD
+As of RHEL 9.4, you can enable and configure passwordless authentication in SSSD to use a biometric device that is compatible with the FIDO2 specification, for example a YubiKey. You must register the FIDO2 token in advance and store this registration information in the user account in RHEL IdM, Active Directory, or an LDAP store. RHEL implements FIDO2 compatibility with the libfido2 library, which currently only supports USB-based tokens.
+Identity Management API is now fully supported
+As of RHEL 9.3, the Identity Management (IdM) API is a fully supported feature.
+Users can use existing tools and scripts even if the IdM API is enhanced to enable multiple versions of API commands. These enhancements do not change the behavior of a command in an incompatible way. This has the following benefits:
+Administrators can use previous or later versions of IdM on the server than on the managing client.
+Developers can use a specific version of an IdM call, even if the IdM version changes on the server.
+The communication with the server is possible, regardless if one side uses, for example, a newer version that introduces new options for a feature.
+Identity Management installation packages have been demodularized
+Previously in RHEL 8, IdM packages were distributed as modules, which required you to enable a stream and install the profile that corresponds to your desired installation. IdM installation packages have been demodularized in RHEL 9, so you can use the following dnf commands to install IdM server packages:
+For a server without integrated DNS services:
+# dnf install ipa-server
+For a server with integrated DNS services:
+# dnf install ipa-server ipa-server-dns
+The SSSD implicit files provider domain is disabled by default
+The SSSD implicit files provider domain, which retrieves user information from local files such as /etc/shadow and group information from /etc/groups, is now disabled by default.
+To retrieve user and group information from local files with SSSD:
+Configure SSSD. Choose one of the following options:
+Explicitly configure a local domain with the id_provider=files option in the sssd.conf configuration file.
+[domain/local]
+id_provider=files
+...
+Enable the files provider by setting the enable_files_domain=true option in the sssd.conf configuration file.
+[sssd]
+enable_files_domain = true
+Configure the name services switch.
+# authselect enable-feature with-files-provider
+To restore caching and synchronization of user information, enable the integration between shadow-utils and sssd_cache by creating a symbolic link:
+# ln -s /usr/sbin/sss_cache /usr/sbin/sss_cache_shadow_utils
+New realm configuration template for KDC enabling FIPS 140-3-compliant key encryption
+This update provides a new, EXAMPLE.COM, example realm configuration in the /var/kerberos/krb5kdc/kdc.conf file. It brings two changes:
+The FIPS 140-3-compliant AES HMAC SHA-2 family is added to the list of supported types for key encryption.
+The encryption type of the KDC master key is switched from AES 256 HMAC SHA-1 to AES 256 HMAC SHA-384.
+Using the new configuration template is recommended for new realms. The template does not affect any realm already deployed. If you are planning to upgrade the configuration of your realm according to the template, consider the following points:
+For upgrading the master key, changing the setting in the KDC configuration is not enough. Follow the process described in the MIT Kerberos documentation.
+Adding the AES HMAC SHA-2 family to the supported types for key encryption is safe at any point because it does not affect existing entries in the KDC. Keys will be generated only when creating new principals or when renewing credentials. Note that keys of this new type cannot be generated based on existing keys. To make these new encryption types available for a certain principal, its credentials have to be renewed, which means renewing keytabs for service principals too.
+The only case where principals should not feature an AES HMAC SHA-2 key is the Active Directory (AD) cross-realm ticket-granting ticket (TGT) ones. Because AD does not implement RFC8009, it does not use the AES HMAC SHA-2 encryption types family. Therefore, a cross-realm TGS-REQ using an AES HMAC SHA-2-encrypted cross-realm TGT would fail. The best way to keep the MIT Kerberos client from using AES HMAC SHA-2 against AD is to not provide AES HMAC SHA-2 keys for the AD cross-realm principals. To do so, ensure that you create the cross-realm TGT entries with an explicit list of key encryption types that are all supported by AD:
+  kadmin.local <<EOF
+  add_principal +requires_preauth -e aes256-cts-hmac-sha1-96,aes128-cts-hmac-sha1-96 -pw [password] krbtgt/[MIT realm]@[AD realm]
+  add_principal +requires_preauth -e aes256-cts-hmac-sha1-96,aes128-cts-hmac-sha1-96 -pw [password] krbtgt/[AD realm]@[MIT realm]
+  EOF
+To ensure the MIT Kerboros clients use the AES HMAC SHA-2 encryption types, you must also set these encryption types as permitted in both the client and the KDC configuration. On RHEL, this setting is managed by the crypto-policy system. For example, on RHEL 9, hosts using the DEFAULT crypto-policy allow AES HMAC SHA-2 and AES HMAC SHA-1 encrypted tickets, while hosts using the FIPS crypto-policy only accept AES HMAC SHA-2 ones.
+Improved SSSD multi-threaded performance
+Previously, SSSD serialized parallel requests from multi-threaded applications, such as Red Hat Directory Server and Identity Management. Starting with RHEL 9.1, all SSSD client libraries, such as nss and pam, do not serialize requests, therefore allowing requests from multiple threads to be executed in parallel for better performance.
+To enable the previous behavior of serialization, set the environment variable SSS_LOCKFREE to NO.
+ansible-freeipa now additionally provides the roles and modules as an Ansible collection in the ansible-freeipa-collection subpackage
+To use the new collection:
+Install the ansible-freeipa-collection subpackage.
+Add the freeipa.ansible_freeipa prefix to the names of roles and modules. Use the fully-qualified names to follow Ansible recommendations. For example, to refer to the ipahbacrule module, use freeipa.ansible_freeipa.ipahbacrule.
+You can simplify the use of the modules that are part of the freeipa.ansible_freeipa collection by applying module_defaults.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+14.2. Technology previews
+IdM-to-IdM migration is now available as a Technology Preview
+In RHEL 9.5, you can use the new ipa-migrate utility, which Red Hat provides as an unsupported Technology Preview, to migrate all IdM-specific data, such as SUDO rules, HBAC, DNA ranges, hosts, services, and more, to another IdM server. This can be useful, for example, when moving IdM from a development or staging environment into a production one or when migrating IdM data between two production servers.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+14.3. Known issues
+Users without SIDs cannot log in to IdM after an upgrade
+After upgrading your Identity Management (IdM) replica to RHEL 9.2, the IdM Kerberos Distribution Centre (KDC) might fail to issue ticket-granting tickets (TGTs) to users who do not have Security Identifiers (SIDs) assigned to their accounts. Consequently, the users cannot log in to their accounts.
+To work around the problem, generate SIDs by running the following command as an IdM administrator on another IdM replica in the topology:
+# ipa config-mod --enable-sid --add-sids
+Afterward, if users still cannot log in, examine the Directory Server error log. You might have to adjust ID ranges to include user POSIX identities.
+Adding a RHEL 9 replica in FIPS mode to an IdM deployment in FIPS mode that was initialized with RHEL 8.6 or earlier fails
+The default RHEL 9 FIPS cryptographic policy aiming to comply with FIPS 140-3 does not allow the use of the AES HMAC-SHA1 encryption types' key derivation function as defined by RFC3961, section 5.1.
+This constraint does not allow you to add a RHEL 9 IdM replica in FIPS mode to a RHEL 8 IdM environment in FIPS mode in which the first server was installed on a RHEL 8.6 or earlier systems. This is because there are no common encryption types between RHEL 9 and the previous RHEL versions, which commonly use the AES HMAC-SHA1 encryption types but do not use the AES HMAC-SHA2 encryption types. For more information, see the AD Domain Users unable to login in to the FIPS-compliant environment KCS solution.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+14.4. Relocated packages
+ansible-freeipa is now available in the AppStream repository with all dependencies
+Previously in RHEL 8.5 and earlier, before installing the ansible-freeipa package, you first had to enable the Ansible repository and install the ansible package. In RHEL 9, you can install ansible-freeipa without any preliminary steps. Installing ansible-freeipa automatically installs ansible-core as a dependency. Both packages are available in the rhel-9-for-x86_64-appstream-rpms repository.
+ansible-freeipa in RHEL 9 contains all the modules that it contained in RHEL 8.5 and earlier.
+Clustered Samba packages are now available from the Resilient Storage and Gluster Samba Repository
+The ctdb clustered Samba packages are now available from the Resilient Storage and Gluster Samba Repository. Previously in RHEL 8, clustered Samba packages were available from the BaseOS repository.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+14.5. Removed functionality
+The nss-pam-ldapd package has been removed
+The nss-pam-ldapd package has been removed from RHEL. Red Hat recommends migrating to SSSD and its ldap provider, which fully replaces the functionality of the nslcd service. SSSD has features that specifically address the needs of nss-pam-ldapd users, such as:
+hosts databases
+networks databases
+services databases
+NIS packages have been removed
+The following Network Information Service (NIS) components have been removed from RHEL:
+nss_nis
+yp-tools
+ypbind
+ypserv
+There is no direct replacement with fully compatible features because the NIS technology is based on outdated design patterns and is no longer considered secure.
+Red Hat recommends using RHEL Identity Management and SSSD instead.
+The openssh-ldap package has been removed
+As the openssh-ldap subpackage is not maintained upstream, it has been removed from RHEL. Red Hat recommends using SSSD and the sss_ssh_authorizedkeys helper, which integrate better with other IdM solutions and are more secure.
+By default, the SSSD ldap and ipa providers read the sshPublicKey LDAP attribute of the user object, if available. Note that you cannot use the default SSSD configuration for the ad provider or IdM trusted domains to retrieve SSH public keys from Active Directory (AD), since AD does not have a default LDAP attribute to store a public key.
+To allow the sss_ssh_authorizedkeys helper to get the key from SSSD, enable the ssh responder by adding ssh to the services option in the sssd.conf file. See the sssd.conf(5) man page for details.
+To allow sshd to use sss_ssh_authorizedkeys, add the following options to the /etc/ssh/sshd_config file as described by the sss_ssh_authorizedkeys(1) man page:
+AuthorizedKeysCommand /usr/bin/sss_ssh_authorizedkeys
+AuthorizedKeysCommandUser nobody
+The custodia package has been removed
+The custodia package has been integrated into Red Hat Identity Management in RHEL 9 and is no longer shipped as a separate service.
+The gssntlmssp package has been removed
+As Windows New Technology LAN Manager (NTLM) is considered insecure, the gssntlmssp package has been removed.
+The nsslapd-conntablesize configuration parameter has been removed from 389-ds-base
+The nsslapd-conntablesize configuration parameter has been removed from the 389-ds-base package in RHEL 9.3. Previously, the nsslapd-conntablesize configuration attribute specified the size of the connection table that managed established connections. With the introduction of the multi-listener feature, which improves the management of established connections, Directory Server now calculates the size of the connection table dynamically. This also resolves issues, when the connection table size was set too low and it affected the number of connections the server was able to support. Starting with RHEL 9.3, use only nsslapd-maxdescriptors and nsslapd-reservedescriptors attributes to manage the number of TCP/IP connections Directory Server can support.
+Limited support for FreeRADIUS
+In RHEL 9, the following external authentication modules are not supported as part of the FreeRADIUS offering:
+The MySQL, PostgreSQL, SQlite, and unixODBC database connectors
+The Perl language module
+The REST API module
+You can find replacements for the removed modules in community-supported packages, for example in the Fedora project.
+In addition, the scope of support for the freeradius package is now limited to the following use cases:
+Using FreeRADIUS as an authentication provider with Identity Management (IdM) as the backend source of authentication. The authentication is happening through the krb5 and LDAP authentication packages or as PAM authentication in the main FreeRADIUS package.
+Using FreeRADIUS to provide a source-of-truth for authentication in IdM, through the Python 3 authentication package.
+In contrast to these removals, Red Hat is now strengthening its support of the following external authentication modules with FreeRADIUS:
+Authentication based on krb5 and LDAP
+Python 3 authentication
+The focus on these integration options is in close alignment with the strategic direction of Red Hat IdM.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 15. Infrastructure services
+The following chapter contains the most notable changes to infrastructure services between RHEL 8 and RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+15.1. Notable changes to infrastructure services
+Support for Berkeley DB dynamic back end has been removed
+With this release, the Berkeley DB (libdb) dynamic back end is no longer supported. The named-sdb build is no longer provided. You can use the DLZ loadable plugins for each back end, for example, sqlite3 or mysql. Those plugins are not built or shipped and have to be built from the source.
+The mod_php module provided with PHP for use with the Apache HTTP Server has been removed
+The mod_php module provided with PHP for use with the Apache HTTP Server is no longer available in RHEL 9.
+Since RHEL 8, PHP scripts are run using the FastCGI Process Manager (php-fpm) by default. For more information, see Using PHP with the Apache HTTP Server.
+The BIND 9.18 is now supported in RHEL
+BIND 9.18 has been added in RHEL 9.5 in the new bind9.18 package. The notable feature enhancements include the following:
+Added support for DNS over TLS (DoT) and DNS over HTTPS (DoH) in the `named`daemon
+Added support for both incoming and outgoing zone transfers over TLS
+Improved support for OpenSSL 3.0 interfaces
+New configuration options for tuning TCP and UDP send and receive buffers
+Various improvements to the dig utility
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 16. Installer and image creation
+The following chapters contain the most notable changes to installer and image creation between RHEL 8 and RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+16.1. Installer
+Anaconda activates network automatically for interactive installations
+Anaconda now activates the network automatically when performing interactive installation, without requiring users to manually activate it in the network spoke. This update does not change the installation experience for Kickstart installations and installations using the ip= boot option.
+New options to Lock root account and Allow root SSH login with password
+RHEL 9 adds following new options to the root password configuration screen:
+Lock root account: To lock the root access to the machine.
+Allow root SSH login with password: To enable password-based SSH root logins.
+During Kickstart installations, you can enable root access via SSH with password by using the --allow-ssh option of the rootpw Kickstart command. For more information, see rootpw (required).
+Licensing, system, and user setting configuration screens have been disabled post standard installation
+Previously, RHEL users configured Licensing, System (Subscription manager), and User Settings prior to gnome-initial-setup and login screens. Starting with RHEL 9, the initial setup screens have been disabled by default to improve user experience. If you must run the initial setup for user creation or license display, install the following packages based on the requirements.
+To install initial setup packages:
+# dnf install initial-setup initial-setup-gui
+To enable initial setup after the next reboot of the system.
+# systemctl enable initial-setup
+Reboot the system to view initial setup.
+For Kickstart installations, add initial-setup-gui to the packages section and enable the initial-setup service.
+firstboot --enable
+%packages
+@^graphical-server-environment
+initial-setup-gui
+%end
+The rhsm command for machine provisioning through Kickstart for Satellite is now available
+The rhsm command replaces the %post scripts for machine provisioning on RHEL 9. The rhsm command helps with all provisioning tasks such as registering the system, attaching RHEL subscriptions, and installing from a Satellite instance.
+New Kickstart command - timesource
+The new timesource Kickstart command is optional and it helps to set NTP, NTS servers, and NTP pools that provide time data. It also helps to control enabling or disabling the NTP services on the system. The --ntpservers option from the timezone command has been deprecated and has been replaced with this new command.
+Support for Anaconda boot arguments without inst. prefix is no longer available
+Anaconda boot arguments without the inst. prefix have been deprecated since RHEL 7. Support for these boot arguments has been removed in RHEL 9. To continue using these options, use the inst. prefix
+For example, to force the installation program to run in the text mode instead of the graphical mode, use the following option:
+inst.text
+Removed Kickstart commands and options
+The following Kickstart commands and options have been removed from RHEL 9. Using them in Kickstart files causes an error.
+device
+deviceprobe
+dmraid
+install - use the subcommands or methods directly as commands
+multipath
+bootloader --upgrade
+ignoredisk --interactive
+partition --active
+harddrive --biospart
+autostep
+Where only specific options and values are listed, the base command and its other options are still available and not removed.
+Removed boot options
+The following boot options have been removed from Red Hat Enterprise Linux:
+inst.zram
+RHEL 9 does not support the zram service. See the zram-generator(8) man page for more information.
+inst.singlelang
+The single language mode is not supported on RHEL 9.
+inst.loglevel
+The log level is always set to debug.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+16.2. Image creation
+RHEL 9.5 introduces the following enhancements over the previous versions:
+Support to additional Edge image type creation
+RHEL image builder now supports building RHEL for Edge for AWS edge-ami and Vmware VSphere edge-vsphere.
+Disk image partition table unification
+Disk images created by using the RHEL image builder tool, such as qcow2,ami, vhd, vsphere, and gce, now have a separate boot with 1 GiB of space.
+Support to additional Edge image type creation
+Starting with 9.4, RHEL image builder supports OpenSCAP customizations in the blueprint by adding a tailoring file for scap security profile. You can add customized tailoring options for a profile to the osbuild-composer blueprint customizations by using the following options:
+selected for the list of rules that you want to add.
+unselected for the list of rules that you want to remove.
+When you build an image from the blueprint customized with tailoring file for scap security profile, it creates a tailoring file with a new tailoring profile ID and saves it to the image as /usr/share/xml/osbuild-oscap-tailoring/tailoring.xml. The new profile ID will have _osbuild_tailoring appended as a suffix to the base profile, for example, xccdf_org.ssgproject.content_profile_cis_osbuild_tailoring, if you use the cis base profile.
+AWS EC2 images now support both BIOS and UEFI boot
+This update extends the AWS EC2 AMD or Intel 64-bit architecture .ami images created by RHEL image builder to support UEFI boot, in addition to the legacy BIOS boot.
+Support to build VMware VSphere (OVA)
+RHEL image builder can build VMware VSphere Open Virtual Appliance (OVA) files that you can deploy more easily to VMware vSphere by using the vSphere GUI client.
+A new and improved way to create blueprints and images in the RHEL image builder web console
+With the new unified version of the image builder tool, you can much more easily create blueprints and images. Notable enhancements include the following:
+You can now use all the customizations previously supported only in the command-line interface, such as kernel, file system, firewall, locale, and other customizations, in the image builder web console.
+You can import, export, and save blueprints in the .JSON or .TOML format.
+Ability to create images with support to different partitioning modes
+With RHEL image builder, you can build VMware VSphere Open Virtual Appliance (OVA) files. You can deploy such files to VMware vSphere by using the vSphere GUI client .
+Filesystem customization policy changes in image builder
+The following policy changes are in place when using the RHEL image builder filesystem customization in blueprints:
+You can set the`mountpoint` and minimum partition minsize entries in the blueprint.
+The following image types do not support filesystem customizations:
+image-installer
+edge-installer
+edge-simplified-installer
+The following image types do not create partitioned operating systems images.
+edge-commit
+edge-container
+tar
+container
+Customizing the filesystem of such images has no result.
+The blueprint now supports the mountpoint customization for the tpm directory and its sub-directories.
+RHEL image builder supports creating customized files and directories in the /etc directory
+With the new`[[customizations.files]]` and the [[customizations.directories]] blueprint customizations, you can create customized files and directories in the /etc image directory. Currently, these customizations are only available in the /etc directory. You can use the customizations for all available image types, except image types that deploy OSTree commits, such as:
+edge-raw-image
+edge-installer
+edge-simplified-installer
+.vhd images built with RHEL image builder now have support for 64-bit ARM
+You can now build .vhd images using image builder and upload them to the Microsoft Azure cloud.
+RHEL image builder supports customized file system partitions on LVM
+With support for customized file system partitions on LVM, if you add any file system customization to your system, the file systems are converted to an LVM partition.
+RHEL image builder now supports file system configuration
+As of Red Hat Enterprise Linux 9.0, Image Builder provides support for users to specify a custom filesystem configuration in blueprints to create images with a specific disk layout, instead of using the default layout configuration.
+RHEL image builder can create bootable ISO Installer images
+You can use RHEL image builder GUI and CLI to create bootable ISO Installer images. These images consist of a tar file that contains a root file system which you can use to install directly to a bare metal server.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 17. Kernel
+The following chapters contain the most notable changes to kernel between RHEL 8 and RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+17.1. Notable changes to kdump memory allocation
+The kexec-tools package now supports the default crashkernel memory reservation values for RHEL 9
+The kexec-tools package now maintains the default crashkernel memory reservation values. The kdump service uses the default value to reserve the crashkernel memory for each kernel. This implementation also improves memory allocation for kdump when a system has less than 4GB of available memory.
+If the memory reserved by the default crashkernel value is not sufficient on your system, you can increase the crashkernel parameter using the default value as a reference.
+To query the default crashkernel value:
+ $ kdumpctl get-default-crashkernel
+Note that the crashkernel=auto option in the boot command line is no longer supported on RHEL 9 and later releases.
+For more information, see the /usr/share/doc/kexec-tools/crashkernel-howto.txt file.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+17.2. Notable changes to the RHEL for Real Time kernel
+The TPM 1.2 secure cryptoprocessor is no longer supported on RHEL 9
+The Trusted Platform Module (TPM) secure cryptoprocessor version 1.2 has been removed and is no longer supported on RHEL 9 and later versions. TPM 2.0 replaces TPM 1.2 and provides many improvements over TPM 1.2. TPM 2.0 is not backward compatible.
+Note that for applications that require support for TPM 1.2, Red Hat recommends that you use RHEL 8.
+Dynamic preemptive scheduling enabled on ARM, AMD, and Intel 64-bit architectures
+Using Dynamic Scheduling, you can change the preemption mode of the kernel at boot or runtime instead of compile time. With dynamic preemptive handling, you can override the default preemption model to improve scheduling latency.
+The /sys/kernel/debug/sched/preempt file contains the current setting that supports runtime modification. Using the DYNAMIC_PREEMPT option, set the preempt= variable at boot to either none, voluntary or full. The voluntary preemption is the default.
+A new command line interface has been added to the tuna tool
+The tuna tool now provides a command line interface with more standardized menu of commands and options that is easier to use and maintain. The new command line interface is based on the argparse parsing module. With this enhancement, you can perform the following tasks:
+Change the attributes of the application and kernel threads.
+Operate on interrupt requests (IRQs) by name or number.
+Operate on tasks or threads by using the process identifier.
+Specify CPUs and sets of CPUs with the CPU or the socket number.
+By using the tuna -h command, you can print the command line arguments and their corresponding options. For each command, there are optional arguments, which you can view with the tuna [command] -h command.
+The runtime verification mechanism available for real-time kernel
+Runtime verification is a lightweight and rigorous method to check the behavioral equivalence between system events and its formal specifications. Runtime verification has monitors integrated in the kernel that attach to tracepoints. If a state deviates from defined specifications, the runtime verification program activates reactors to inform or enable a reaction such as capturing the event in the log file or a system shutdown to avoid failure propagation in an extreme case.
+For more information see, Optimizing RHEL 9 for Real Time for low latency operation.
+CONFIG_RT_GROUP_SCHED is disabled in RHEL 9
+In RHEL 8, the default control group was cgroups v1, and you could specify CPU bandwidth for realtime tasks on a per cgroup basis by using control files, for example, /sys/fs/cgroup/cpu,cpuacct/cpu.rt_period_us and /sys/fs/cgroup/cpu,cpuacct/cpu.rt_runtime_us. However, in RHEL 9, the CONFIG_RT_GROUP_SCHED kernel configuration option is disabled because cgroups v2 is the default control group and the equivalent control files do not exist for the cgroups v2 CPU controller. Note that the /proc/sys/kernel/sched_rt_runtime_us and /proc/sys/kernel/sched_rt_period_us global settings are still available, and you can use them with the stalld background process to prevent CPU time starvation.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+17.3. Notable changes to kernel
+The 64k page size kernel
+In addition to the RHEL 9 for ARM kernel which supports 4k pages, Red Hat now offers an optional kernel package that supports 64k pages: kernel-64k.
+The 64k page size kernel is a useful option for large datasets on ARM platforms. It enables better performance for some types of memory- and CPU-intensive operations.
+You must choose page size on 64-bit ARM architecture systems at the time of installation. You can install kernel-64k only by Kickstart by adding the kernel-64k package to the package list in the Kickstart file.
+For more information about installing kernel-64k, see Installing Kernel-64k on ARM.
+cgroup-v2 enabled by default in RHEL 9
+The control groups version 2 (cgroup-v2) feature implements a single hierarchy model that simplifies the management of control groups. Also, it ensures that a process can only be a member of a single control group at a time. Deep integration with systemd improves the end-user experience when configuring resource control on a RHEL system.
+Development of new features is mostly done for cgroup-v2, which has some features that are missing in cgroup-v1. Similarly, cgroup-v1 contains some legacy features that are missing in cgroup-v2. Also, the control interfaces are different. Therefore, third party software with direct dependency on cgroup-v1 may not run properly in the cgroup-v2 environment.
+To use cgroup-v1, you need to add the following parameters to the kernel command-line:
+systemd.unified_cgroup_hierarchy=0
+systemd.legacy_systemd_cgroup_controller
+Kernel changes potentially affecting third party kernel modules
+Linux distributions with a kernel version prior to 5.9 supported exporting GPL functions as non-GPL functions. As a result, users could link proprietary functions to GPL kernel functions through the shim mechanism. With this release, the RHEL kernel incorporates upstream changes that enhance the ability of RHEL to enforce GPL by rebuffing shim.
+Core scheduling is supported in RHEL 9
+With the core scheduling functionality users can prevent tasks that should not trust each other from sharing the same CPU core. Likewise, users can define groups of tasks that can share a CPU core.
+These groups can be specified:
+To improve security by mitigating some cross-Symmetric Multithreading (SMT) attacks
+To isolate tasks that need a whole core. For example for tasks in real-time environments, or for tasks that rely on specific processor features such as Single Instruction, Multiple Data (SIMD) processing
+For more information, see Core Scheduling.
+The kernelopts environment variable has been removed in RHEL 9
+In RHEL 8, the kernel command-line parameters for systems using the GRUB2 bootloader were defined in the kernelopts environment variable. This variable was stored in the /boot/grub2/grubenv file for each kernel boot entry. However, storing the kernel command-line parameters using kernelopts was not robust. Therefore, Red Hat removed kernelopts and the kernel command-line parameters are now stored in the Boot Loader Specification (BLS) snippet, instead of in the /boot/loader/entries/<KERNEL_BOOT_ENTRY>.conf file.
+Red Hat protects kernel symbols only for minor releases
+Red Hat guarantees that a kernel module will continue to load in all future updates within an Extended Update Support (EUS) release, only if you compile the kernel module using protected kernel symbols. There is no kernel Application Binary Interface (ABI) guarantee between minor releases of RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+17.4. Notable changes to boot loader
+Boot loader menu hidden by default
+Starting with RHEL 9.1, the GRUB boot loader is now configured to hide the boot menu by default if RHEL is the only installed operating system and if the previous boot succeeded. This results in a smoother boot experience on such systems.
+To access the boot menu, use one of the following options:
+Repeatedly press Esc after booting the system.
+Repeatedly press F8 after booting the system.
+Hold Shift during boot.
+To disable this function and configure the boot loader menu to display by default, use the following command:
+# grub2-editenv - unset menu_auto_hide
+Boot loader configuration files are unified across CPU architectures
+Configuration files for the GRUB boot loader are now stored in the /boot/grub2/ directory on all supported CPU architectures. The /boot/efi/EFI/redhat/grub.cfg file, which GRUB previously used as the main configuration file on UEFI systems, now simply loads the /boot/grub2/grub.cfg file.
+This change simplifies the layout of the GRUB configuration file, improves user experience, and provides the following notable benefits:
+You can boot the same installation with either EFI or legacy BIOS.
+You can use the same documentation and commands for all architectures.
+GRUB configuration tools are more robust, because they no longer rely on symbolic links and they do not have to handle platform-specific cases.
+The usage of the GRUB configuration files is aligned with images generated by CoreOS Assembler (COSA) and OSBuild.
+The usage of the GRUB configuration files is aligned with other Linux distributions.
+RHEL no longer boots on 32-bit UEFI
+Support for the 32-bit UEFI firmware was removed from the GRUB and shim boot loaders. As a consequence, RHEL 9 requires a 64-bit UEFI, and can no longer boot on 64-bit systems that use a 32-bit UEFI.
+The following packages have been removed as part of this change:
+grub2-efi-ia32
+grub2-efi-ia32-cdboot
+grub2-efi-ia32-modules
+shim-ia32
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 18. Networking
+The following chapters contain the most notable changes to networking between RHEL 8 and RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+18.1. Kernel
+WireGuard VPN is available as a Technology Preview
+WireGuard, which Red Hat provides as an unsupported Technology Preview, is a high-performance VPN solution that runs in the Linux kernel. It uses modern cryptography and is easier to configure than other VPN solutions. Additionally, the small code-basis of WireGuard reduces the surface for attacks and, therefore, improves the security.
+For further details, see Setting up a WireGuard VPN.
+The PRP and HSR protocols are available as a Technology Preview
+Starting with RHEL 9.3, the hsr kernel module is available as an unsupported Technology Preview. The module provides the following protocols:
+Parallel Redundancy Protocol (PRP)
+High-availability Seamless Redundancy (HSR)
+The IEC 62439-3 standard defines these protocols, and you can use this feature to configure zero-loss redundancy in Ethernet networks.
+Segment Routing over IPv6 (SRv6) is available as a Technology Preview
+The RHEL 9.3 kernel provides Segment Routing over IPv6 (SRv6) as an unsupported Technology Preview. You can use this functionality to optimize traffic flows in edge computing or to improve network programmability in data centers. However, the most significant use case is the end-to-end (E2E) network slicing in 5G deployment scenarios. In that area, the SRv6 protocol provides you with the programmable custom network slices and resource reservations to address network requirements for specific applications or services. At the same time, the solution can be deployed on a single-purpose appliance, and it satisfies the need for a smaller computational footprint.
+NetworkManager and the Nmstate API support MACsec hardware offload
+You can use both NetworkManager and the Nmstate API to enable MACsec hardware offload if the hardware supports this feature. As a result, you can offload MACsec operations, such as encryption, from the CPU to the network interface card.
+Note that this feature is an unsupported Technology Preview.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+18.2. Network Types
+Network teams are deprecated
+The teamd service and the libteam library are deprecated in Red Hat Enterprise Linux 9 and will be removed in the next major release. As a replacement, configure a bond instead of a network team.
+Red Hat focuses its efforts on kernel-based bonding to avoid maintaining two features, bonds and teams, that have similar functions. The bonding code has a high customer adoption, is robust, and has an active community development. As a result, the bonding code receives enhancements and updates.
+For details about how to migrate a team to a bond, see Migrating a network team configuration to network bond.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+18.3. NetworkManager
+NetworkManager stores new network configurations in a key file format
+Previously, NetworkManager stored new network configurations to /etc/sysconfig/network-scripts/ in the ifcfg format. Starting with RHEL 9.0, RHEL stores new network configurations at /etc/NetworkManager/system-connections/ in a key file format. The connections for which the configurations are stored to /etc/sysconfig/network-scripts/ in the old format still work uninterrupted. Modifications in existing profiles continue updating the older files.
+If Red Hat adds support for more connection profile properties, note that these properties work only in profiles in keyfile format.
+The WEP Wi-Fi connection method has been removed
+The insecure wired equivalent privacy (WEP) Wi-Fi connection method has been removed from RHEL 9. For secure Wi-Fi connections, use the Wi-Fi Protected Access 3 (WPA3) or WPA2 connection methods.
+dhclient in NetworkManager is now deprecated
+Instead of the default internal DHCP library, NetworkManager in RHEL 9 can be configured to use a DHCP client from the dhclient package. The option to use dhclient is now deprecated and results in a warning displayed at the NetworkManager startup. We recommend that you switch to the internal DHCP library. In RHEL 10, dhclient is no longer available and the applications configured to use dhclient now use the internal DHCP library instead.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+18.4. MPTCP
+The mptcpd service is available
+With this update the mptcpd service is available for usage. It is a user space based MPTCP path manager with integrated mptcpize tool.
+The mptcpd service provides the simplified automatic configuration of the MPTCP`paths. It benefits with better reliability of the `MPTCP socket in case of network failure or reconfiguration.
+Now you can use the mptcpize tool to enable the MPTCP protocol on the existing systemd units without additional external dependencies.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+18.5. Firewall
+The ipset and iptables-nft packages have been deprecated
+The ipset and iptables-nft packages have been deprecated in RHEL. The iptables-nft package contains different tools such as iptables, ip6tables, ebtables and arptables. These tools will no longer receive new features and using them for new deployments is not recommended. As a replacement, it is recommended to use the nft command line tool provided by the nftables package. Existing setups should migrate to nft when possible.
+For more information about migrating to nftables, see Migrating from iptables to nftables, as well as the iptables-translate(8) and ip6tables-translate(8) man pages.
+The unsupported xt_u32 Netfilter module has been removed
+RHEL 8 contained the unsupported xt_u32 module, which enabled iptables users to match arbitrary 32 bits in the packet header or payload. This module has been removed from RHEL 9. As a replacement, use the nftables packet filtering framework. If no native match exists in nftables, use the raw payload matching feature of nftables. For details, see the raw payload expression section in the nft(8) man page on your system.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+18.6. Infiniband and RDMA networks
+The ibdev2netdev script has been removed from RHEL 9
+ibdev2netdev was a helper utility that was able to display all the associations between network devices and Remote Direct Memory Access (RDMA) adapter ports. Previously, Red Hat was including ibdev2netdev in the rdma-core package. From Red Hat Enterprise Linux 9, ibdev2netdev has been removed and replaced by the rdmatool utility. Now, the iproute package includes rdmatool.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+18.7. Removed functionality
+RHEL 9 does not contain the legacy network scripts
+RHEL 9 does not contain the network-scripts package that provided the deprecated legacy network scripts in RHEL 8. To configure network connections in RHEL 9, use NetworkManager. For details, see the Configuring and managing networking documentation.
+The unsupported xt_u32 Netfilter module has been removed
+RHEL 8 contained the unsupported xt_u32 module, which enabled iptables users to match arbitrary 32 bits in the packet header or payload. This module has been removed from RHEL 9. As a replacement, use the nftables packet filtering framework. If no native match exists in nftables, use the raw payload matching feature of nftables. For details, see the raw payload expression section in the nft(8) man page on your system.
+Data Encryption Standard (DES) algorithm is not available for net-snmp communication in Red Hat Enterprise Linux 9
+In previous versions of RHEL, DES was used as an encryption algorithm for secure communication between net-snmp clients and servers. In RHEL 9, the DES algorithm isn’t supported by the OpenSSL library. The algorithm is marked as insecure and hence the DES support for net-snmp has been removed.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 19. Performance
+The following chapter contains the most notable changes to performance between RHEL 8 and RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+19.1. Notable changes to performance
+Performance Co-Pilot rebased to version 6.0
+Starting in RHEL 9.2, Performance Co-Pilot (PCP) has been updated to version 6.0. Notable improvements include:
+Version 3 PCP archive support:
+This includes support for instance domain change-deltas, Y2038-safe timestamps, nanosecond-precision timestamps, arbitrary timezones support, and 64-bit file offsets used throughout for larger (beyond 2GB) individual volumes.
+This feature is currently opt-in via the PCP_ARCHIVE_VERSION setting in the /etc/pcp.conf file.
+Version 2 archives remain the default.
+Only OpenSSL is used throughout PCP. Mozilla NSS/NSPR use has been dropped:
+This impacts libpcp, PMAPI clients and PMCD use of encryption. These elements are now configured and used consistently with pmproxy HTTPS support and redis-server, which were both already using OpenSSL.
+New nanosecond precision timestamp PMAPI calls for PCP library interfaces that make use of timestamps.
+These are all optional, and full backward compatibility is preserved for existing tools.
+The following tools and services have been updated:
+The sadf(1) tool now generates PCP archives from native sadc(1) archives
+Starting in RHEL 9, the sadf(1) tool provided by the sysstat package can generate PCP archives from native sadc(1) archives.
+By default, when the - flag is used with sadc(1), sadc(1) writes the data to the standard system activity daily data file. This file is named saDD and is located in the /var/log/sa directory by default. Conversely, when no input datafile is specified, the sadf(1) tool uses the standard system activity daily data file to generate archives. Pass numbers as an argument to tell sadf(1) to generate archives from data recorded that specified number of days in the past.
+To generate a PCP archive from an sadc(1) archive recorded 2 days ago, run:
+# sadf -l -O pcparchive=/tmp/recording -2
+To show a list of metrics in the PCP archive generated from an sadc(1) archive archive, run:
+$ pminfo --archive /tmp/recording
+Disk.dev.avactive
+Disk.dev.read
+Disk.dev.write
+Disk.dev.blkread
+[...]
+To show the timespace of the archive and hostname of the PCP archive generated from an sadc(1) archive
+$ pmdumplog --label /tmp/recording
+Log Label (Log Format Version 2)
+Performance metrics from host shard
+        commencing Tue Jul 20 00:10:30.642477 2021
+        ending     Wed Jul 21 00:10:30.222176 2021
+You can then analyze the PCP archive generated from an sadc(1) archive by using PCP commands, for example:
+$ pmchart --archive /tmp/recording
+New PCP PMDA - pmdabpf
+RHEL 9 is distributed with the pcp-pmda-bpf package, which provides the pmdabpf Performance Co-Pilot (PCP) Performance Metric Domain Agent (PMDA).
+The pmdabpf PMDA extracts live performance data from eBPF programs utilizing BPF CO-RE (Compile Once - Run Everywhere), that is libbpf and BTF.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 20. Security
+The following chapters contain the most notable changes to security between RHEL 8 and RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+20.1. Security compliance
+CIS and DISA STIG profiles provided as DRAFT
+The profiles based on benchmarks from the Center for Internet Security (CIS) and Defence Industry Security Association Security Technical Implementation Guides (DISA STIG) are provided as DRAFT because the issuing authorities have not yet published an official benchmark for RHEL 9. In addition, the OSSP profile is in DRAFT because it is being implemented.
+For a complete list of profiles available in RHEL 9, see SCAP Security Guide profiles supported in RHEL 9.
+OpenSCAP no longer supports SHA-1 and MD5
+Due to removal of SHA-1 and MD5 hash functions in Red Hat Enterprise Linux 9, support for OVAL filehash_test has been removed from OpenSCAP. Also, support for SHA-1 and MD5 hash functions has been removed from OVAL filehash58_test implementation in OpenSCAP. As a result, OpenSCAP evaluates rules in SCAP content that use the OVAL filehash_test as notchecked. In addition, OpenSCAP returns notchecked also when evaluating OVAL filehash58_test with the hash_type element within filehash58_object set to SHA-1 or MD5.
+To update your OVAL content, rewrite the affected SCAP content so that it uses filehash58_test instead of filehash_test and use one of SHA-224, SHA-256, SHA-384, SHA-512 in the hash_type element within filehash58_object.
+OpenSCAP uses the data stream file instead of the XCCDF file
+The SCAP source data stream file (ssg-rhel9-ds.xml) contains all the data that in previous versions of RHEL were contained in the XCCDF file (ssg-rhel9-xccdf.xml). The SCAP source data stream is a container file that includes all the components (XCCDF, OVAL, CPE) needed to perform a compliance scan. Using the SCAP source data stream instead of XCCDF has been recommended since RHEL 7. In previous versions of RHEL, the data in the XCCDF file and SCAP source data stream was duplicated. In RHEL 9, this duplication is removed to reduce the RPM package size. If your scenario requires using separate files instead of the data stream, you can split the data stream file by using this command: # oscap ds sds-split /usr/share/xml/scap/ssg/content/ssg-rhel9-ds.xml output_directory.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+20.2. Crypto-policies, RHEL core cryptographic components, and protocols
+Continuing SHA-1 deprecation
+In RHEL 9, SHA-1 usage for signatures is restricted in the DEFAULT system-wide cryptographic policy. Except for HMAC, SHA-1 is no longer allowed in TLS, DTLS, SSH, IKEv2, DNSSEC, and Kerberos protocols. Individual applications not controlled by the RHEL system-wide crypto policies are also moving away from using SHA-1 hashes in RHEL 9.
+If your scenario requires the use of SHA-1 for verifying existing or third-party cryptographic signatures, you can enable it by entering the following command:
+# update-crypto-policies --set DEFAULT:SHA1
+Alternatively, you can switch the system-wide crypto policies to the LEGACY policy. Note that LEGACY also enables many other algorithms that are not secure. See the Re-enabling SHA-1 section in the RHEL 9 Security hardening document for more information.
+For solutions of compatibility problems with systems that still require SHA-1, see the following KCS articles:
+SSH from RHEL 9 to RHEL 6 systems does not work
+Packages signed with SHA-1 cannot be installed or upgraded
+Failed connection with SSH servers and clients that do not support the 'server-sig-algs' extension
+DNSSEC records signed with RSASHA1 fail to verify
+Algorithms disabled in all policy levels
+The following algorithms are disabled in the LEGACY, DEFAULT and FUTURE crypto policies provided with RHEL 9:
+TLS older than version 1.2 (since RHEL 9, was < 1.0 in RHEL 8)
+DTLS older than version 1.2 (since RHEL 9, was < 1.0 in RHEL 8)
+DH with parameters < 2048 bits (since RHEL 9, was < 1024 bits in RHEL 8)
+RSA with key size < 2048 bits (since RHEL 9, was < 1024 bits in RHEL 8)
+DSA (since RHEL 9, was < 1024 bits in RHEL 8)
+3DES (since RHEL 9)
+RC4 (since RHEL 9)
+FFDHE-1024 (since RHEL 9)
+DHE-DSS (since RHEL 9)
+Camellia (since RHEL 9)
+ARIA
+SEED
+IDEA
+Integrity-only cipher suites
+TLS CBC mode cipher suites using SHA-384 HMAC
+AES-CCM8
+All ECC curves incompatible with TLS 1.3, including secp256k1
+IKEv1 (since RHEL 8)
+NSEC3DSA in the BIND configuration (since RHEL 9.2)
+Changes to TLS
+In RHEL 9, TLS configuration is performed using the system-wide cryptographic policies mechanism. TLS versions below 1.2 are not supported anymore. DEFAULT, FUTURE and LEGACY cryptographic policies allow only TLS 1.2 and 1.3. See Using system-wide cryptographic policies for more information.
+The default settings provided by libraries included in RHEL 9 are secure enough for most deployments. The TLS implementations use secure algorithms where possible while not preventing connections from or to legacy clients or servers. Apply hardened settings in environments with strict security requirements where legacy clients or servers that do not support secure algorithms or protocols are not expected or allowed to connect.
+The Extended Master Secret TLS Extension is now enforced on FIPS-enabled systems
+With the release of the RHSA-2023:3722 advisory, the TLS Extended Master Secret (EMS) extension (RFC 7627) is mandatory for TLS 1.2 connections on FIPS-enabled RHEL 9 systems. This is in accordance with FIPS-140-3 requirements. TLS 1.3 is not affected.
+Legacy clients that do not support EMS or TLS 1.3 now cannot connect to FIPS servers running on RHEL 9. Similarly, RHEL 9 clients in FIPS mode cannot connect to servers that only support TLS 1.2 without EMS. This in practice means that these clients cannot connect to servers on RHEL 6, RHEL 7 and non-RHEL legacy operating systems. This is because the legacy 1.0.x versions of OpenSSL do not support EMS or TLS 1.3.
+SCP not supported in RHEL 9
+The secure copy protocol (SCP) protocol is no longer supported because it is difficult to secure. It has already caused security issues, for example CVE-2020-15778. In RHEL 9, SCP is replaced by the SSH File Transfer Protocol (SFTP) by default.
+Interoperability of FIPS:OSPP hosts impacted due to CNSA 1.0
+The OSPP subpolicy has been aligned with Commercial National Security Algorithm (CNSA) 1.0. This affects the interoperability of hosts that use the FIPS:OSPP policy-subpolicy combination, with the following major aspects:
+Minimum RSA key size is mandated at 3072 bits.
+Algorithm negotiations no longer support AES-128 ciphers, the secp256r1 elliptic curve, and the FFDHE-2048 group.
+OpenSSH root password login disabled by default
+The default configuration of OpenSSH in RHEL 9 disallows users to log in as root with a password to prevent attackers from gaining access through brute-force attacks on passwords.
+OpenSSH further enforces SHA-2
+As part of the effort to migrate further from the less secure SHA-1 message digest for cryptographic purposes, the following changes were made in OpenSSH:
+Added a check on sshd startup whether using SHA-1 is configured on the system. If it is not available, OpenSSH does not try to use SHA-1 for operations. This eliminates loading DSS keys when they are present and also enforces advertising rsa-sha2 combinations when they are available.
+On SSH private key conversion, OpenSSH explicitly uses SHA-2 for testing RSA keys.
+When SHA-1 signatures are unavailable on the server side, sshd uses SHA-2 to confirm host key proof. This might be incompatible with clients on RHEL 8 and earlier versions.
+When the SHA-1 algorithm is unavailable on the client side, OpenSSH uses SHA-2.
+On the client side, OpenSSH permits SHA-2-based key proofs from the server when SHA-1 was used in key proof request or when the hash algorithm is not specified (assuming default). This is aligned with the already present exception for RSA certificates, and allows connecting by using modern algorithms when supported.
+GnuTLS requires EMS with TLS 1.2 in FIPS mode
+To comply with the FIPS-140-3 standard, GnuTLS servers and clients require the Extended Master Secret (EMS) extension (RFC 7627) for all TLS 1.2 connections negotiated in FIPS mode. If your scenario requires preserving compatibility with older servers and clients that do not support EMS and you cannot use TLS 1.3, you can apply the NO-ENFORCE-EMS system-wide cryptographic subpolicy:
+# update-crypto-policies --set FIPS:NO-ENFORCE-EMS
+GnuTLS no longer supports TPM 1.2
+The GnuTLS library no longer supports the Trusted Platform Module (TPM) 1.2 technology. Your applications using TPM through the GnuTLS API must support TPM 2.0.
+GnuTLS support for GOST has been removed
+In RHEL 8, the GOST ciphers have been disabled through the system-wide cryptographic policies. In RHEL 9, support for these ciphers has been removed from the GnuTLS library.
+cyrus-sasl now uses GDBM instead of Berkeley DB
+The cyrus-sasl package is now built without the libdb dependency, and the sasldb plugin uses the GDBM database format instead of Berkeley DB. To migrate your existing Simple Authentication and Security Layer (SASL) databases stored in the old Berkeley DB format, use the cyrusbdb2current tool with the following syntax:
+$ cyrusbdb2current <sasldb_path> <new_path>
+NSS now enforce EMS in FIPS mode
+The Network Security Services (NSS) libraries now contain the TLS-REQUIRE-EMS policy to require the Extended Master Secret (EMS) extension (RFC 7627) for all TLS 1.2 connections as mandated by the FIPS 140-3 standard. NSS use the new policy when the system-wide cryptographic policies are set to FIPS.
+If your scenario requires interoperating with legacy systems without support for EMS or TLS 1.3, you can apply the NO-ENFORCE-EMS system-wide cryptographic subpolicy. Such a change violates the FIPS-140-3 requirements.
+NSS no longer support DBM and pk12util defaults changed
+The Network Security Services (NSS) libraries no longer support the DBM file format for the trust database. In RHEL 8, the SQLite file format became the default format, and the existing DBM databases were opened on read-only mode and automatically converted to SQLite. Before you upgrade to RHEL 9, update all trust databases from DBM to SQLite.
+See the Updating NSS databases from DBM to SQLite procedure for detailed instructions.
+NSS pk12util no longer uses DES-3 and SHA-1 by default
+The pk12util tool now uses the AES and SHA-256 algorithms instead of DES-3 and SHA-1 by default when exporting private keys.
+Note that SHA-1 is disabled by the default system-wide cryptographic policy for all signatures in RHEL 9.
+NSS no longer support RSA keys shorter than 1023 bits
+The update of the Network Security Services (NSS) libraries changes the minimum key size for all RSA operations from 128 to 1023 bits. This means that NSS no longer perform the following functions:
+Generate RSA keys shorter than 1023 bits.
+Sign or verify RSA signatures with RSA keys shorter than 1023 bits.
+Encrypt or decrypt values with RSA key shorter than 1023 bits.
+OpenSSL ENGINE extension API is not supported in FIPS mode
+The legacy extension system to OpenSSL, the ENGINE API, is not compatible with the new provider API. Therefore, applications that depend on functionality provided by OpenSSL engines, such as the openssl-pkcs11 and openssl-ibmca modules, cannot be used in FIPS mode.
+FIPS mode in OpenSSL must be enabled to work correctly
+If you are using non-default values in the openssl.cnf configuration file with FIPS mode enabled, and especially when using a third-party FIPS provider, add fips=yes to the openssl.cnf file.
+OpenSSL does not accept explicit curve parameters in FIPS mode
+Elliptic curve cryptography parameters, private keys, public keys, and certificates that specified explicit curve parameters no longer work in FIPS mode. Specifying the curve parameters using ASN.1 object identifiers, which use one of the FIPS-approved curves, still works in FIPS mode.
+OpenSSL no longer creates X.509 v1 certificates
+With the OpenSSL TLS toolkit 3.2.1 introduced in RHEL 9.5, you can no longer create certificates in the X.509 version 1 format using the openssl CA tool. The X.509 v1 format does not meet current web requirements.
+Libreswan now requests ESN by default
+In Libreswan, the default value for the configuration option esn= has changed from no to either. This means that when initiating connections, Libreswan requests the use of Extended Serial Number (ESN) by default. In particular, when hardware offload is used, this new behavior prevents certain network interface cards (NIC) from establishing IPsec connection if they do not support ESN. To disable ESN, set esn= to no and the replay_window= option to a value of 32 or lower. For example:
+  esn=no
+  replay_window=32
+The replay_window= option is necessary because a different mechanism uses ESN for anti-replay protection with window sizes larger than 32.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+20.3. SELinux
+Support for disabling SELinux through /etc/selinux/config has been removed
+With the RHEL 9.0 release, support for disabling SELinux through the SELINUX=disabled option in the /etc/selinux/config file has been removed from the kernel. When you disable SELinux only through /etc/selinux/config, the system starts with SELinux enabled but with no policy loaded, and SELinux security hooks remain registered in the kernel. This means that SELinux disabled by using /etc/selinux/config still requires some system resources, and you should instead disable SELinux by using the kernel command line in all performance-sensitive scenarios.
+Furthermore, the Anaconda installation program and the corresponding man pages have been updated to reflect this change. This change also enables read-only-after-initialization protection for the Linux Security Module (LSM) hooks.
+If your scenario requires disabling SELinux, add the selinux=0 parameter to your kernel command line.
+See the Remove support for SELinux run-time disable Fedora wiki page for more information.
+Additional services confined in the SELinux policy
+The RHEL 9.3 release added additional rules to the SELinux policy that confine the following systemd services:
+qat
+systemd-pstore
+boothd
+fdo-manufacturing-server
+fdo-rendezvous-server
+fdo-client-linuxapp
+fdo-owner-onboarding-server
+As a result, these services do not run with the unconfined_service_t SELinux label anymore, and run successfully in SELinux enforcing mode.
+The glusterd SELinux module moved to a separate glusterfs-selinux package
+With this update, the glusterd SELinux module is maintained in the separate glusterfs-selinux package. The module is therefore no longer part of the selinux-policy package. For any actions that concern the glusterd module, install and use the glusterfs-selinux package.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 21. Shells and command-line tools
+The following chapters contain the most notable changes to shells and command-line tools between RHEL 8 and RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+21.1. Notable changes to system management
+Data Encryption Standard (DES) algorithm is not available for net-snmp communication in Red Hat Enterprise Linux 9
+In previous versions of RHEL, DES was used as an encryption algorithm for secure communication between net-snmp clients and servers. In RHEL 9, the DES algorithm isn’t supported by the OpenSSL library. The algorithm is marked as insecure and the DES support for net-snmp has therefore been removed.
+The ABRT tool has been removed
+The Automatic Bug Reporting Tool (ABRT) for detecting and reporting application crashes is not available in RHEL 9.
+As a replacement, use the systemd-coredump tool to log and store core dumps, which are automatically generated files after a program crashes.
+The hidepid=n mount option is not supported in RHEL 9 systemd
+The mount option hidepid=n, which controls who can access information in /proc/[pid] directories, is not compatible with systemd infrastructure provided in RHEL 9.
+In addition, using this option might cause certain services started by systemd to produce SELinux AVC denial messages and prevent other operations from being completed.
+The dump utility from the dump package has been removed
+The dump utility used for backup of file systems has been deprecated in Red Hat Enterprise Linux 8 and is not available in RHEL 9.
+In RHEL 9, Red Hat recommends using the tar, or dd as a backup tool for ext2, ext3, and ext4 file systems. The dump utility will be a part of the EPEL 9 repository.
+Note that the restore utility from the dump package remains available and supported in RHEL 9 and is available as the restore package.
+RHEL 9 does not contain ReaR crontab
+The /etc/cron.d/rear crontab in the rear package, which runs rear mkrescue after the disk layout changes, has been removed in RHEL 9.
+If you relied on the /etc/cron.d/rear crontab to run rear mkrescue, you can manually configure periodic runs of ReaR instead.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+21.2. Notable changes to command-line tools
+Support for the raw command-line tool has been removed
+With this release, the raw (/usr/bin/raw) command-line tool has been removed from the util-linux package, because Linux kernel does not support raw devices since version 5.14.
+Currently, there is no replacement available.
+cgroupsv1 is deprecated in RHEL 9
+cgroups is a kernel subsystem used for process tracking, system resource allocation and partitioning. Systemd service manager supports booting in the cgroups v1 mode and in cgroups v2 mode. In Red Hat Enterprise Linux 9, the default mode is v2. In the next major release, systemd will not support booting in the cgroups v1 mode and only cgroups v2 mode will be available.
+The lsb-release binary is not available in RHEL 9
+The information in the /etc/os-release file was previously available by calling the lsb-release binary. This binary was included in the redhat-lsb package, which was removed in RHEL 9. Now, you can display information about the operating system, such as the distribution, version, code name, and associated metadata, by reading the /etc/os-release file. This file is provided by Red Hat and any changes to it are overwritten with each update of the redhat-release package. The format of the file is KEY=VALUE, and you can safely source the data for a shell script.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 22. Software management
+The following chapter contains the most notable changes to software management between RHEL 8 and RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+22.1. Notable changes to software management
+Package management with DNF/YUM
+In Red Hat Enterprise Linux 9, software installation is ensured by DNF. Red Hat continues to support the usage of the yum term for consistency with previous major versions of RHEL. If you type dnf instead of yum, the command works as expected because both are aliases for compatibility.
+Although RHEL 8 and RHEL 9 are based on DNF, they are compatible with YUM used in RHEL 7.
+For more information, see Managing software with the DNF tool.
+Notable RPM features and changes
+Red Hat Enterprise Linux 9 is distributed with RPM version 4.16. This version introduces many enhancements over its previous versions.
+Notable features include:
+New SPEC features, most notably:
+Fast macro-based dependency generators
+It is now possible to define dependency generators as regular RPM macros. This is especially useful in combination with the embedded Lua interpreter (%{lua:…​}) because it enables writing sophisticated yet fast generators and avoiding redundant forking and executing a shell script.
+Example:
+%__foo_provides()    %{basename:%{1}}
+The %generate_buildrequires section that enables generating dynamic build dependencies
+Additional build dependencies can now be generated programmatically at RPM build time, using the newly available %generate_buildrequires section. This is useful when packaging software written in a language in which a specialized utility is commonly used to determine run-time or build-time dependencies, such as Rust, Golang, Node.js, Ruby, Python or Haskell.
+Meta (unordered) dependencies
+A new dependency qualifier called meta enables expressing dependencies that are not specifically install-time or run-time dependencies. This is useful for avoiding unnecessary dependency loops that could otherwise arise from the normal dependency ordering, such as when specifying the dependencies of a meta package.
+Example:
+Requires(meta): <pkgname>
+Native version comparison in expressions
+It is now possible to compare arbitrary version strings in expressions by using the newly supported v"…​" format.
+Example:
+%if v"%{python_version}" < v"3.9"
+Caret version operator, opposite of tilde
+The new caret (^) operator can be used to express a version that is higher than the base version. It is a complement to the existing tilde (~) operator which has the opposite semantics.
+%elif, %elifos and %elifarch statements
+Optional automatic patch and source numbering
+Patch: and Source: tags without a number are now automatically numbered based on the order in which they are listed.
+%autopatch now accepts patch ranges
+The %autopatch macro now accepts the -m and -M parameters to limit the minimum and maximum patch number to apply, respectively.
+%patchlist and %sourcelist sections
+It is now possible to list patch and source files without preceding each item with the respective Patch: and Source: tags by using the newly added %patchlist and %sourcelist sections.
+A more intuitive way to declare build conditionals
+Starting from RHEL 9.2, you can use the new %bcond macro to build conditionals. The %bcond macro takes a build conditional name and the default value as arguments. Compared to the old %bcond_with and %bcond_without macros, %bcond is easier to understand and allows you to calculate the default value at build time. The default value can be any numeric expression.
+Example:
+To create a gnutls build conditional, enabled by default:
+%bcond gnutls 1
+To create a bootstrap build conditional, disabled by default:
+%bcond bootstrap 0
+To create an openssl build conditional, defaulting to opposite of gnutls:
+%bcond openssl %{without gnutls}
+The RPM database is now based on the sqlite library. Read-only support for BerkeleyDB databases has been retained for migration and query purposes.
+A new rpm-plugin-audit plug-in for issuing audit log events on transactions, previously built into RPM itself
+Increased parallelism in package builds
+There have been numerous improvements to the way the package build process is parallelized. These improvements involve various buildroot policy scripts and sanity checks, file classification, and subpackage creation and ordering. As a result, package builds on multiprocessor systems, particularly for large packages, should now be faster and more efficient.
+Enforced UTF-8 validation of header data at build-time
+RPM now supports the Zstandard (zstd) compression algorithm
+In RHEL 9, the default RPM compression algorithm has switched to Zstandard (zstd). As a result, packages now install faster, which can be especially noticeable during large transactions.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 23. Subscription management
+The following chapter contains the most notable changes to subscription management between RHEL 8 and RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+23.1. Notable changes to subscription management
+Merged system purpose commands under the subscription-manager syspurpose command
+Previously, there were two different commands to set system purpose attributes; syspurpose and subscription-manager. To unify all the system purpose attributes under one module, all the addons, role, service-level, and usage commands from subscription-manager have been moved to the new submodule, subscription-manager syspurpose.
+Existing subscription-manager commands outside the new submodule are deprecated. The separate package (python3-syspurpose) that provides the syspurpose command line tool has been removed in RHEL 9.
+This update provides a consistent way to view, set, and update all system purpose attributes using a single command of subscription-manager. This command replaces all the existing system purpose commands with their equivalent versions available as a new subcommand. For example, subscription-manager role --set SystemRole becomes subscription-manager syspurpose role --set SystemRole and so on.
+For complete information about the new commands, options, and other attributes, see the SYSPURPOSE OPTIONS section in the subscription-manager man page or Configuring system purpose using the subscription manager command line tool.
+virt-who now uses /etc/virt-who.conf for global options instead of /etc/sysconfig/virt-who
+In RHEL 9, the global options for the virt-who utility on your system are stored in the /etc/virt-who.conf file. Therefore, the /etc/sysconfig/virt-who file is not being used any more, and has been removed.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 24. System roles
+The following chapter contains the most notable changes to system roles between RHEL 8 and RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+24.1. Performing system administration tasks with RHEL system roles
+As of Red Hat Enterprise Linux 9.0 General Availability (GA) release, RHEL system roles includes the ansible-core 2.12 package. This is a version of Ansible that has only the core functionality - that is, it does not include modules such as blivet for the storage role, gobject for the network role, and plugins such as json_query.
+With RHEL system roles, you can take advantage of a configuration interface to remotely manage multiple RHEL systems. As an option to the traditional RHEL system roles format, you can benefit from Ansible Collections, available in the Automation Hub only for Ansible Automation Platform Customers or via RPM package, available for RHEL users.
+RHEL system roles support
+Support for the following roles are available:
+The cockpit RHEL system role. You can automate the deployment and configuration of the web console and, thus, be able to manage your RHEL systems from a web browser.
+The firewall RHEL system role.
+The ha_cluster RHEL system role, formerly presented as a Technology Preview, is now fully supported.
+The gfs2 RHEL system role, which creates Red Hat Global File System 2 (GFS2) file systems in a Pacemaker cluster managed with the pcs command-line interface. Previously, setting up GFS2 file systems in a supported configuration required you to follow a long series of steps to configure the storage and cluster resources. The gfs2 role simplifies the process. Using the role, you can specify only the minimum information needed to configure GFS2 file systems in a RHEL high availability cluster.
+The nbde_client RHEL system role now supports servers with static IP addresses.
+The Microsoft SQL (microsoft.sql.server) role for Microsoft SQL Server. It simplifies and automates the configuration of RHEL with recommended settings for MSSQL Server workloads. Currently, the SQL Server does not support running on RHEL 9. You can only run the role on a RHEL 9 control node to manage the SQL Server on RHEL 7 and RHEL 8.
+The VPN RHEL system role, to configure VPN connections on RHEL systems by using Red Hat Ansible Automation Platform. Users can use it to set up host-to-host, network-to-network, VPN Remote Access Server, and Mesh configurations.
+The IPMI modules, to automate hardware management interfaces available in the rhel_mgmt Collection.
+The keylime_server, to configure and deploy the server components for Keylime Remote Attestation.
+To learn more about the RHEL system roles, see the documentation title Administration and configuration tasks using system roles in RHEL.
+Support for Ansible Engine 2.9 is no longer available in RHEL 9
+Ansible Engine 2.9 is no longer available in Red Hat Enterprise Linux 9. Playbooks that previously ran on Ansible Engine 2.9 might generate error messages related to missing plugins or modules. If your use case for Ansible falls outside of the limited scope of support for Ansible Core provided in RHEL, contact Red Hat to discuss the available offerings.
+RHEL system roles now uses Ansible Core
+As of the RHEL 9 General Availability release, Ansible Core is provided with a limited scope of support to enable RHEL supported automation use cases. Ansible Core is available in the AppStream repository for RHEL. For details on the scope of support, refer to Scope of support for the Ansible Core package included in the RHEL 9 AppStream.
+The deprecated --token option of the subscription-manager register command will stop working at the end of November 2024
+The default entitlement server, subscription.rhsm.redhat.com, will no longer be allowing token-based authentication from the end of November 2024. As a result, the deprecated --token=<TOKEN> option of the subscription-manager register command will no longer be a supported authentication method. As a consequence, if you use subscription-manager register --token=<TOKEN>, the registration will fail with the following error message:
+Token authentication not supported by the entitlement server
+To register your system, use other supported authorization methods, such as including paired options --username / --password OR --org / --activationkey with the subscription-manager register command.
+RHEL system roles can be used to manage multiple different versions of RHEL
+You can use RHEL system roles as a consistent interface to manage different versions of RHEL. This can help to ease the transition between major versions of RHEL.
+RHEL 8 moves to Maintenance Support phase
+After the RHEL 8.10 release, RHEL 8 moved to the Maintenance Support phase and will no longer receive new features. As a result, starting with RHEL 9.5, new features will only be available in RHEL 9. Therefore, to get access to the latest enhancements use RHEL 9 for your RHEL system role control nodes.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 25. Virtualization
+The following chapters contain the most notable changes to virtualization between RHEL 8 and RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+25.1. Notable changes to KVM
+KVM virtualization is no longer supported on IBM POWER
+Red Hat Kernel-based Virtual Machine (KVM) for RHEL 9.0 and later is not supported on IBM POWER hardware.
+KVM virtualization fully supported on 64-bit ARM architecture
+In RHEL 9.4 and later, creating KVM virtual machines on systems that use 64-bit ARM (also known as AArch64) CPUs is fully supported. Note, however, that certain virtualization features and functionalities that are available on AMD64 and Intel 64 systems might work differently or be unsupported on 64-bit ARM systems.
+For details, see How virtualization on ARM 64 differs from AMD 64 and Intel 64.
+VM machine types based on RHEL 7.5 and earlier are unsupported
+In RHEL 9, virtual machines (VMs) no longer support machine types based on RHEL 7.5 and earlier. These also include pc-i440fx-rhel7.5.0 and earlier machine types, which were default in earlier major versions of RHEL. As a consequence, attempting to start a VM with such machine types on a RHEL 9 host fails with an unsupported configuration error. If you encounter this problem after upgrading your host to RHEL 9, see the Red Hat KnowledgeBase.
+RHEL 9 still supports the pc-i440fx-rhel7.6.0 machine type. However, RHEL will remove support for all i440x machine types in a future major update.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+25.2. Notable changes to libvirt
+Modular libvirt daemons
+In RHEL 9, the libvirt library uses modular daemons that handle individual virtualization driver sets on your host. For example, the virtqemud daemon handles QEMU drivers. This makes it possible to fine-grain a variety of tasks that involve virtualization drivers, such as resource load optimization and monitoring.
+In addition, the monolithic libvirt daemon, libvirtd, has become deprecated. However, if you upgrade from RHEL 8 to RHEL 9, your host will still use libvirtd, which you can continue using in RHEL 9.
+Nevertheless, Red Hat recommends enabling modular libvirt daemons instead. For instructions, see the Enabling modular libvirt daemons document.
+Note, however, that if you switch to using modular libvirt daemons, pre-configured tasks that use libvirtd will stop working.
+External snapshots for virtual machines
+RHEL 9.4 and later supports the external snapshot mechanism for virtual machines (VMs), which replaces the previously deprecated internal snapshot mechanism. As a result, you can create, delete, and revert to VM snapshots that are fully supported. External snapshots work more reliably both in the command-line interface and in the RHEL web console. This also applies to snapshots of running VMs, known as live snapshots.
+Note, however, that some commands and utilities might still create internal snapshots. To verify that your snapshot is fully supported, ensure that it is configured as external. For example:
+# virsh snapshot-dumpxml VM-name snapshot-name | grep external
+<disk name='vda' snapshot='external' type='file'>
+virsh iface-* commands are now unsupported
+The virsh iface-* commands, such as virsh iface-start and virsh iface-destroy, are no longer supported in RHEL 9. Due to the removal of the netcf package, the majority of them do not work. To create and modify network interfaces, use NetworkManager utilities, such as nmcli.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+25.3. Notable changes to QEMU
+QEMU no longer includes the SGA option ROM
+In RHEL 9, the Serial Graphics Adapter (SGA) option ROM has been replaced by an equivalent functionality in SeaBIOS. However, if your virtual machine (VM) configuration uses the following XML fragament, this change will not affect your VM functionality.
+  <bios useserial='yes'/>
+TPM passthrough has been removed
+It is no longer possible to assign a physical Trusted Platform Module (TPM) device using the passthrough back end to a VM on RHEL 9. Note that this was an unsupported feature in RHEL 8. Instead, use the vTPM functionality, which uses the emulator back end, and is fully supported.
+Other unsupported devices
+QEMU no longer supports the following virtual devices:
+The Cirrus graphics device. The default graphics devices are now set to stdvga on BIOS-based machines and bochs-display on UEFI-based machines.
+The ac97 audio device. In RHEL 9, libvirt uses the ich9 device instead.
+Intel vGPU removed
+The packages required for the Intel vGPU feature were removed in RHEL 9.3.
+Previously, as a Technology Preview, it was possible to divide a physical Intel GPU device into multiple virtual devices referred to as mediated devices. These mediated devices could then be assigned to multiple virtual machines (VMs) as virtual GPUs.
+Since RHEL 9.3, you cannot use this feature.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+25.4. Notable changes to SPICE
+SPICE has become unsupported
+In RHEL 9, the SPICE remote display protocol is no longer supported. QXL, the graphics device used by SPICE, has also become unsupported. On a RHEL 9 host, VMs configured to use SPICE or QXL fail to start and instead display an unsupported configuration error.
+Instead of SPICE, Red Hat recommends using alternate solutions for remote display streaming:
+For remote console access, use the VNC protocol. However, note that certain features available on SPICE are currently unsupported or do not work well on VNC. This includes:
+Smart card sharing from the host to the VM (It is now supported only by third party remote visualization solutions.)
+Audio playback from the VM to the host
+Automated VM screen resizing
+USB redirection from the host to the VM
+Drag & drop file transfer from the host to the VM
+In addition, VNC cannot be used by the GNOME Boxes application. As a consequence, Boxes is currently not available in RHEL 9.
+For advanced remote display functions, use third party tools such as RDP, HP ZCentral Remote Boost, or Mechdyne TGX.
+For graphical VMs hosted on RHEL 9, Red Hat recommends using the virtio-vga and virtio-gpu virtual graphics cards.
+For more information on how to switch a VM from the SPICE protocol to VNC, see the Knowledgebase article Unable to define, create or start a Virtual Machine using spice or qxl in RHEL 9 KVM.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 26. The web console
+The following chapter contains the most notable changes to the web console between RHEL 8 and RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+26.1. Changes to the RHEL web console
+Remote root login disabled on new installations of RHEL 9.2 and later
+Due to security reasons, on new installations of RHEL 9.2 and newer, it is not possible to connect to the web console from a remote machine as a root user.
+To enable the remote root login:
+As a root user, open the /etc/cockpit/disallowed-users file in a text editor.
+Remove the root user line from the file.
+Save your changes.
+Appendix A. Changes to packages
+The following chapters contain changes to packages between RHEL 8 and RHEL 9, as well as changes between minor releases of RHEL 9.
+A.1. New packages
+The following packages were added in RHEL 9:
+A.2. Package replacements
+The following table lists packages that were replaced, renamed, merged, or split:
+A.3. Moved packages
+The following packages were moved between repositories within RHEL 9:
+This table uses abbreviated names for the repository ID. Use the following examples to help identify the full repository ID, where <arch> is the specific architecture:
+rhel9-BaseOS: rhel-9-for-<arch>-baseos-rpms, rhel-9-for-<arch>-baseos-eus-rpms, rhel-9-for-<arch>-baseos-e4s-rpms.
+rhel9-AppStream: rhel-9-for-<arch>-appstream-rpms, rhel-9-for-<arch>-appstream-eus-rpms, rhel-9-for-<arch>-appstream-e4s-rpms.
+rhel9-CRB: codeready-builder-for-rhel-9-<arch>-rpms, codeready-builder-for-rhel-9-<arch>-eus-rpms.
+rhel9-SAP-Solutions: rhel-9-for-<arch>-sap-solutions-rpms, rhel-9-for-<arch>-sap-solutions-eus-rpms, rhel-9-for-<arch>-sap-solutions-e4s-rpms.
+rhel9-SAP-NetWeaver: rhel-9-for-<arch>-sap-netweaver-rpms, rhel-9-for-<arch>-sap-netweaver-eus-rpms, rhel-9-for-<arch>-sap-netweaver-e4s-rpms.
+A.4. Removed packages
+The following packages are part of RHEL 8 but are not distributed with RHEL 9:
+A.5. Packages with removed support
+Certain packages in RHEL 9 are distributed through the CodeReady Linux Builder repository, which contains unsupported packages for use by developers.
+The following packages are distributed in a supported repository in RHEL 8 and in the CodeReady Linux Builder repository RHEL 9:

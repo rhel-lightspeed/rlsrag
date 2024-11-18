@@ -1,0 +1,209 @@
+Abstract
+The IdM API contains examples for using various types of request. Administrators and developers can use the IdM API to write custom scripts in Python to integrate IdM with third-party applications.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 1. Introduction to IdM API
+You can access the services of the Red Hat Identity Management with command-line and web-based interfaces. With the Identity Management API, you can interact with Identity Management services through the third-party applications and scripts that are written in Python.
+The Identity Management API has the JavaScript Object Notation Remote Procedure Call (JSON-RPC) interface. To use the automation for various important parts, access the Identity Management API through Python. For example, you can retrieve metadata from the server with all available commands.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 2. Basics of IdM API
+You can use the IdM API to automate the access to IdM environment with your custom scripts.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.1. Initializing IdM API
+To use the IdM API, first initialize it in your environment.
+Prerequisites
+The IdM server or IdM client package is installed.
+A valid Kerberos ticket is issued.
+Procedure
+To initialize the IdM API, include the following code in the beginning of your script:
+from ipalib import api
+
+api.bootstrap(context="server")
+api.finalize()
+To establish a connection with the LDAP server, add the following logic to your script after API initialization:
+if api.env.in_server:
+    api.Backend.ldap2.connect()
+else:
+    api.Backend.rpcclient.connect()
+If you run your script on the IdM server, this logic allows your script to connect directly to LDAP server.
+If you run your script on the IdM client, the script uses the Remote Procedure Call (RPC) client.
+Additional resources
+IdM API context
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.2. Running IdM API commands
+You can run IdM API commands within your script. To run an IdM API command, use the api.Command structure in your script.
+Prerequisites
+The IdM API is initialized. For more information, see Initializing IdM API.
+Procedure
+For example, to list the information about user, include the following code in your script:
+api.Command.user_show("user_name", no_members=True, all=True)
+In this example, you also pass arguments and options to the command user_show.
+Additional resources
+For the full list of the api.Command commands, see IPA API Commands web source.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.3. IdM API commands output structure
+Each IdM API command has four sections for its output. These sections contain various information about the command execution.
+IdM API output structure
+In this example, your script executes the add_user command:
+api.Command.user_add("test", givenname="a", sn="b")
+The output structure of that command is below:
+{
+    "result": {
+        "displayname": ["a b"],
+        "objectclass": [
+            "top",
+            "person",
+            "organizationalperson",
+            "inetorgperson",
+            "inetuser",
+            "posixaccount",
+            "krbprincipalaux",
+            "krbticketpolicyaux",
+            "ipaobject",
+            "ipasshuser",
+            "ipaSshGroupOfPubKeys",
+            "mepOriginEntry",
+            "ipantuserattrs",
+        ],
+        "cn": ["a b"],
+        "gidnumber": ["1445000004"],
+        "mail": ["test@ipa.test"],
+        "krbprincipalname": [ipapython.kerberos.Principal("test@IPA.TEST")],
+        "loginshell": ["/bin/sh"],
+        "initials": ["ab"],
+        "uid": ["test"],
+        "uidnumber": ["1445000004"],
+        "sn": ["b"],
+        "krbcanonicalname": [ipapython.kerberos.Principal("test@IPA.TEST")],
+        "homedirectory": ["/home/test"],
+        "givenname": ["a"],
+        "gecos": ["a b"],
+        "ipauniqueid": ["9f9c1df8-5073-11ed-9a56-fa163ea98bb3"],
+        "mepmanagedentry": [
+            ipapython.dn.DN("cn=test,cn=groups,cn=accounts,dc=ipa,dc=test")
+        ],
+        "has_password": False,
+        "has_keytab": False,
+        "memberof_group": ["ipausers"],
+        "dn": ipapython.dn.DN("uid=test,cn=users,cn=accounts,dc=ipa,dc=test"),
+    },
+    "value": "test",
+    "messages": [
+        {
+            "type": "warning",
+            "name": "VersionMissing",
+            "message": "API Version number was not sent, forward compatibility not guaranteed. Assuming server's API version, 2.248",
+            "code": 13001,
+            "data": {"server_version": "2.248"},
+        }
+    ],
+    "summary": 'Added user "test"',
+}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.4. Listing the IdM API commands and parameters
+You can list information about the IdM API command and its parameters by using the commands command_show and param_show.
+Prerequisites
+The IdM API is initialized. For more information, see Initializing IdM API.
+Procedure
+To display information about user_add command, execute the following code:
+api.Command.command_show("user_add")
+The result for this command is as follows:
+{
+    "result": {
+        "name": "user_add",
+        "version": "1",
+        "full_name": "user_add/1",
+        "doc": "Add a new user.",
+        "topic_topic": "user/1",
+        "obj_class": "user/1",
+        "attr_name": "add",
+    },
+    "value": "user_add",
+    "messages": [
+        {
+            "type": "warning",
+            "name": "VersionMissing",
+            "message": "API Version number was not sent, forward compatibility not guaranteed. Assuming server's API version, 2.251",
+            "code": 13001,
+            "data": {"server_version": "2.251"},
+        }
+    ],
+    "summary": None,
+}
+To display information about the givenname parameter for the user_add command, execute the following code:
+api.Command.param_show("user_add", name="givenname")
+The result for this command is as follows:
+{
+    "result": {
+        "name": "givenname",
+        "type": "str",
+        "positional": False,
+        "cli_name": "first",
+        "label": "First name",
+    },
+    "value": "givenname",
+    "messages": [
+        {
+            "type": "warning",
+            "name": "VersionMissing",
+            "message": "API Version number was not sent, forward compatibility not guaranteed. Assuming server's API version, 2.251",
+            "code": 13001,
+            "data": {"server_version": "2.251"},
+        }
+    ],
+    "summary": None,
+}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.5. Using batches for executing IdM API commands
+You can execute multiple IdM API commands with a single call by using the batch command. The following example shows how to create multiple IdM users.
+Prerequisites
+The IdM API is initialized. For more information, see Initializing IdM API.
+Procedure
+To create 100 IdM users in one batch, include the following code into your script:
+batch_args = []
+for i in range(100):
+    user_id = "user%i" % i
+    args = [user_id]
+    kw = {
+        'givenname' : user_id,
+        'sn' : user_id
+    }
+    batch_args.append({
+        'method' : 'user_add',
+        'params' : [args, kw]
+    })
+ret = api.Command.batch(*batch_args)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.6. IdM API context
+IdM API context determines which plug-ins the API uses. Specify the context during API initialization. For example on how to use the IdM API context, see Initializing IdM API.
+IdM API context
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 3. IdM API and IdM CLI commands comparison
+You can use the IdM API commands in the Python interactive console. The IdM API commands are different from the ipa tool commands.
+IdM CLI and IdM API commands difference
+Useful CLI tools
+The console starts an interactive Python console, which you can use to run IdM API commands.
+The help command shows description of the topics and the commands and includes various examples.
+The show-mapping command shows the mapping between CLI parameter names and LDAP attributes.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 4. IdM API example scenarios
+The following examples provide you with the common scenarios of using IdM API commands.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.1. Managing users with IdM API commands
+The examples below show common scenarios of how you can manage IdM users with the IdM API commands.
+Examples of managing IdM users with IdM API commands
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.2. Managing groups with IdM API commands
+The examples below show common scenarios of how you can manage IdM groups with the IdM API commands.
+Examples of managing IdM users with IdM API commands
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.3. Managing access control with IdM API commands
+The examples below show common scenarios of how you can manage access control with the IdM API commands.
+Examples of managing access control with IdM API commands
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.4. Managing sudo rules with IdM API commands
+The examples below show common scenarios of how you can manage sudo rules with the IdM API commands.
+Examples of managing sudo rules with IdM API commands
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.5. Managing Host-based Access Control with IdM API commands
+The examples below show common scenarios of how you can manage Host-based Access Control (HBAC) with the IdM API commands.
+Examples of managing HBAC with IdM API commands

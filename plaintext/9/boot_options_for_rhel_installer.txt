@@ -1,0 +1,95 @@
+Abstract
+RHEL installation system includes a range of boot options for administrators. By using these options, you can modify the default behavior of the installation program by enabling or disabling certain functions to customize the installation program.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 1. Boot options
+This section contains information about some of the boot options that you can use to modify the default behavior of the installation program. For a full list of boot options, see the upstream boot option content.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.1. Types of boot options
+The two types of boot options are those with an equals "=" sign, and those without an equals "=" sign. Boot options are appended to the boot command line and you can append multiple options separated by space. Boot options that are specific to the installation program always start with inst.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.2. Editing boot options
+This section describes different ways to edit boot options from the boot menu. The boot menu opens after you boot the installation media.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.2.1. Editing the boot: prompt in BIOS
+When using the boot: prompt, the first option must always specify the installation program image file that you want to load. In most cases, you can specify the image using the keyword. You can specify additional options according to your requirements.
+Prerequisites
+You have created bootable installation media (USB, CD or DVD).
+You have booted the installation from the media, and the installation boot menu is open.
+Procedure
+With the boot menu open, press the Esc key on your keyboard.
+The boot: prompt is now accessible.
+Press the Tab key on your keyboard to display the help commands.
+Press the Enter key on your keyboard to start the installation with your options. To return from the boot: prompt to the boot menu, restart the system and boot from the installation media again.
+The boot: prompt also accepts dracut kernel options. A list of options is available in the dracut.cmdline(7) man page.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.2.2. Editing predefined boot options using the > prompt
+In BIOS-based AMD64 and Intel 64 systems, you can use the > prompt to edit predefined boot options. To display a full set of options, select Test this media and install RHEL 9 from the boot menu.
+Prerequisites
+You have created bootable installation media (USB, CD or DVD).
+You have booted the installation from the media, and the installation boot menu is open.
+Procedure
+From the boot menu, select an option and press the Tab key on your keyboard. The > prompt is accessible and displays the available options.
+Append the options that you require to the > prompt.
+Press Enter to start the installation.
+Press Esc to cancel editing and return to the boot menu.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.2.3. Editing the GRUB2 menu for the UEFI-based systems
+The GRUB2 menu is available on UEFI-based AMD64, Intel 64, and 64-bit ARM systems.
+Prerequisites
+You have created bootable installation media (USB, CD or DVD).
+You have booted the installation from the media, and the installation boot menu is open.
+Procedure
+From the boot menu window, select the required option and press e.
+On UEFI systems, the kernel command line starts with linuxefi. Move the cursor to the end of the linuxefi kernel command line.
+Edit the parameters as required. For example, to configure one or more network interfaces, add the ip= parameter at the end of the linuxefi kernel command line, followed by the required value.
+When you finish editing, press Ctrl+X to start the installation using the specified options.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.3. Installation source boot options
+This section describes various installation source boot options.
+Set disk device names with the following formats:
+Kernel device name, for example /dev/sda1 or sdb2
+File system label, for example LABEL=Flash or LABEL=RHEL8
+File system UUID, for example UUID=8176c7bf-04ff-403a-a832-9557f94e61db
+Non-alphanumeric characters must be represented as \xNN, where NN is the hexadecimal representation of the character. For example, \x20 is a white space (" ").
+For more information about unified ISO, see Unified ISO.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.4. Network boot options
+If your scenario requires booting from an image over the network instead of booting from a local image, you can use the following options to customize network booting.
+In the following tables:
+The ip parameter specifies the client IP address and IPv6 requires square brackets, for example 192.0.2.1 or [2001:db8::99].
+The gateway parameter is the default gateway. IPv6 requires square brackets.
+The netmask parameter is the netmask to be used. This can be either a full netmask (for example, 255.255.255.0) or a prefix (for example, 64).
+The hostname parameter is the host name of the client system. This parameter is optional.
+Configuration methods for the automatic interface
+The method automatic configuration of a specific interface with an override opens the interface using the specified method of automatic configuration, such as dhcp, but overrides the automatically obtained IP address, gateway, netmask, host name or other specified parameters. All parameters are optional, so specify only the parameters that you want to override.
+The method parameter can be any of the following:
+VLAN_PLUS_VID: vlan0005
+VLAN_PLUS_VID_NO_PAD: vlan5
+DEV_PLUS_VID: enp0s1.0005
+DEV_PLUS_VID_NO_PAD: enp0s1.5
+Additional resources
+Configuring and managing networking
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.5. Console boot options
+This section describes how to configure boot options for your console, monitor display, and keyboard.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.6. Debug boot options
+This section describes the options you can use when debugging issues.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.7. Storage boot options
+This section describes the options you can specify to customize booting from a storage device.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.8. Kickstart boot options
+This section describes the boot options you can add in the Kickstart file to automate an installation.
+If you use this option without specifying a device, the installation program uses the following value for the option:
+inst.ks=nfs:next-server:/filename
+In the previous example, next-server is the DHCP next-server option or the IP address of the DHCP server itself, and filename is the DHCP filename option, or /kickstart/. If the given file name ends with the / character, ip-kickstart is appended. The following table contains an example.
+If a volume with a label of OEMDRV is present, the installation program attempts to load a Kickstart file named ks.cfg. If your Kickstart file is in this location, you do not need to use the inst.ks= boot option.
+Additional resources
+Full list of boot options
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.9. Advanced installation boot options
+This section contains information about advanced installation boot options.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.10. Removed boot options
+The following boot options have been removed from Red Hat Enterprise Linux:

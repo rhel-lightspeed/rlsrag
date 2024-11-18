@@ -1,0 +1,496 @@
+Abstract
+The ipa-healthcheck utility helps administrators to detect problems in a Red Hat Identity Management (IdM) environment. This includes status checks of IdM services, configuration file permissions, replication statuses, and issues with certificates.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 1. Installing and running the IdM Healthcheck tool
+Learn more about the IdM Healthcheck tool and how to install and run it.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.1. Healthcheck in IdM
+The Healthcheck tool in Identity Management (IdM) helps find issues that may impact the health of your IdM environment.
+Modules are Independent
+Healthcheck consists of independent modules which test for:
+Replication issues
+Certificate validity
+Certificate Authority infrastructure issues
+IdM and Active Directory trust issues
+Correct file permissions and ownership settings
+Two output formats
+Healthcheck generates the following outputs, which you can set using the output-type option:
+json: Machine-readable output in JSON format (default)
+human: Human-readable output
+You can specify a different file destination with the --output-file option.
+Results
+Each Healthcheck module returns one of the following results:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.2. Installing IdM Healthcheck
+Follow this procedure to install the IdM Healthcheck tool.
+Procedure
+Install the ipa-healthcheck package:
+[root@server ~]# dnf install ipa-healthcheck
+Verification
+Use the --failures-only option to have ipa-healthcheck only report errors. A fully-functioning IdM installation returns an empty result of [].
+[root@server ~]# ipa-healthcheck --failures-only
+[]
+Additional resources
+Use ipa-healthcheck --help to see all supported arguments.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.3. Running IdM Healthcheck
+Healthcheck can be run manually or automatically using log rotation
+Prerequisites
+The Healthcheck tool must be installed. See Installing IdM Healthcheck.
+Procedure
+To run healthcheck manually, enter the ipa-healthcheck command.
+[root@server ~]# ipa-healthcheck
+Additional resources
+For all options, see the man page: man ipa-healthcheck.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.4. Log rotation
+Log rotation creates a new log file every day, and the files are organized by date. Since log files are saved in the same directory, you can select a particular log file according to the date.
+Rotation means that there is configured a number for max number of log files and if the number is exceeded, the newest file rewrites and renames the oldest one. For example, if the rotation number is 30, the thirty-first log file replaces the first (oldest) one.
+Log rotation reduces voluminous log files and organizes them, which can help with analysis of the logs.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.5. Configuring log rotation using the IdM Healthcheck
+Follow this procedure to configure a log rotation with:
+The systemd timer
+The crond service
+The systemd timer runs the Healthcheck tool periodically and generates the logs. The default value is set to 4 a.m. every day.
+The crond service is used for log rotation.
+The default log name is healthcheck.log and the rotated logs use the healthcheck.log-YYYYMMDD format.
+Prerequisites
+You must execute commands as root.
+Procedure
+Enable a systemd timer:
+# systemctl enable ipa-healthcheck.timer
+Created symlink /etc/systemd/system/multi-user.target.wants/ipa-healthcheck.timer -> /usr/lib/systemd/system/ipa-healthcheck.timer.
+Start the systemd timer:
+# systemctl start ipa-healthcheck.timer
+Open the /etc/logrotate.d/ipahealthcheck file to configure the number of logs which should be saved.
+By default, log rotation is set up for 30 days.
+In the /etc/logrotate.d/ipahealthcheck file, configure the path to the logs.
+By default, logs are saved in the /var/log/ipa/healthcheck/ directory.
+In the /etc/logrotate.d/ipahealthcheck file, configure the time for log generation.
+By default, a log is created daily at 4 a.m.
+To use log rotation, ensure that the crond service is enabled and running:
+# systemctl enable crond
+# systemctl start crond
+To start with generating logs, start the IPA healthcheck service:
+# systemctl start ipa-healthcheck
+To verify the result, go to /var/log/ipa/healthcheck/ and check if logs are created correctly.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.6. Changing IdM Healthcheck configuration
+You can change Healthcheck settings by adding the desired command line options to the /etc/ipahealthcheck/ipahealthcheck.conf file. This can be useful when, for example, you configured a log rotation and want to ensure the logs are in a format suitable for automatic analysis, but do not want to set up a new timer.
+After the modification, all logs that Healthcheck creates follow the new settings. These settings also apply to any manual execution of Healthcheck.
+Additional resources
+Configuring log rotation using the IdM Healthcheck
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.7. Configuring Healthcheck to change the output logs format
+Follow this procedure to configure Healthcheck with a timer already set up. In this example, you configure Healthcheck to produce logs in a human-readable format and to also include successful results instead of only errors.
+Prerequisites
+Your system is running RHEL 9.1 or later.
+You have root privileges.
+You have previously configured log rotation on a timer.
+Procedure
+Open the /etc/ipahealthcheck/ipahealthcheck.conf file in a text editor.
+Add options output_type=human and all=True to the [default] section.
+Save and close the file.
+Verification
+Run Healthcheck manually:
+# ipa-healthcheck
+Go to /var/log/ipa/healthcheck/ and check that the logs are in the correct format.
+Additional resources
+Configuring log rotation using the IdM Healthcheck
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.8. Additional resources
+See the following sections of the Using IdM Healthcheck to monitor your IdM environment guide for examples of using IdM Healthcheck.
+Checking services
+Verifying your IdM and AD trust configuration
+Verifying certificates
+Verifying system certificates
+Checking disk space
+Verifying permissions of IdM configuration files
+Checking replication
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 2. Checking services using IdM Healthcheck
+You can monitor services used by the Identity Management (IdM) server using the Healthcheck tool.
+For details, see
+Healthcheck in IdM.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.1. Services Healthcheck test
+The Healthcheck tool includes a test to check if any IdM services is not running. This test is important because services which are not running can cause failures in other tests. Therefore, check that all services are running first. You can then check all other test results.
+To see all services tests, run ipa-healthcheck with the --list-sources option:
+# ipa-healthcheck --list-sources
+You can find all services tested with Healthcheck under the ipahealthcheck.meta.services source:
+certmonger
+dirsrv
+gssproxy
+httpd
+ipa_custodia
+ipa_dnskeysyncd
+ipa_otpd
+kadmin
+krb5kdc
+named
+pki_tomcatd
+sssd
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.2. Screening services using Healthcheck
+Follow this procedure to run a standalone manual test of services running on the Identity Management (IdM) server using the Healthcheck tool.
+The Healthcheck tool includes many tests, whose results can be shortened with:
+Excluding all successful test: --failures-only
+Including only services tests: --source=ipahealthcheck.meta.services
+Procedure
+To run Healthcheck with warnings, errors and critical issues regarding services, enter:
+# ipa-healthcheck --source=ipahealthcheck.meta.services --failures-only
+A successful test displays empty brackets:
+[ ]
+If one of the services fails, the result can looks similarly to this example:
+{
+  "source": "ipahealthcheck.meta.services",
+  "check": "httpd",
+  "result": "ERROR",
+  "kw": {
+    "status": false,
+    "msg": "httpd: not running"
+  }
+}
+Additional resources
+See man ipa-healthcheck.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 3. Checking disk space using IdM Healthcheck
+You can monitor the Identity Management server’s free disk space using the Healthcheck tool.
+For details, see Healthcheck in IdM.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.1. Disk space healthcheck test
+The Healthcheck tool includes a test for checking available disk space. Insufficient free disk space can cause issues with:
+Logging
+Execution
+Backups
+The test checks the following paths:
+To list all tests, run the ipa-healthcheck with the --list-sources option:
+# ipa-healthcheck --list-sources
+You can find the file system space check test under the ipahealthcheck.system.filesystemspace source:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.2. Screening disk space using the healthcheck tool
+Follow this procedure to run a standalone manual test of available disk space on an Identity Management (IdM) server using the Healthcheck tool.
+Since Healthcheck includes many tests, you can narrow the results by:
+Excluding all successful test: --failures-only
+Including only space check tests: --source=ipahealthcheck.system.filesystemspace
+Procedure
+To run Healthcheck with warnings, errors and critical issues regarding available disk space, enter:
+# ipa-healthcheck --source=ipahealthcheck.system.filesystemspace --failures-only
+A successful test displays empty brackets:
+[]
+As an example, a failed test can display:
+{
+  "source": "ipahealthcheck.system.filesystemspace",
+  "check": "FileSystemSpaceCheck",
+  "result": "ERROR",
+  "kw": {
+    "msg": "/var/lib/dirsrv: free space under threshold: 0 MiB < 1024 MiB",
+    "store": "/var/lib/dirsrv",
+    "free_space": 0,
+    "threshold": 1024
+  }
+}
+The failed test informs you that the /var/lib/dirsrv directory has run out of space.
+Additional resources
+See man ipa-healthcheck.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 4. Verifying permissions of IdM configuration files using Healthcheck
+Learn more about how to test Identity Management (IdM) configuration files using the Healthcheck tool.
+For details, see
+Healthcheck in IdM.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.1. File permissions Healthcheck tests
+The Healthcheck tool tests ownership and permissions of some important files installed or configured by Identity Management (IdM).
+If you change the ownership or permissions of any tested file, the test returns a warning in the result section. While it does not necessarily mean that the configuration will not work, it means that the file differs from the default configuration.
+To see all tests, run the ipa-healthcheck with the --list-sources option:
+# ipa-healthcheck --list-sources
+You can find the file permissions test under the ipahealthcheck.ipa.files source:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.2. Screening configuration files using Healthcheck
+Follow this procedure to run a standalone manual test of an Identity Management (IdM) server’s configuration files using the Healthcheck tool.
+The Healthcheck tool includes many tests. Results can be narrowed down by:
+Excluding all successful test: --failures-only
+Including only ownership and permissions tests: --source=ipahealthcheck.ipa.files
+Procedure
+To run Healthcheck tests on IdM configuration file ownership and permissions, while displaying only warnings, errors and critical issues, enter:
+# ipa-healthcheck --source=ipahealthcheck.ipa.files --failures-only
+A successful test displays empty brackets:
+# ipa-healthcheck --source=ipahealthcheck.ipa.files --failures-only
+[]
+Failed tests display results similar to the following WARNING:
+{
+  "source": "ipahealthcheck.ipa.files",
+  "check": "IPAFileNSSDBCheck",
+  "result": "WARNING",
+  "kw": {
+    "key": "_etc_dirsrv_slapd-EXAMPLE-TEST_pkcs11.txt_mode",
+    "path": "/etc/dirsrv/slapd-EXAMPLE-TEST/pkcs11.txt",
+    "type": "mode",
+    "expected": "0640",
+    "got": "0666",
+    "msg": "Permissions of /etc/dirsrv/slapd-EXAMPLE-TEST/pkcs11.txt are 0666 and should be 0640"
+  }
+}
+Additional resources
+See man ipa-healthcheck.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 5. Checking DNS records using IdM Healthcheck
+You can identify issues with DNS records in Identity Management (IdM) using the Healthcheck tool.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.1. DNS records healthcheck test
+The Healthcheck tool includes a test for checking that the expected DNS records required for autodiscovery are resolvable.
+To list all tests, run the ipa-healthcheck with the --list-sources option:
+# ipa-healthcheck --list-sources
+You can find the DNS records check test under the ipahealthcheck.ipa.idns source.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.2. Screening DNS records using the healthcheck tool
+Follow this procedure to run a standalone manual test of DNS records on an Identity Management (IdM) server using the Healthcheck tool.
+The Healthcheck tool includes many tests. Results can be narrowed down by including only the DNS records tests by adding the --source ipahealthcheck.ipa.idns option.
+Prerequisites
+You must perform Healthcheck tests as the root user.
+Procedure
+To run the DNS records check, enter:
+# ipa-healthcheck --source ipahealthcheck.ipa.idns
+If the record is resolvable, the test returns SUCCESS as a result:
+{
+    "source": "ipahealthcheck.ipa.idns",
+    "check": "IPADNSSystemRecordsCheck",
+    "result": "SUCCESS",
+    "uuid": "eb7a3b68-f6b2-4631-af01-798cac0eb018",
+    "when": "20200415143339Z",
+    "duration": "0.210471",
+    "kw": {
+      "key": "_ldap._tcp.idm.example.com.:server1.idm.example.com."
+    }
+}
+The test returns a WARNING when, for example, the number of records does not match the expected number:
+{
+    "source": "ipahealthcheck.ipa.idns",
+    "check": "IPADNSSystemRecordsCheck",
+    "result": "WARNING",
+    "uuid": "972b7782-1616-48e0-bd5c-49a80c257895",
+    "when": "20200409100614Z",
+    "duration": "0.203049",
+    "kw": {
+      "msg": "Got {count} ipa-ca A records, expected {expected}",
+      "count": 2,
+      "expected": 1
+    }
+}
+Additional resources
+See man ipa-healthcheck.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 6. Verifying the optimal number of KDC worker processes using IdM Healthcheck
+You can use the Healthcheck tool in Identity Management (IdM) to verify that the Kerberos Key Distribution Center (KDC) is configured to use the optimal number of krb5kdc worker processes, which should be equal to the number of CPU cores on the host.
+You can find the test for the correct number of KDC worker processes under the ipahealthcheck.ipa.kdc source. As the Healthcheck tool includes many tests, you can narrow down the results by including only the KDC worker tests by adding the --source ipahealthcheck.ipa.kdc option.
+Prerequisites
+The KDC worker process Healthcheck tool is only available on RHEL 8.7 or newer.
+You must perform Healthcheck tests as the root user.
+Procedure
+To run the check for KDC worker processes, enter:
+# ipa-healthcheck --source ipahealthcheck.ipa.kdc
+If the number of KDC worker processes matches the number of CPU cores, the test returns SUCCESS as a result:
+{
+	"source": "ipahealthcheck.ipa.kdc",
+	"check": "KDCWorkersCheck",
+	"result": "SUCCESS",
+	"uuid": "68f6e20a-0aa9-427d-8fdc-fbb8196d56cd",
+	"when": "20230105162211Z",
+	"duration": "0.000157",
+	"kw": {
+  	"key": "workers"
+	}
+}
+The test returns a WARNING if the number of worker processes does not match the number of CPU cores. In the following example, a host with 2 cores is configured to have only one KDC worker process:
+{
+    "source": "ipahealthcheck.ipa.kdc",
+    "check": "KDCWorkersCheck",
+    "result": "WARNING",
+    "uuid": "972b7782-1616-48e0-bd5c-49a80c257895",
+    "when": "20230105122236Z",
+    "duration": "0.203049",
+    "kw": {
+      "key": ‘workers’,
+      "cpus": 2,
+      "workers": 1,
+      "expected": "The number of CPUs {cpus} does not match the number of workers {workers} in {sysconfig}"
+    }
+}
+The test also outputs a WARNING if there are no configured workers. In the following example, the KRB5KDC_ARGS variable is missing from the /etc/sysconfig/krb5kdc configuration file:
+  {
+    "source": "ipahealthcheck.ipa.kdc",
+    "check": "KDCWorkersCheck",
+    "result": "WARNING",
+    "uuid": "5d63ea86-67b9-4638-a41e-b71f4
+56efed7",
+    "when": "20230105162526Z",
+    "duration": "0.000135",
+    "kw": {
+      "key": "workers",
+      "sysconfig": "/etc/sysconfig/krb5kdc",
+      "msg": "KRB5KDC_ARGS is not set in {sysconfig}"
+    }
+  }
+Additional resources
+man ipa-healthcheck
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 7. Checking IdM replication using Healthcheck
+You can test Identity Management (IdM) replication using the Healthcheck tool.
+Prerequisites
+You are using RHEL version 8.1 or newer.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.1. Replication healthcheck tests
+The Healthcheck tool tests the Identity Management (IdM) topology configuration and searches for replication conflict issues.
+To list all tests, run the ipa-healthcheck with the --list-sources option:
+# ipa-healthcheck --list-sources
+The topology tests are placed under the ipahealthcheck.ipa.topology and ipahealthcheck.ds.replication sources:
+Additional resources
+Solving common replication problems
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.2. Screening replication using Healthcheck
+Follow this procedure to run a standalone manual test of an Identity Management (IdM) replication topology and configuration using the Healthcheck tool.
+The Healthcheck tool includes many tests. Therefore, you can shorten the results with:
+Replication conflict test: --source=ipahealthcheck.ds.replication
+Correct topology test: --source=ipahealthcheck.ipa.topology
+Prerequisites
+You are logged in as the root user.
+Procedure
+To run Healthcheck replication conflict and topology checks, enter:
+# ipa-healthcheck --source=ipahealthcheck.ds.replication --source=ipahealthcheck.ipa.topology
+Four different results are possible:
+SUCCESS — the test passed successfully.
+{
+  "source": "ipahealthcheck.ipa.topology",
+  "check": "IPATopologyDomainCheck",
+  "result": "SUCCESS",
+  "kw": {
+    "suffix": "domain"
+  }
+}
+WARNING — the test passed but there might be a problem.
+ERROR — the test failed.
+{
+  "source": "ipahealthcheck.ipa.topology",
+  "check": "IPATopologyDomainCheck",
+  "result": "ERROR",
+  "uuid": d6ce3332-92da-423d-9818-e79f49ed321f
+  "when": 20191007115449Z
+  "duration": 0.005943
+  "kw": {
+    "msg": "topologysuffix-verify domain failed, server2 is not connected (server2_139664377356472 in MainThread)"
+  }
+}
+CRITICAL — the test failed and it affects the IdM server functionality.
+Additional resources
+man ipa-healthcheck
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.3. Additional resources
+Healthcheck in IdM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 8. Verifying your IdM and AD trust configuration using IdM Healthcheck
+Learn more about identifying issues with IdM and an Active Directory trust in Identity Management (IdM) by using the Healthcheck tool.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.1. IdM and AD trust Healthcheck tests
+The Healthcheck tool includes several tests for testing the status of your Identity Management (IdM) and Active Directory (AD) trust.
+To see all trust tests, run ipa-healthcheck with the --list-sources option:
+# ipa-healthcheck --list-sources
+You can find all tests under the ipahealthcheck.ipa.trust source:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.2. Screening the trust with the Healthcheck tool
+Follow this procedure to run a standalone manual test of an Identity Management (IdM) and Active Directory (AD) trust health check using the Healthcheck tool.
+The Healthcheck tool includes many tests, therefore, you can shorten the results by:
+Excluding all successful test: --failures-only
+Including only trust tests: --source=ipahealthcheck.ipa.trust
+Procedure
+To run Healthcheck with warnings, errors and critical issues in the trust, enter:
+# ipa-healthcheck --source=ipahealthcheck.ipa.trust --failures-only
+Successful test displays empty brackets:
+# ipa-healthcheck --source=ipahealthcheck.ipa.trust --failures-only
+[]
+Additional resources
+See man ipa-healthcheck.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 9. Verifying system certificates using IdM Healthcheck
+Learn more about identifying issues with system certificates in Identity Management (IdM) by using the Healthcheck tool.
+For details, see
+Healthcheck in IdM.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.1. System certificates Healthcheck tests
+The Healthcheck tool includes several tests for verifying system (DogTag) certificates.
+To see all tests, run the ipa-healthcheck with the --list-sources option:
+# ipa-healthcheck --list-sources
+You can find all tests under the ipahealthcheck.dogtag.ca source:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.2. Screening system certificates using Healthcheck
+Follow this procedure to run a standalone manual test of Identity Management (IdM) certificates using the Healthcheck tool.
+Since, the Healthcheck tool includes many tests, you can narrow the results by including only DogTag tests: --source=ipahealthcheck.dogtag.ca
+Procedure
+To run Healthcheck restricted to DogTag certificates, enter:
+# ipa-healthcheck --source=ipahealthcheck.dogtag.ca
+An example of a successful test:
+{
+  "source: ipahealthcheck.dogtag.ca",
+  "check: DogtagCertsConfigCheck",
+  "result: SUCCESS",
+  "uuid: 9b366200-9ec8-4bd9-bb5e-9a280c803a9c",
+  "when: 20191008135826Z",
+  "duration: 0.252280",
+  "kw:" {
+    "key": "Server-Cert cert-pki-ca",
+    "configfile":  "/var/lib/pki/pki-tomcat/conf/ca/CS.cfg"
+    }
+}
+An example of a failed test:
+{
+  "source: ipahealthcheck.dogtag.ca",
+  "check: DogtagCertsConfigCheck",
+  "result: CRITICAL",
+  "uuid: 59d66200-1447-4b3b-be01-89810c803a98",
+  "when: 20191008135912Z",
+  "duration: 0.002022",
+  "kw:" {
+    "exception": "NSDB /etc/pki/pki-tomcat/alias not initialized",
+    }
+}
+Additional resources
+See man ipa-healthcheck.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 10. Verifying certificates using IdM Healthcheck
+Learn more about understanding and using the Healthcheck tool in Identity management (IdM) to identify issues with IPA certificates maintained by certmonger.
+For details, see Healthcheck in IdM.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10.1. IdM certificates Healthcheck tests
+The Healthcheck tool includes several tests for verifying the status of certificates maintained by certmonger in Identity Management (IdM). For details about certmonger, see Obtaining an IdM certificate for a service using certmonger.
+This suite of tests checks expiration, validation, trust and other issues. Multiple errors may be thrown for the same underlying issue.
+To see all certificate tests, run the ipa-healthcheck with the --list-sources option:
+# ipa-healthcheck --list-sources
+You can find all tests under the ipahealthcheck.ipa.certs source:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10.2. Screening certificates using the Healthcheck tool
+Follow this procedure to run a standalone manual test of an Identity Management (IdM) certificate health check using the Healthcheck tool.
+The Healthcheck tool includes many tests, therefore, you can shorten the results with:
+Excluding all successful test: --failures-only
+Including only certificate tests: --source=ipahealthcheck.ipa.certs
+Prerequisites
+You must perform Healthcheck tests as the root user.
+Procedure
+To run Healthcheck with warnings, errors and critical issues regarding certificates, enter:
+# ipa-healthcheck --source=ipahealthcheck.ipa.certs --failures-only
+Successful test displays empty brackets:
+[]
+Failed test shows you the following output:
+{
+  "source": "ipahealthcheck.ipa.certs",
+  "check": "IPACertfileExpirationCheck",
+  "result": "ERROR",
+  "kw": {
+    "key": 1234,
+    "dbdir": "/path/to/nssdb",
+    "error": [error],
+    "msg": "Unable to open NSS database '/path/to/nssdb': [error]"
+  }
+}
+This IPACertfileExpirationCheck test failed on opening the NSS database.
+Additional resources
+See man ipa-healthcheck.

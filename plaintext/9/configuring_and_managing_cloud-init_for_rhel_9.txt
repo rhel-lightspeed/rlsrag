@@ -1,0 +1,764 @@
+Abstract
+You can efficiently create multiple cloud instances of RHEL by using the cloud-init package. This allows for consistent and repeatable deployment of RHEL on a variety of cloud platforms. In the following chapters, you can learn more about:
+How cloud-init works
+How to use cloud-init to initiate cloud instances
+What uses of cloud-init Red Hat supports
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 1. Introducing RHEL on public cloud platforms
+Public cloud platforms provide computing resources as a service. Instead of using on-premises hardware, you can run your IT workloads, including Red Hat Enterprise Linux (RHEL) systems, as public cloud instances.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.1. Benefits of using RHEL in a public cloud
+RHEL as a cloud instance located on a public cloud platform has the following benefits over RHEL on-premises physical systems or virtual machines (VMs):
+Flexible and fine-grained allocation of resources
+A cloud instance of RHEL runs as a VM on a cloud platform, which typically means a cluster of remote servers maintained by the provider of the cloud service. Therefore, allocating hardware resources to the instance, such as a specific type of CPU or storage, happens on the software level and is easily customizable.
+In comparison to a local RHEL system, you are also not limited by the capabilities of your physical host. Instead, you can choose from a variety of features, based on selection offered by the cloud provider.
+Space and cost efficiency
+You do not need to own any on-premises servers to host your cloud workloads. This avoids the space, power, and maintenance requirements associated with physical hardware.
+Instead, on public cloud platforms, you pay the cloud provider directly for using a cloud instance. The cost is typically based on the hardware allocated to the instance and the time you spend using it. Therefore, you can optimize your costs based on your requirements.
+Software-controlled configurations
+The entire configuration of a cloud instance is saved as data on the cloud platform, and is controlled by software. Therefore, you can easily create, remove, clone, or migrate the instance. A cloud instance is also operated remotely in a cloud provider console and is connected to remote storage by default.
+In addition, you can back up the current state of a cloud instance as a snapshot at any time. Afterwards, you can load the snapshot to restore the instance to the saved state.
+Separation from the host and software compatibility
+Similarly to a local VM, the RHEL guest operating system on a cloud instance runs on a virtualized kernel. This kernel is separate from the host operating system and from the client system that you use to connect to the instance.
+Therefore, any operating system can be installed on the cloud instance. This means that on a RHEL public cloud instance, you can run RHEL-specific applications that cannot be used on your local operating system.
+In addition, even if the operating system of the instance becomes unstable or is compromised, your client system is not affected in any way.
+Additional resources
+What is public cloud?
+What is a hyperscaler?
+Types of cloud computing
+Public cloud use cases for RHEL
+Obtaining RHEL for public cloud deployments
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.2. Public cloud use cases for RHEL
+Deploying on a public cloud provides many benefits, but might not be the most efficient solution in every scenario. If you are evaluating whether to migrate your RHEL deployments to the public cloud, consider whether your use case will benefit from the advantages of the public cloud.
+Beneficial use cases
+Deploying public cloud instances is very effective for flexibly increasing and decreasing the active computing power of your deployments, also known as scaling up and scaling down. Therefore, using RHEL on public cloud is recommended in the following scenarios:
+Clusters with high peak workloads and low general performance requirements. Scaling up and down based on your demands can be highly efficient in terms of resource costs.
+Quickly setting up or expanding your clusters. This avoids high upfront costs of setting up local servers.
+Cloud instances are not affected by what happens in your local environment. Therefore, you can use them for backup and disaster recovery.
+Potentially problematic use cases
+You are running an existing environment that cannot be adjusted. Customizing a cloud instance to fit the specific needs of an existing deployment may not be cost-effective in comparison with your current host platform.
+You are operating with a hard limit on your budget. Maintaining your deployment in a local data center typically provides less flexibility but more control over the maximum resource costs than the public cloud does.
+Next steps
+Obtaining RHEL for public cloud deployments
+Additional resources
+Should I migrate my application to the cloud? Here’s how to decide.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.3. Frequent concerns when migrating to a public cloud
+Moving your RHEL workloads from a local environment to a public cloud platform might raise concerns about the changes involved. The following are the most commonly asked questions.
+Will my RHEL work differently as a cloud instance than as a local virtual machine?
+In most respects, RHEL instances on a public cloud platform work the same as RHEL virtual machines on a local host, such as an on-premises server. Notable exceptions include:
+Instead of private orchestration interfaces, public cloud instances use provider-specific console interfaces for managing your cloud resources.
+Certain features, such as nested virtualization, may not work correctly. If a specific feature is critical for your deployment, check the feature’s compatibility in advance with your chosen public cloud provider.
+Will my data stay safe in a public cloud as opposed to a local server?
+The data in your RHEL cloud instances is in your ownership, and your public cloud provider does not have any access to it. In addition, major cloud providers support data encryption in transit, which improves the security of data when migrating your virtual machines to the public cloud.
+The general security of your RHEL public cloud instances is managed as follows:
+Your public cloud provider is responsible for the security of the cloud hypervisor
+Red Hat provides the security features of the RHEL guest operating systems in your instances
+You manage the specific security settings and practices in your cloud infrastructure
+What effect does my geographic region have on the functionality of RHEL public cloud instances?
+You can use RHEL instances on a public cloud platform regardless of your geographical location. Therefore, you can run your instances in the same region as your on-premises server.
+However, hosting your instances in a physically distant region might cause high latency when operating them. In addition, depending on the public cloud provider, certain regions may provide additional features or be more cost-efficient. Before creating your RHEL instances, review the properties of the hosting regions available for your chosen cloud provider.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.4. Obtaining RHEL for public cloud deployments
+To deploy a RHEL system in a public cloud environment, you need to:
+Select the optimal cloud provider for your use case, based on your requirements and the current offer on the market.
+The cloud providers currently certified for running RHEL instances are:
+Amazon Web Services (AWS)
+For more information, see Deploying RHEL 9 on Amazon Web Services.
+Google Cloud Platform (GCP)
+For more information, see Deploying RHEL 9 on Google Cloud Platform.
+Microsoft Azure
+For more information, see Deploying RHEL 9 on Microsoft Azure.
+Create a RHEL cloud instance on your chosen cloud platform. For more information, see Methods for creating RHEL cloud instances.
+To keep your RHEL deployment up-to-date, use Red Hat Update Infrastructure (RHUI).
+Additional resources
+RHUI documentation
+Red Hat Open Hybrid Cloud
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.5. Methods for creating RHEL cloud instances
+To deploy a RHEL instance on a public cloud platform, you can use one of the following methods:
+Additional resources
+What is a golden image?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 2. Introduction to cloud-init
+The cloud-init utility automates the initialization of cloud instances during system boot. You can configure cloud-init to perform a variety of tasks:
+Configuring a host name
+Installing packages on an instance
+Running scripts
+Suppressing default virtual machine (VM) behavior
+Prerequisites
+Sign up for a Red Hat Customer Portal account.
+The cloud-init is available in various types of RHEL images. For example:
+If you download a KVM guest image from the Red Hat Customer Portal, the image comes preinstalled with the cloud-init package. After you launch the instance, the cloud-init package becomes enabled. KVM guest images on the Red Hat Customer Portal are intended to use with Red Hat Virtualization (RHV), the Red Hat OpenStack Platform (RHOSP), and Red Hat OpenShift Virtualization.
+You can also download the RHEL ISO image from the Red Hat Customer Portal to create a custom guest image. In this case, you need to install the cloud-init package on the customized guest image.
+If you require to use an image from a cloud service provider (for example, AWS or Azure), use the RHEL image builder to create the image. Image builder images are customized for specific cloud providers. The following image types include cloud-init already installed:
+Amazon Machine Image (AMI)
+Virtual Hard Disk (VHD)
+QEMU copy-on-write (qcow2)
+For details about the RHEL image builder, see Composing a customized RHEL system image.
+Most cloud platforms support cloud-init, but configuration procedures and supported options vary. Alternatively, you can configure cloud-init for the NoCloud environment.
+In addition, you can configure cloud-init on one VM and then use that VM as a template to create additional VMs or clusters of VMs.
+Specific Red Hat products, for example, Red Hat Virtualization, have documented procedures to configure cloud-init for those products.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.1. Overview of the cloud-init configuration
+The cloud-init utility uses YAML-formatted configuration files to apply user-defined tasks to instances. When an instance boots, the cloud-init service starts and executes the instructions from the YAML file. Depending on the configuration, tasks complete either during the first boot or on subsequent boots of the VM.
+To define the specific tasks, configure the /etc/cloud/cloud.cfg file and add directives under the /etc/cloud/cloud.cfg.d/ directory.
+The cloud.cfg file includes directives for various system configurations, such as user access, authentication, and system information.
+The file also includes default and optional modules for cloud-init. These modules execute in order in the following phases: .. The cloud-init initialization phase .. The configuration phase .. The final phase.
++ In the cloud.cfg file, the modules for the three phases are listed under cloud_init_modules, cloud_config_modules, and cloud_final_modules respectively.
+You can add additional directives for cloud-init in the cloud.cfg.d directory. When adding directives to the cloud.cfg.d directory, you need to add them to a custom file named *.cfg, and always include #cloud-config at the top of the file.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.2. cloud-init operates in stages
+During system boot, the cloud-init utility operates in five stages that determine whether cloud-init runs and where it finds its datasources, among other tasks. The stages are as follows:
+Generator stage: By using the systemd service, this phase determines whether to run cloud-init utility at the time of boot.
+Local stage: cloud-init searches local datasources and applies network configuration, including the DHCP-based fallback mechanism.
+Network stage: cloud-init processes user data by running modules listed under cloud_init_modules in the /etc/cloud/cloud.cfg file. You can add, remove, enable, or disable modules in the cloud_init_modules section.
+Config stage: cloud-init runs modules listed under cloud_config_modules section in the /etc/cloud/cloud.cfg file. You can add, remove, enable, or disable modules in the cloud_config_modules section.
+Final stage: cloud-init runs modules and configurations included in the cloud_final_modules section of the /etc/cloud/cloud.cfg file. It can include the installation of specific packages, as well as triggering configuration management plug-ins and user-defined scripts. You can add, remove, enable, or disable modules in the cloud_final_modules section.
+Additional resources
+Boot Stages of cloud-init
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.3. cloud-init modules execute in phases
+When cloud-init runs, it executes the modules within cloud.cfg in order within three phases:
+The network phase (cloud_init_modules)
+The configuration phase (cloud_config_modules)
+The final phase (cloud_final_modules)
+When cloud-init runs for the first time on a VM, all the modules you have configured run in their respective phases. On a subsequent running of cloud-init, whether a module runs within a phase depends on the module frequency of the individual module. Some modules run every time cloud-init runs; some modules only run the first time cloud-init runs, even if the instance ID changes.
+The possible module frequency values are as follows:
+Per instance means that the module runs on first boot of an instance. For example, if you clone an instance or create a new instance from a saved image, the modules designated as per instance run again.
+Per once means that the module runs only once. For example, if you clone an instance or create a new instance from a saved image, the modules designated per once do not run again on those instances.
+Per always means the module runs on every boot.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.4. cloud-init acts upon user data, metadata, and vendor data
+The datasources that cloud-init consumes are user data, metadata, and vendor data.
+User data includes directives you specify in the cloud.cfg file and in the cloud.cfg.d directory, for example, user data can include files to run, packages to install, and shell scripts. Refer to the cloud-init Documentation section User-Data Formats for information about the types of user data that cloud-init allows.
+Metadata includes data associated with a specific datasource, for example, metadata can include a server name and instance ID. If you are using a specific cloud platform, the platform determines where your instances find user data and metadata. Your platform may require that you add metadata and user data to an HTTP service; in this case, when cloud-init runs it consumes metadata and user data from the HTTP service.
+Vendor data is optionally provided by the organization (for example, a cloud provider) and includes information that can customize the image to better fit the environment where the image runs. cloud-init acts upon optional vendor data and user data after it reads any metadata and initializes the system. By default, vendor data runs on the first boot. You can disable vendor data execution.
+Refer to the cloud-init Documentation section Instance Metadata for a description of metadata; Datasources for a list of datasources; and Vendor Data for more information about vendor data.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.5. cloud-init identifies the cloud platform
+cloud-init attempts to identify the cloud platform using the script ds-identify. The script runs on the first boot of an instance.
+Adding a datasource directive can save time when cloud-init runs. You would add the directive in the /etc/cloud/cloud.cfg file or in the /etc/cloud/cloud.cfg.d directory. For example:
+datasource_list:[Ec2]
+Beyond adding the directive for your cloud platform, you can further configure cloud-init by adding additional configuration details, such as metadata URLs.
+datasource_list: [Ec2]
+datasource:
+  Ec2:
+    metadata_urls: ['http://169.254.169.254']
+After cloud-init runs, you can view a log file (run/cloud-init/ds-identify.log) that provides detailed information about the platform.
+Additional resources
+Datasources
+How to identify the datasource I’m using
+How can I debug my user data?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.6. Additional resources
+Upstream documentation for cloud-init
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 3. Red Hat support for cloud-init
+Red Hat supports the cloud-init utility, cloud-init modules, and default directories and files across various Red Hat products.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.1. cloud-init significant directories and files
+By using directories and files in the following table, you can perform tasks such as:
+Configuring cloud-init
+Finding information about your configuration after cloud-init has run
+Examining log files
+Finding templates
+Depending on your scenario and datasource, there can be additional files and directories important to your configuration.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.2. Red Hat products that use cloud-init
+You can use cloud-init with these Red Hat products:
+Red Hat Virtualization. Once you install cloud-init on a VM, you can create a template and leverage cloud-init functions for all VMs created from that template. Refer to Using Cloud-Init to Automate the Configuration of Virtual Machines for information about using cloud-init with VMs.
+Red Hat OpenStack Platform. You can use cloud-init to help configure images for OpenStack. Refer to the Instances and Images Guide for more information.
+Red Hat Satellite. You can use cloud-init with Red Hat Satellite. Refer to Preparing Cloud-init Images in Red Hat Virtualization for more information.
+Red Hat OpenShift. You can use cloud-init when you create VMs for OpenShift. Refer to Creating Virtual Machines for more information.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.3. Red Hat supports these cloud-init modules
+Red Hat supports most cloud-init modules. Individual modules can contain multiple configuration options. In the following table, you can find all of the cloud-init modules that Red Hat currently supports and provides a brief description and the default module frequency. Refer to Modules in the cloud-init Documentation section for complete descriptions and options for these modules.
+The following list of modules is not supported by Red Hat:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.4. The default cloud.cfg file
+The /etc/cloud/cloud.cfg file lists the modules comprising the basic configuration for cloud-init.
+The modules in the file are the default modules for cloud-init. You can configure the modules for your environment or remove modules you do not need. Modules that are included in cloud.cfg do not necessarily do anything by being listed in the file. You need to configure them individually if you want them to perform actions during one of the cloud-init phases.
+The cloud.cfg file provides the chronology for running individual modules. You can add additional modules to cloud.cfg as long as Red Hat supports the modules you want to add.
+The default contents of the file for Red Hat Enterprise Linux (RHEL) are as follows:
+users: 1
+ - default
+
+disable_root: true 2
+resize_rootfs_tmp: /dev
+ssh_pwauth:   false 3
+
+mount_default_fields: [~, ~, 'auto', 'defaults,nofail,x-systemd.requires=cloud-init.service', '0', '2'] 4
+ssh_deletekeys:   true 5
+ssh_genkeytypes: ['rsa', 'ecdsa', 'ed25519'] 6
+syslog_fix_perms: ~ 7
+disable_vmware_customization: false 8
+
+cloud_init_modules: 9
+  - migrator
+  - seed_random
+  - bootcmd
+  - write_files
+  - growpart
+  - resizefs
+  - disk_setup
+  - mounts
+  - set_hostname
+  - update_hostname
+  - update_etc_hosts
+  - ca_certs
+  - rsyslog
+  - users_groups
+  - ssh
+
+cloud_config_modules: 10
+  - ssh_import_id
+  - locale
+  - set_passwords
+  - rh_subscription
+  - spacewalk
+  - yum_add_repo
+  - ntp
+  - timezone
+  - disable_ec2_metadata
+  - runcmd
+
+cloud_final_modules: 11
+  - package_update_upgrade_install
+  - write_files_deferred
+  - puppet
+  - chef
+  - ansible
+  - mcollective
+  - salt_minion
+  - reset_rmc
+  - rightscale_userdata
+  - scripts_vendor
+  - scripts_per_once
+  - scripts_per_boot
+  - scripts_per_instance
+  - scripts_user
+  - ssh_authkey_fingerprints
+  - keys_to_console
+  - install_hotplug
+  - phone_home
+  - final_message
+  - power_state_change
+
+system_info:
+  default_user: 12
+    name: cloud-user
+    lock_passwd: true
+    gecos: Cloud User
+    groups: [adm, systemd-journal]
+    sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+    shell: /bin/bash
+   distro: rhel 13
+   network:
+    renderers: ['sysconfig', 'eni', 'netplan', 'network-manager', 'networkd']
+  paths:
+    cloud_dir: /var/lib/cloud 14
+    templates_dir: /etc/cloud/templates 15
+  ssh_svcname: sshd 16
+
+# vim:syntax=yaml
+Additional resources
+Modules
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.5. The cloud.cfg.d directory
+cloud-init acts upon directives that you provide and configure. Typically, those directives are included in the cloud.cfg.d directory.
+There are multiple ways to add directives. You can include directives in a file named *.cfg, which includes the heading #cloud-config. Typically, the directory would contain multiple *cfg files. There are other options for adding directives, for example, you can add a user data script. Refer to User-Data Formats for more information.
+Additional resources
+Cloud config examples
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.6. The default 05_logging.cfg file
+The 05_logging.cfg file sets logging information for cloud-init. The /etc/cloud/cloud.cfg.d directory includes this file, along with other cloud-init directives that you add.
+cloud-init uses the logging configuration in 05_logging.cfg by default. The default contents of the file for Red Hat Enterprise Linux (RHEL) are as follows:
+## This yaml formatted config file handles setting
+## logger information.  The values that are necessary to be set
+## are seen at the bottom.  The top '_log' are only used to remove
+## redundancy in a syslog and fallback-to-file case.
+##
+## The 'log_cfgs' entry defines a list of logger configs
+## Each entry in the list is tried, and the first one that
+## works is used.  If a log_cfg list entry is an array, it will
+## be joined with '\n'.
+_log:
+ - &log_base |
+   [loggers]
+   keys=root,cloudinit
+
+   [handlers]
+   keys=consoleHandler,cloudLogHandler
+
+   [formatters]
+   keys=simpleFormatter,arg0Formatter
+
+   [logger_root]
+   level=DEBUG
+   handlers=consoleHandler,cloudLogHandler
+
+   [logger_cloudinit]
+   level=DEBUG
+   qualname=cloudinit
+   handlers=
+   propagate=1
+
+   [handler_consoleHandler]
+   class=StreamHandler
+   level=WARNING
+   formatter=arg0Formatter
+   args=(sys.stderr,)
+
+   [formatter_arg0Formatter]
+   format=%(asctime)s - %(filename)s[%(levelname)s]: %(message)s
+
+   [formatter_simpleFormatter]
+   format=[CLOUDINIT] %(filename)s[%(levelname)s]: %(message)s
+ - &log_file |
+   [handler_cloudLogHandler]
+   class=FileHandler
+   level=DEBUG
+   formatter=arg0Formatter
+   args=('/var/log/cloud-init.log',)
+ - &log_syslog |
+   [handler_cloudLogHandler]
+   class=handlers.SysLogHandler
+   level=DEBUG
+   formatter=simpleFormatter
+   args=("/dev/log", handlers.SysLogHandler.LOG_USER)
+
+log_cfgs:
+# Array entries in this list will be joined into a string
+# that defines the configuration.
+#
+# If you want logs to go to syslog, uncomment the following line.
+# - [ *log_base, *log_syslog ]
+#
+# The default behavior is to just log to a file.
+# This mechanism that does not depend on a system service to operate.
+ - [ *log_base, *log_file ]
+# A file path can also be used.
+# - /etc/log.conf
+
+# This tells cloud-init to redirect its stdout and stderr to
+# 'tee -a /var/log/cloud-init-output.log' so the user can see output
+# there without needing to look on the console.
+output: {all: '| tee -a /var/log/cloud-init-output.log'}
+Additional resources
+Logging
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.7. The cloud-init /var/lib/cloud directory layout
+When cloud-init first runs, it creates a directory layout that includes information about your instance and cloud-init configuration.
+The directory can include optional directories, such as /scripts/vendor.
+The following is a sample directory layout for cloud-init:
+/var/lib/cloud/
+    - data/
+       - instance-id
+       - previous-instance-id
+       - previous-datasource
+       - previous-hostname
+       - result.json
+       - set-hostname
+       - status.json
+    - handlers/
+    - instance
+       - boot-finished
+       - cloud-config.txt
+       - datasource
+       - handlers/
+       - obj.pkl
+       - scripts/
+       - sem/
+       - user-data.txt
+       - user-data.txt.i
+       - vendor-data.txt
+       - vendor-data.txt.i
+    - instances/
+        f111ee00-0a4a-4eea-9c17-3fa164739c55/
+          - boot-finished
+          - cloud-config.txt
+          - datasource
+          - handlers/
+          - obj.pkl
+          - scripts/
+          - sem/
+          - user-data.txt
+          - user-data.txt.i
+          - vendor-data.txt
+          - vendor-data.txt.i
+    - scripts/
+       - per-boot/
+       - per-instance/
+       - per-once/
+       - vendor/
+    - seed/
+    - sem/
+       - config_scripts_per_once.once
+Additional resources
+Directory layout
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 4. Configuring cloud-init
+By using cloud-init, you can perform a variety of configuration tasks.
+Your cloud-init configuration can require that you add directives to the cloud.cfg file and the cloud.cfg.d directory. Alternatively, your specific data source might require that you add directives to files, such as a user data file and a metadata file. A data source might require that you upload your directives to an HTTP server. Check the requirements of your data source and add directives accordingly.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.1. Creating a virtual machine that includes cloud-init for a NoCloud datasource
+To create a new virtual machine (VM) that includes cloud-init, create a meta-data file and a user-data file.
+The meta-data file includes instance details.
+The user-data file includes information to create a user and grant access.
+Include these files in a new ISO image, and attach the ISO file to a new VM created from a KVM Guest Image. In this scenario, the datasource is NoCloud.
+Procedure
+Create a directory named cloudinitiso and set is as your working directory:
+$ mkdir cloudinitiso
+$ cd cloudinitiso
+Create the meta-data file and add the following information:
+instance-id: citest
+local-hostname: citest-1
+Create the user-data file and add the following information:
+#cloud-config
+password: cilogon
+chpasswd: {expire: False}
+ssh_pwauth: True
+ssh_authorized_keys:
+  - ssh-rsa AAA...fhHQ== sample@redhat.com
+Use the genisoimage command to create an ISO image that includes user-data and meta-data:
+# genisoimage -output ciiso.iso -volid cidata -joliet -rock user-data meta-data
+
+I: -input-charset not specified, using utf-8 (detected in locale settings)
+Total translation table size: 0
+Total rockridge attributes bytes: 331
+Total directory bytes: 0
+Path table size(bytes): 10
+Max brk space used 0
+183 extents written (0 MB)
+Download a KVM Guest Image from the Red Hat Customer Portal to the /var/lib/libvirt/images directory.
+Create a new VM from the KVM Guest Image using the virt-install utility and attach the downloaded image to the existing image:
+# virt-install \
+    --memory 4096 \
+    --vcpus 4 \
+    --name mytestcivm \
+    --disk /var/lib/libvirt/images/rhel-8.1-x86_64-kvm.qcow2,device=disk,bus=virtio,format=qcow2 \
+    --disk /home/sample/cloudinitiso/ciiso.iso,device=cdrom \
+    --os-type Linux \
+    --os-variant rhel9.0 \
+    --virt-type kvm \
+    --graphics none \
+    --import
+Log on to your image with username cloud-user and password cilogon:
+citest-1 login: cloud-user
+Password:
+[cloud-user@citest-1 ~]$
+Verification
+Check the cloud-init status to confirm that the utility has completed its defined tasks:
+[cloud-user@citest-1 instance]$ cloud-init status
+status: done
+The cloud-init utility creates the cloud-init directory layout under /var/lib/cloud when it runs, and it updates or changes certain directory contents based upon the directives you have specified.
+For example, you can confirm that the datasource is NoCloud by checking the datasource file.
+$ cd /var/lib/cloud/instance
+$ cat datasource
+DataSourceNoCloud: DataSourceNoCloud [seed=/dev/sr0][dsmode=net]
+cloud-init copies user-data into /var/lib/cloud/instance/user-data.txt:
+$ cat user-data.txt
+#cloud-config
+password: cilogon
+chpasswd: {expire: False}
+ssh_pwauth: True
+ssh_authorized_keys:
+  - ssh-rsa AAA...fhHQ== sample@redhat.com
+Additional resources
+Upstream documentation for the NoCloud data source
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.2. Expiring a cloud user password with cloud-init
+To force cloud-user to change the cloud-user password at the first login, you can set their password as expired.
+Procedure
+Depending on the requirements of your datasource, edit the user-data file or add the following directive to the cloud.cfg.d directory:
+Change the line chpasswd: {expire: False} to chpasswd: {expire: True}:
+#cloud-config
+password: mypassword
+chpasswd: {expire: True}
+ssh_pwauth: True
+ssh_authorized_keys:
+  - ssh-rsa AAA...SDvz user1@yourdomain.com
+  - ssh-rsa AAB...QTuo user2@yourdomain.com
+This works to expire the password because password and chpasswd operate on the default user unless you indicate otherwise.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.3. Changing a default user name with cloud-init
+You can change the default user name to something other than cloud-user.
+Procedure
+Depending on the requirements of your datasource, edit the user-data file or add the following directive to the cloud.cfg.d directory:
+Add the line user: <username>, replacing <username> with the new default user name:
+#cloud-config
+user: username
+password: mypassword
+chpasswd: {expire: False}
+ssh_pwauth: True
+ssh_authorized_keys:
+  - ssh-rsa AAA...SDvz user1@yourdomain.com
+  - ssh-rsa AAB...QTuo user2@yourdomain.com
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.4. Setting a root password with cloud-init
+To set the root password, create a user list.
+Procedure
+Depending on the requirements of your datasource, edit the user-data file or add the following directive to the cloud.cfg.d directory:
+Create a user list in the chpasswd section of the file:
+#cloud-config
+ssh_pwauth: True
+ssh_authorized_keys:
+  - ssh-rsa AAA...SDvz user1@yourdomain.com
+  - ssh-rsa AAB...QTuo user2@yourdomain.com
+chpasswd:
+  list: |
+     root:myrootpassword
+     cloud-user:mypassword
+  expire: False
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.5. Managing Red Hat subscriptions with cloud-init
+You can use the rh_subscription directive to register your system. For each subscription, you need to edit user data.
+Example 1
+You can use the auto-attach and service-level options:
+Under rh_subscription, add your username and password, set auto-attach to True, and set service-level to self-support.
+rh_subscription:
+  username: sample@redhat.com
+  password: 'mypassword'
+  auto-attach: True
+  service-level: self-support
+Example 2
+You can use the activation-key and org options:
+Under rh_subscription, add your activation key and org number and set auto-attach to True.
+rh_subscription:
+  activation-key: example_key
+  org: 12345
+  auto-attach: True
+Example 3
+You can add a subscription pool:
+Under rh_subscription, add your username, password, and pool number.
+rh_subscription:
+  username: sample@redhat.com
+  password: 'password'
+  add-pool: XYZ01234567
+Example 4
+You can set a server host name in the /etc/rhsm/rhsm.conf file:
+Under rh_subscription, add your username, password, server-hostname, and set auto-attach to True.
+rh_subscription:
+  username: sample@redhat.com
+  password: 'password'
+  server-hostname: test.example.com
+  auto-attach: True
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.6. Adding users and user options with cloud-init
+You create and describe users in a users section. You can modify the section to add more users to your initial system configuration, and you can set additional user options.
+If you add the users section, you must also set the default user options in this section.
+Procedure
+Depending on the requirements of your datasource, edit the user-data file or add the following directive to the cloud.cfg.d directory:
+Add or modify the users section to add users.
+If you want cloud-user to be the default user created along with the other users you specify, ensure that you add default as the first entry in the section. If it is not the first entry, cloud-user is not created.
+By default, users are labeled as unconfined_u if there is not an selinux-user value.
+#cloud-config
+users:
+  - default
+  - name: user2
+    gecos: User N. Ame
+    selinux-user: staff_u
+    groups: users,wheel
+    ssh_pwauth: True
+    ssh_authorized_keys:
+      - ssh-rsa AA..vz user@domain.com
+chpasswd:
+  list: |
+    root:password
+    cloud-user:mypassword
+    user2:mypassword2
+  expire: False
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.7. Running first boot commands with cloud-init
+You can use the runcmd and bootcmd sections to execute commands during startup and initialization.
+The bootcmd section executes early in the initialization process and by default runs on every boot. The runcmd section executes near the end of the process and is only executed during the first boot and initialization.
+Procedure
+Depending on the requirements of your datasource, edit the user-data file or add the following directive to the cloud.cfg.d directory:
+Add the sections for bootcmd and runcmd; include commands you want cloud-init to execute.
+#cloud-config
+users:
+  - default
+  - name: user2
+    gecos: User N. Ame
+    groups: users
+chpasswd:
+  list: |
+    root:password
+    fedora:myfedpassword
+    user2:mypassword2
+  expire: False
+bootcmd:
+ - echo New MOTD >> /etc/motd
+runcmd:
+ - echo New MOTD2 >> /etc/motd
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.8. Adding additional sudoers with cloud-init
+You can configure a user as a sudoer by adding a sudo and groups entry to the users section.
+Procedure
+Depending on the requirements of your datasource, edit the user-data file or add the following directive to the cloud.cfg.d directory:
+Add a sudo entry and specify the user access. For example, sudo: ALL=(ALL) NOPASSWD:ALL allows a user unrestricted user access.
+Add a groups entry and specify the groups that include the user:
+#cloud-config
+users:
+  - default
+  - name: user2
+    gecos: User D. Two
+    sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+    groups: wheel,adm,systemd-journal
+    ssh_pwauth: True
+    ssh_authorized_keys:
+      - ssh-rsa AA...vz user@domain.com
+chpasswd:
+  list: |
+    root:password
+    cloud-user:mypassword
+    user2:mypassword2
+  expire: False
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.9. Setting up a static networking configuration with cloud-init
+You can set up network configuration with cloud-init by adding a network-interfaces section to the metadata.
+Red Hat Enterprise Linux provides its default networking service through NetworkManager, a dynamic network control and configuration daemon that keeps network devices and connections up and active when they are available.
+Your datasource might provide a network configuration. For details, see the cloud-init section Network Configuration Sources.
+If you do not specify network configuration for cloud-init and have not disabled network configuration, cloud-init tries to determine if any attached devices have a connection. If it finds a connected device, it generates a network configuration that issues a DHCP request on the interface. Refer to the cloud-init documentation section Fallback Network Configuration for more information.
+Procedure
+The following example adds a static networking configuration.
+Depending on the requirements of your datasource, edit the user-data file or add the following directive to the cloud.cfg.d directory:
+Add a network-interfaces section.
+network:
+  version: 1
+  config:
+    - type: physical
+      name: eth0
+      subnets:
+        - type: static
+          address: 192.0.2.1/24
+          gateway: 192.0.2.254
+Additional resources
+Network Configuration
+NoCloud
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.10. Configuring only a root user with cloud-init
+You can configure your user data so that you have a root user and no other users.
+Procedure
+Depending on the requirements of your datasource, edit the user-data file or add the following directive to the cloud.cfg.d directory:
+Create an entry for the user root in the users section.
+The simple example that follows includes a users section with only the name option.
+users:
+  - name: root
+chpasswd:
+  list: |
+    root:password
+  expire: False
+Optionally, set up SSH keys for the root user.
+users:
+  - name: root
+    ssh_pwauth: True
+    ssh_authorized_keys:
+      - ssh-rsa AA..vz user@domain.com
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.11. Setting up storage with container-storage-setup in cloud-init
+You can set up storage by referencing the container-storage-setup utility within the write_files module.
+Procedure
+Depending on the requirements of your datasource, edit the user-data file or add the following directive to the cloud.cfg.d directory:
+Add or modify the write_files module to include the path to the container-storage-setup utility.
+The following example sets the size of the root logical volume to 6 GB rather than the default 3 GB.
+write_files:
+  - path: /etc/sysconfig/docker-storage-setup
+    permissions: 0644
+    owner: root
+    content: |
+    ROOT_SIZE=6G
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.12. Changing the system locale with cloud-init
+You can configure the system location with the locale module.
+Procedure
+Depending on the requirements of your datasource, edit the meta-data file. You can also add the following directive to the cloud.cfg file or the cloud.cfg.d directory:
+Add the locale directive, specifying the location. The following sample sets the locale to ja_JP (Japan) with UTF-8 encoding.
+#cloud-config
+locale: ja_JP.UTF-8
+Additional resources
+Set system locale
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.13. cloud-init and shell scripts
+You can add list values or string values to bootcmd or runcmd. You can also provide a shell script within userdata.
+If you use a list value for bootcmd or runcmd, each list item runs in turn using execve.
+If you use a string value, then the entire string runs as a shell script.
+If you want to use cloud-init to run a shell script, you can provide a shell script (complete with shebang (#!) ) instead of providing cloud-init with a .yaml file.
+Refer to Run commands on first boot for examples of how to put shell scripts in bootcmd and runcmd.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.14. Preventing cloud-init from updating config files
+When you create or restore an instance from a backup image, the instance ID changes. With the change in the instance ID, the cloud-init utility updates configuration files. However, you can ensure that cloud-init does not update certain configuration files when you create or restore from backup.
+Procedure
+Edit the /etc/cloud/cloud.cfg file, for example:
+# vi /etc/cloud/cloud.cfg
+Comment out or remove the configuration that you do not want cloud-init to update when you restore your instance. For example, to avoid updating the SSH key file, remove -ssh from the cloud_init_modules section.
+cloud_init_modules:
+ - disk_setup
+ - migrator
+ - bootcmd
+ - write-files
+ - growpart
+ - resizefs
+ - set_hostname
+ - update_hostname
+ - update_etc_hosts
+ - rsyslog
+ - users-groups
+ # - ssh
+Verification
+To check the configuration files updated by cloud-init, examine the /var/log/cloud/cloud-init.log file. Updated files are logged during instance startup with messages beginning with Writing to. For example:
+2019-09-03 00:16:07,XXX - util.py[DEBUG]: Writing to /root/.ssh/authorized_keys - wb: [XXX] 554 bytes
+2019-09-03 00:16:08,XXX - util.py[DEBUG]: Writing to /etc/ssh/sshd_config - wb: [XXX] 3905 bytes
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.15. Modifying a VM created from a KVM Guest Image after cloud-init has run
+You can modify your cloud-init configuration before rerunning the cloud-init utility. When you launch a VM with the cloud-init package installed and enabled, cloud-init runs in its default state on the initial boot of the VM.
+Procedure
+Log in to your VM.
+Add or change directives, for example, modify the cloud.cfg file in the /etc/cloud directory or add directives to the /etc/cloud/cloud.cfg.d directory.
+Run the cloud-init clean command to clean directories so that cloud-init can rerun. You can also run the following commands as root to clean the VM:
+rm -Rf /var/lib/cloud/instances/
+rm -Rf /var/lib/cloud/instance
+rm -Rf /var/lib/cloud/data/
+Rerun cloud-init or reboot the VM.
+cloud-init reruns, implementing the configuration changes you made.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.16. Modifying a VM for a specific datasource after cloud-init has run
+You can modify your cloud-init configuration before rerunning cloud-init. This procedure uses OpenStack as an example datasource. Note that the exact steps you need to perform vary based on your datasource.
+Procedure
+Create and launch an instance for the OpenStack Platform. For information about creating instances for OpenStack, see Creating an instance. In this example, the virtual machine (VM) includes cloud-init, which runs upon boot of the VM.
+Add or change directives. For example, modify the user-data.file file that is stored on the OpenStack HTTP server.
+Clean the virtual machine. Run the following commands as root.
+# rm -rf /etc/resolv.conf /run/cloud-init
+# userdel -rf cloud-user
+# hostnamectl set-hostname localhost.localdomain
+# rm /etc/NetworkManager/conf.d/99-cloud-init.conf
+Rerun cloud-init or reboot the virtual machine.
+Cloud-init reruns, implementing the configuration changes you made.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.17. Troubleshooting cloud-init
+After running the cloud-init utility, you can troubleshoot the instance by examining the configuration and log files. After identifying the issue, rerun cloud-init on your instance. You can run cloud-init from the command line. For details, run the cloud-init --help command.
+Procedure
+Review the cloud-init configuration files:
+Examine the /etc/cloud/cloud.cfg configuration file. Check which modules are included under cloud_init_modules, cloud_config_modules, and cloud_final_modules.
+Check directives (*.cfg files) in the /etc/cloud/cloud.cfg.d directory.
+Review the /var/log/cloud-init.log and /var/log/cloud-init-output.log files for details on a specific issue. For example, if the root partition was not automatically extended, check log messages for the growpart utility. If the file system was not extended, check log messages for resizefs. For example:
+# grep resizefs /var/log/cloud-init.log
+Rerun cloud-init commands as root:
+Rerun cloud-init with only the init modules:
+# /usr/bin/cloud-init -d init
+Rerun cloud-init with all modules in the configuration:
+# /usr/bin/cloud-init -d modules
+Delete the cloud-init cache and force cloud-init to run after boot:
+# rm -rf /var/lib/cloud/ && /usr/bin/cloud-init -d init
+Clean directories and simulate a clean instance:
+# rm -rf /var/lib/cloud/instances/
+# rm -rf /var/lib/cloud/instance
+# rm -rf /var/lib/cloud/data/
+# reboot
+Rerun the cloud-init utility:
+# cloud-init init --local
+# cloud-init init
+Additional resources
+The cloud-init cli commands

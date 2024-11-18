@@ -1,0 +1,608 @@
+Abstract
+Red Hat only supports Identity Management (IdM) on Red Hat Enterprise Linux (RHEL). If you run IdM on RHEL 8 or an LDAP directory, you can migrate these solutions to IdM on RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 1. Migrating your IdM environment from RHEL 8 servers to RHEL 9 servers
+To upgrade a RHEL 8 IdM environment to RHEL 9, you must first add new RHEL 9 IdM replicas to your RHEL 8 IdM environment, and then retire the RHEL 8 servers. The migration involves moving all Identity Management (IdM) data and configuration from a Red Hat Enterprise Linux (RHEL) 8 server to a RHEL 9 server.
+This section describes how to migrate all Identity Management (IdM) data and configuration from a Red Hat Enterprise Linux (RHEL) 8 server to a RHEL 9 server.
+The migration procedure includes:
+Configuring a RHEL 9 IdM server and adding it as a replica to your current RHEL 8 IdM environment. For details, see Installing the RHEL 9 Replica.
+Making the RHEL 9 server the certificate authority (CA) renewal server. For details, see Assigning the CA renewal server role to the RHEL 9 IdM server.
+Stopping the generation of the certificate revocation list (CRL) on the RHEL 8 server and redirecting CRL requests to the RHEL 9 replica. For details, see Stopping CRL generation on a RHEL 8 IdM CA server.
+Starting the generation of the CRL on the RHEL 9 server. For details, see Starting CRL generation on the new RHEL 9 IdM CA server.
+Stopping and decommissioning the original RHEL 8 CA renewal server. For details, see Stopping and decommissioning the RHEL 8 server.
+In the following procedures:
+rhel9.example.com is the RHEL 9 system that will become the new CA renewal server.
+rhel8.example.com is the original RHEL 8 CA renewal server. To identify which Red Hat Enterprise Linux 8 server is the CA renewal server, run the following command on any IdM server:
+[root@rhel8 ~]# ipa config-show | grep "CA renewal"
+IPA CA renewal master: rhel8.example.com
+If your IdM deployment does not use an IdM CA, any IdM server running on RHEL 8 can be rhel8.example.com.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.1. Prerequisites for migrating IdM from RHEL 8 to 9
+On rhel8.example.com:
+Upgrade the system to the latest RHEL 8 version.
+Update the ipa-* packages to their latest version:
+[root@rhel8 ~]# dnf update ipa-*
+On rhel9.example.com:
+The latest version of Red Hat Enterprise Linux is installed on the system. For more information, see Interactively installing RHEL from installation media.
+Ensure the system is an IdM client enrolled into the domain for which rhel8.example.com IdM server is authoritative. For more information, see Installing an IdM client: Basic scenario.
+Ensure the system meets the requirements for IdM server installation. See Preparing the system for IdM server installation.
+Ensure you know the time server rhel8.example.com is synchronized with:
+[root@rhel8 ~]# ntpstat
+synchronised to NTP server (ntp.example.com) at stratum 3
+   time correct to within 42 ms
+   polling server every 1024 s
+Ensure the system is authorized for the installation of an IdM replica. See Authorizing the installation of a replica on an IdM client.
+Update the ipa-* packages to their latest version:
+[root@rhel8 ~]# dnf update ipa-*
+Additional resources
+To decide which server roles you want to install on the new IdM primary server, rhel9.example.com, see the following links:
+For details on the CA server role in IdM, see Planning your CA services.
+For details on the DNS server role in IdM, see Planning your DNS services and host names.
+For details on integration based on cross-forest trust between an IdM and Active Directory (AD), see Planning a cross-forest trust between IdM and AD.
+To be able to install specific server roles for IdM in RHEL 9, you need to download packages from specific IdM repositories: Installing packages required for an IdM server.
+To upgrade a system from RHEL 8 to RHEL 9, see Upgrading from RHEL 8 to RHEL 9.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.2. Installing the RHEL 9 replica
+List which server roles are present in your RHEL 8 environment:
+[root@rhel8 ~]# ipa server-role-find --status enabled --server rhel8.example.com
+----------------------
+3 server roles matched
+----------------------
+  Server name: rhel8.example.com
+  Role name: CA server
+  Role status: enabled
+
+  Server name: rhel8.example.com
+  Role name: DNS server
+  Role status: enabled
+[... output truncated ...]
+Optional: If you want to use the same per-server forwarders for rhel9.example.com that rhel8.example.com is using, view the per-server forwarders for rhel8.example.com:
+[root@rhel8 ~]# ipa dnsserver-show rhel8.example.com
+-----------------------------
+1 DNS server matched
+-----------------------------
+  Server name: rhel8.example.com
+  SOA mname: rhel8.example.com.
+  Forwarders: 192.0.2.20
+  Forward policy: only
+--------------------------------------------------
+Number of entries returned 1
+--------------------------------------------------
+Install the IdM server software on rhel9.example.com to configure it as a replica of the RHEL 8 IdM server, including all the server roles present on rhel8.example.com. To install the roles from the example above, use these options with the ipa-replica-install command:
+--setup-ca to set up the Certificate System component
+--setup-dns and --forwarder to configure an integrated DNS server and set a per-server forwarder to take care of DNS queries that go outside the IdM domain
+--ntp-server to specify an NTP server or --ntp-pool to specify a pool of NTP servers
+To set up an IdM server with the IP address of 192.0.2.1 that uses a per-server forwarder with the IP address of 192.0.2.20 and synchronizes with the ntp.example.com NTP server:
+[root@rhel9 ~]# ipa-replica-install --setup-ca --ip-address 192.0.2.1 --setup-dns --forwarder 192.0.2.20 --ntp-server ntp.example.com
+You do not need to specify the RHEL 8 IdM server itself because if DNS is working correctly, rhel9.example.com will find it using DNS autodiscovery.
+Optional: Add an _ntp._udp service (SRV) record for your external NTP time server to the DNS of the newly-installed IdM server, rhel9.example.com. The presence of the SRV record for the time server in IdM DNS ensures that future RHEL 9 replica and client installations are automatically configured to synchronize with the time server used by rhel9.example.com. This is because ipa-client-install looks for the _ntp._udp DNS entry unless --ntp-server or --ntp-pool options are provided on the install command-line interface (CLI).
+Verification
+Verify that the IdM services are running on rhel9.example.com:
+[root@rhel9 ~]# ipactl status
+Directory Service: RUNNING
+[... output truncated ...]
+ipa: INFO: The ipactl command was successful
+Verify that server roles for rhel9.example.com are the same as for rhel8.example.com:
+[root@rhel9 ~]# kinit admin
+[root@rhel9 ~]# ipa server-role-find --status enabled --server rhel9.example.com
+----------------------
+2 server roles matched
+----------------------
+  Server name: rhel9.example.com
+  Role name: CA server
+  Role status: enabled
+
+  Server name: rhel9.example.com
+  Role name: DNS server
+  Role status: enabled
+Optional: Display details about the replication agreement between rhel8.example.com and rhel9.example.com:
+[root@rhel9 ~]# ipa-csreplica-manage list --verbose rhel9.example.com
+Directory Manager password:
+
+rhel8.example.com
+last init status: None
+last init ended: 1970-01-01 00:00:00+00:00
+last update status: Error (0) Replica acquired successfully: Incremental update succeeded
+last update ended: 2019-02-13 13:55:13+00:00
+Optional: If your IdM deployment is in a trust relationship with AD, verify that it is working:
+Verify the Kerberos configuration
+Attempt to resolve an AD user on rhel9.example.com:
+[root@rhel9 ~]# id aduser@ad.domain
+Verify that rhel9.example.com is synchronized with the NTP server:
+[root@rhel8 ~]# chronyc tracking
+Reference ID    : CB00710F (ntp.example.com)
+Stratum         : 3
+Ref time (UTC)  : Wed Feb 16 09:49:17 2022
+[... output truncated ...]
+Additional resources
+DNS configuration priorities
+Time service requirements for IdM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.3. Assigning the CA renewal server role to the RHEL 9 IdM server
+If your IdM deployment uses an embedded certificate authority (CA), assign the CA renewal server role to the Red Hat Enterprise Linux (RHEL) 9 IdM server.
+On rhel9.example.com, configure rhel9.example.com as the new CA renewal server:
+Configure rhel9.example.com to handle CA subsystem certificate renewal:
+[root@rhel9 ~]# ipa config-mod --ca-renewal-master-server rhel9.example.com
+  ...
+  IPA masters: rhel8.example.com, rhel9.example.com
+  IPA CA servers: rhel8.example.com, rhel9.example.com
+  IPA CA renewal master: rhel9.example.com
+The output confirms that the update was successful.
+On rhel9.example.com, enable the certificate updater task:
+Open the /etc/pki/pki-tomcat/ca/CS.cfg configuration file for editing.
+Remove the ca.certStatusUpdateInterval entry, or set it to the desired interval in seconds. The default value is 600.
+Save and close the /etc/pki/pki-tomcat/ca/CS.cfg configuration file.
+Restart IdM services:
+[user@rhel9 ~]$ ipactl restart
+On rhel8.example.com, disable the certificate updater task:
+Open the /etc/pki/pki-tomcat/ca/CS.cfg configuration file for editing.
+Change ca.certStatusUpdateInterval to 0, or add the following entry if it does not exist:
+ca.certStatusUpdateInterval=0
+Save and close the /etc/pki/pki-tomcat/ca/CS.cfg configuration file.
+Restart IdM services:
+[user@rhel8 ~]$ ipactl restart
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.4. Stopping CRL generation on a RHEL 8 IdM CA server
+If your IdM deployment uses an embedded certificate authority (CA), stop generating the Certificate Revocation List (CRL) on the IdM CRL publisher server.
+Prerequisites
+You must be logged in as root.
+Procedure
+Optional: Verify that rhel8.example.com is generating the CRL:
+[root@rhel8 ~]# ipa-crlgen-manage status
+CRL generation: enabled
+Last CRL update: 2021-10-31 12:00:00
+Last CRL Number: 6
+The ipa-crlgen-manage command was successful
+Stop generating the CRL on the rhel8.example.com server:
+[root@rhel8 ~]# ipa-crlgen-manage disable
+Stopping pki-tomcatd
+Editing /var/lib/pki/pki-tomcat/conf/ca/CS.cfg
+Starting pki-tomcatd
+Editing /etc/httpd/conf.d/ipa-pki-proxy.conf
+Restarting httpd
+CRL generation disabled on the local host. Please make sure to configure CRL generation on another master with ipa-crlgen-manage enable.
+The ipa-crlgen-manage command was successful
+Optional: Check if the rhel8.example.com server stopped generating the CRL:
+[root@rhel7 ~]# ipa-crlgen-manage status
+The rhel8.example.com server stopped generating the CRL. The next step is to enable generating the CRL on rhel9.example.com.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.5. Starting CRL generation on the new RHEL 9 IdM CA server
+If your IdM deployment uses an embedded certificate authority (CA), start Certificate Revocation List (CRL) generation on the new Red Hat Enterprise Linux (RHEL) 9 IdM CA server.
+Prerequisites
+You must be logged in as root on the rhel9.example.com machine.
+Procedure
+To start generating the CRL on rhel9.example.com, use the ipa-crlgen-manage enable command:
+[root@rhel9 ~]# ipa-crlgen-manage enable
+Stopping pki-tomcatd
+Editing /var/lib/pki/pki-tomcat/conf/ca/CS.cfg
+Starting pki-tomcatd
+Editing /etc/httpd/conf.d/ipa-pki-proxy.conf
+Restarting httpd
+Forcing CRL update
+CRL generation enabled on the local host. Please make sure to have only a single CRL generation master.
+The ipa-crlgen-manage command was successful
+Verification
+To check if CRL generation is enabled, use the ipa-crlgen-manage status command:
+[root@rhel8 ~]# ipa-crlgen-manage status
+CRL generation: enabled
+Last CRL update: 2021-10-31 12:10:00
+Last CRL Number: 7
+The ipa-crlgen-manage command was successful
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.6. Stopping and decommissioning the RHEL 8 server
+Make sure that all data, including the latest changes, have been correctly migrated from rhel8.example.com to rhel9.example.com. For example:
+Add a new user on rhel8.example.com:
+[root@rhel8 ~]# ipa user-add random_user
+First name: random
+Last name: user
+Check that the user has been replicated to rhel9.example.com:
+[root@rhel9 ~]# ipa user-find random_user
+--------------
+1 user matched
+--------------
+  User login: random_user
+  First name: random
+  Last name: user
+Ensure that a Distributed Numeric Assignment (DNA) ID range is allocated to rhel9.example.com. Use one of the following methods:
+Activate the DNA plug-in on rhel9.example.com directly by creating another test user:
+[root@rhel9 ~]# ipa user-add another_random_user
+First name: another
+Last name: random_user
+Assign a specific DNA ID range to rhel9.example.com:
+On rhel8.example.com, display the IdM ID range:
+[root@rhel8 ~]# ipa idrange-find
+----------------
+3 ranges matched
+----------------
+  Range name: EXAMPLE.COM_id_range
+  First Posix ID of the range: 196600000
+  Number of IDs in the range: 200000
+  First RID of the corresponding RID range: 1000
+  First RID of the secondary RID range: 100000000
+  Range type: local domain range
+On rhel8.example.com, display the allocated DNA ID ranges:
+[root@rhel8 ~]# ipa-replica-manage dnarange-show
+rhel8.example.com: 196600026-196799999
+rhel9.example.com: No range set
+Reduce the DNA ID range allocated to rhel8.example.com so that a section becomes available to rhel9.example.com:
+[root@rhel8 ~]# ipa-replica-manage dnarange-set rhel8.example.com 196600026-196699999
+Assign the remaining part of the IdM ID range to rhel9.example.com:
+[root@rhel8 ~]# ipa-replica-manage dnarange-set rhel9.example.com 196700000-196799999
+Stop all IdM services on rhel8.example.com to force domain discovery to the new rhel9.example.com server.
+[root@rhel8 ~]# ipactl stop
+Stopping CA Service
+Stopping pki-ca:                                           [  OK  ]
+Stopping HTTP Service
+Stopping httpd:                                            [  OK  ]
+Stopping MEMCACHE Service
+Stopping ipa_memcached:                                    [  OK  ]
+Stopping DNS Service
+Stopping named:                                            [  OK  ]
+Stopping KPASSWD Service
+Stopping Kerberos 5 Admin Server:                          [  OK  ]
+Stopping KDC Service
+Stopping Kerberos 5 KDC:                                   [  OK  ]
+Stopping Directory Service
+Shutting down dirsrv:
+    EXAMPLE-COM...                                         [  OK  ]
+    PKI-IPA...                                             [  OK  ]
+After this, the ipa utility will contact the new server through a remote procedure call (RPC).
+Remove the RHEL 8 server from the topology by executing the removal commands on the RHEL 9 server. For details, see Uninstalling an IdM server.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 2. Upgrading an IdM client from RHEL 8 to RHEL 9
+In-place upgrades of IdM clients from RHEL 8 to RHEL 9 by using the leapp utility are supported, and the tool handles all necessary configuration changes automatically.
+However, in-place upgrades are not supported for IdM servers and IdM server nodes.
+Part II. Migrating to IdM from external sources
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 3. Migrating to IdM on RHEL 9 from FreeIPA on non-RHEL Linux distributions
+To migrate a FreeIPA deployment on a non-RHEL Linux distribution to an Identity Management (IdM) deployment on RHEL 9 servers, you must first add a new RHEL 9 IdM Certificate Authority (CA) replica to your existing FreeIPA environment, transfer certificate-related roles to it, and then retire the non-RHEL FreeIPA servers.
+Prerequisites
+On the RHEL 9 system:
+The latest version of Red Hat Enterprise Linux is installed on the system. For more information, see Interactively installing RHEL from installation media.
+Ensure the system is an IdM client enrolled into the domain for which the FreeIPA server is authoritative. For more information, see Installing an IdM client: Basic scenario.
+Ensure the system meets the requirements for IdM server installation. See Preparing the system for IdM server installation.
+Ensure the system is authorized for the installation of an IdM replica. See Authorizing the installation of a replica on an IdM client.
+On the non-RHEL FreeIPA server:
+Ensure you know the time server that the system is synchronized with:
+[root@freeipaserver ~]# ntpstat
+synchronised to NTP server (ntp.example.com) at stratum 3
+   time correct to within 42 ms
+   polling server every 1024 s
+Update the ipa-* packages to their latest version:
+[root@freeipaserver ~]# dnf update ipa-*
+Procedure
+To perform the migration, follow the same procedure as Migrating your IdM environment from RHEL 8 servers to RHEL 9 servers, with your non-RHEL FreeIPA CA replica acting as the RHEL 8 server:
+Configure a RHEL 9 server and add it as an IdM replica to your current FreeIPA environment on the non-RHEL Linux distribution. For details, see Installing the RHEL 9 Replica.
+Make the RHEL 9 replica the certificate authority (CA) renewal server. For details, see Assigning the CA renewal server role to the RHEL 9 IdM server.
+Stop generating the certificate revocation list (CRL) on the non-RHEL server and redirect CRL requests to the RHEL 9 replica. For details, see Stopping CRL generation on a RHEL 8 IdM CA server.
+Start generating the CRL on the RHEL 9 server. For details, see Starting CRL generation on the new RHEL 9 IdM CA server.
+Stop and decommission the original non-RHEL FreeIPA CA renewal server. For details, see Stopping and decommissioning the RHEL 8 server.
+Additional resources
+Migrating your IdM environment from RHEL 8 servers to RHEL 9 servers
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 4. Migrating from an LDAP directory to IdM
+If you previously deployed an LDAP server for identity and authentication lookups, you can migrate the lookup service to Identity Management (IdM). IdM offers a migration tool to help you with the following tasks:
+Transferring user accounts, including passwords and group membership, without losing data.
+Avoiding expensive configuration updates on the clients.
+The migration process described here assumes a simple deployment scenario with one namespace in LDAP and one in IdM. For more complex environments, such as those with multiple namespaces or custom schemas, contact the Red Hat support services.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.1. Considerations in migrating from LDAP to IdM
+The process of moving from an LDAP server to Identity Management (IdM) has the following stages:
+Migrating the clients. Plan this stage carefully. Determine which services each client in your current infrastructure uses. These may include for example Kerberos or Systems Security Services Daemon (SSSD). Then determine which of these services you can use in the final IdM deployment. See Planning the client configuration when migrating from LDAP to IdM for more information.
+Migrating the data.
+Migrating the passwords. Plan this stage carefully. IdM requires Kerberos hashes for every user account in addition to passwords. Some of the considerations and migration paths for passwords are covered in Planning password migration when migrating from LDAP to IdM.
+You can first migrate the server part and then the clients or first the clients and then the server. For more information about the two types of migration, see LDAP to IdM migration sequence.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.2. Planning the client configuration when migrating from LDAP to IdM
+Identity Management (IdM) can support a number of different client configurations, with varying degrees of functionality, flexibility, and security. Decide which configuration is best for each individual client based on its operating system and your IT maintenance priorities. Consider also the client’s functional area: a development machine typically requires a different configuration than production servers or user laptops do.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.2.1. Initial, pre-migration client configuration
+Before deciding on the specifics of the client configuration in Identity Management (IdM), first establish the specifics of the current, pre-migration configuration.
+The initial state for almost all LDAP deployments that are to be migrated is that there is an LDAP service providing identity and authentication services.
+Figure 4.1. Basic LDAP directory and client configuration
+Linux and Unix clients use the PAM_LDAP and NSS_LDAP libraries to connect directly to the LDAP services. These libraries allow clients to retrieve user information from the LDAP directory as if the data were stored in /etc/passwd or /etc/shadow. In real life, the infrastructure may be more complex if a client uses LDAP for identity lookups and Kerberos for authentication or other configurations.
+An Identity Management (IdM) server differs from an LDAP directory, particularly in schema support and the structure of the directory tree. For more background on those differences, see the Contrasting IdM with a Standard LDAP Directory section from the Planning the client configuration when migrating from LDAP to IdM. Those differences may impact data, especially with the directory tree, which affects entry names. However, the differences have little impact on the client configuration and on migrating clients to IdM.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.2.2. Recommended configuration for RHEL clients
+The System Security Services Daemon (SSSD) in Red Hat Enterprise Linux (RHEL) uses special PAM and NSS libraries, pam_sss and nss_sss. Using these libraries, SSSD can integrate very closely with Identity Management (IdM) and benefit from its full authentication and identity features. SSSD has a number of useful features, such as caching identity information so that users can log in even if the connection to the central server is lost.
+Unlike generic LDAP directory services that use the pam_ldap and nss_ldap libraries, SSSD establishes relationships between identity and authentication information by defining domains. A domain in SSSD defines the following back end functions:
+Authentication
+Identity lookups
+Access
+Password changes
+The SSSD domain is then configured to use a provider to supply the information for any one, or all, of these functions. The domain configuration always requires an identity provider. The other three providers are optional; if an authentication, access, or password provider is not defined, then the identity provider is used for that function.
+SSSD can use IdM for all of its back end functions. This is the ideal configuration because it provides the full range of IdM functionality, unlike generic LDAP identity providers or Kerberos authentication. For example, during daily operation, SSSD enforces host-based access control rules and security features in IdM.
+Figure 4.2. Clients and SSSD with an IdM back end
+The ipa-client-install script automatically configures SSSD to use IdM for all its back end services, so that RHEL clients are set up with the recommended configuration by default.
+Additional information
+Understanding SSSD and its benefits
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.2.3. Alternative supported configuration
+Unix and Linux systems such as Mac, Solaris, HP-UX, AIX, and Scientific Linux support all of the services that Identity Management (IdM) manages but do not use SSSD. Similarly, older Red Hat Enterprise Linux (RHEL) versions, specifically 6.1 and 5.6, support SSSD but have an older version, which does not support IdM as an identity provider.
+If it is not possible to use a modern version of SSSD on a system, then clients can be configured in the following way:
+The client connects to the IdM server as if it were an LDAP directory server for identity lookups, by using nss_ldap.
+The client connects to the IdM server as if it were a regular Kerberos KDC, by using pam_krb5.
+For more information about configuring a RHEL client with an older version of SSSD to use the IdM server as its identity provider and its Kerberos authentication domain, see the Configuring identity and authentication providers for SSSD section of the RHEL 7 System-Level Authentication Guide.
+Figure 4.3. Clients and IdM with LDAP and Kerberos
+It is generally best practice to use the most secure configuration possible for a client. This means SSSD or LDAP for identities and Kerberos for authentication. However, for some maintenance situations and IT structures, you may need to resort to the simplest possible scenario: configuring LDAP to provide both identity and authentication by using the nss_ldap and pam_ldap libraries on the clients.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.3. Planning password migration when migrating from LDAP to IdM
+A crucial question to answer before migrating users from LDAP to Identity Management (IdM) is whether to migrate user passwords or not. The following options are available:
+The following sections explain how to migrate users and their passwords:
+Methods for migrating passwords when migrating LDAP to IdM
+Using a web page
+Using SSSD
+Planning the migration of cleartext LDAP passwords
+Planning the migration of LDAP passwords that do not meet the IdM requirements
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.3.1. Methods for migrating passwords when migrating LDAP to IdM
+To migrate user accounts from LDAP to Identity Management (IdM) without forcing the users to change their passwords, you can use the following methods:
+Method 1: Using the migration web page
+Tell users to enter their LDAP credentials once into a special page in the IdM Web UI, https://ipaserver.example.com/ipa/migration. A script running in the background then captures the clear text password and properly updates the user account with the password and an appropriate Kerberos hash.
+Method 2 (recommended): Using SSSD
+Mitigate the user impact of the migration by using the System Security Services Daemon (SSSD) to generate the required user keys. For deployments with a lot of users or where users should not be burdened with password changes, this is the best scenario.
+Workflow
+A user tries to log into a machine with SSSD.
+SSSD attempts to perform Kerberos authentication against the IdM server.
+Even though the user exists in the system, the authentication fails with the error key type is not supported because the Kerberos hashes do not exist yet.
+SSSD performs a plain text LDAP bind over a secure connection.
+IdM intercepts this bind request. If the user has a Kerberos principal but no Kerberos hashes, then the IdM identity provider generates the hashes and stores them in the user entry.
+If authentication is successful, SSSD disconnects from IdM and tries Kerberos authentication again. This time, the request succeeds because the hash exists in the entry.
+With method 2, the entire process is invisible to the users. They log in to a client service without noticing that their password has been moved from LDAP to IdM.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.3.2. Planning the migration of cleartext LDAP passwords
+Although in most deployments LDAP passwords are stored encrypted, there may be some users or some environments that use cleartext passwords for user entries.
+When users are migrated from the LDAP server to the IdM server, their cleartext passwords are not migrated over because IdM does not allow cleartext passwords. Instead, a Kerberos principal is created for each user, the keytab is set to true, and the password is set as expired. This means that IdM requires the user to reset the password at the next login. For more information, see Planning the migration of LDAP passwords that do not meet the IdM requirements.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.3.3. Planning the migration of LDAP passwords that do not meet the IdM requirements
+If user passwords in the original directory do not meet the password policies defined in Identity Management (IdM), the passwords become invalid after the migration.
+Password reset is done automatically the first time a user attempts to obtain a Kerberos ticket-granting ticket (TGT) in the IdM domain by entering kinit. The user is forced to change his or her password:
+[migrated_idm_user@idmclient ~]$ kinit
+Password for migrated_idm_user@IDM.EXAMPLE.COM:
+Password expired.  You must change it now.
+Enter new password:
+Enter it again:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.4. Further migration considerations and requirements
+As you are planning a migration from an LDAP server to Identity Management (IdM), ensure that your LDAP environment is able to work with the IdM migration script.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.4.1. LDAP servers supported for migration
+The migration process from an LDAP server to IdM uses a special script, ipa migrate-ds, to perform the migration. This script has specific requirements regarding the structure of the LDAP directory and LDAP entries. Migration is supported only for LDAPv3-compliant directory services, which include several common directories:
+Sun ONE Directory Server
+Apache Directory Server
+OpenLDAP
+Migration from an LDAP server to IdM has been tested with Red Hat Directory Server and OpenLDAP.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.4.2. LDAP environment requirements for migration
+Many different possible configuration scenarios exist for LDAP servers and for Identity Management (IdM), which affects the smoothness of the migration process. For the example migration procedures, these are the assumptions about the environment:
+A single LDAP directory domain is being migrated to one IdM realm. No consolidation is involved.
+A user password is stored as a hash in the LDAP directory. For a list of supported hashes, see the Password Storage Schemes section in the Configuration, Command, and File Reference title available in the Red Hat Directory Server 10 section of Red Hat Directory Server Documentation.
+The LDAP directory instance is both the identity store and the authentication method. Client machines are configured to use the pam_ldap or nss_ldap library to connect to the LDAP server.
+Entries use only the standard LDAP schema. Entries that contain custom object classes or attributes are not migrated to IdM.
+The migrate-ds command only migrates the following accounts:
+Those containing a gidNumber attribute. The attribute is required by the posixAccount object class.
+Those containing an sn attribute. The attribute is required by the person object class.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.4.3. IdM system requirements for migration
+With a moderately-sized directory of around 10,000 users and 10 groups, it is necessary to have a powerful enough target IdM system to allow the migration to proceed. The minimum requirements for a migration are:
+4 cores
+4GB of RAM
+30GB of disk space
+A SASL buffer size of 2MB, which is the default for an IdM server
+In case of migration errors, increase the buffer size:
+[root@ipaserver ~]# ldapmodify -x -D 'cn=directory manager' -w password -h ipaserver.example.com -p 389
+
+dn: cn=config
+changetype: modify
+replace: nsslapd-sasl-max-buffer-size
+nsslapd-sasl-max-buffer-size: 4194304
+
+modifying entry "cn=config"
+Set the nsslapd-sasl-max-buffer-size value in bytes.
+Additional resources
+IdM server hardware recommendations
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.4.4. User and group ID numbers
+When migrating from LDAP to an IdM deployment, ensure that no user ID (UID) and group ID (GID) conflict exists between the deployments. Before migration, verify that:
+You know your LDAP ID range.
+You know your IdM ID range.
+No overlap exists between UIDs and GIDs on the LDAP server and existing UIDs or GIDs on the RHEL system or IdM deployment.
+The migrated LDAP UIDs and GIDs fit into the IdM ID range.
+If needed, create a new IdM ID range prior to migration.
+Additional resources
+Adding a new IdM ID range
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.4.5. Considerations about sudo rules
+If you are using sudo with LDAP, you must migrate the sudo rules stored in LDAP to Identity Management (IdM) manually. Red Hat recommends that you recreate netgroups in IdM as hostgroups. IdM presents hostgroups automatically as traditional netgroups for sudo configurations that do not use the SSSD sudo provider.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.4.6. LDAP to IdM migration tools
+Identity Management (IdM) uses a specific command, ipa migrate-ds, to execute the migration process so that LDAP directory data are properly formatted and imported cleanly into the IdM server. When using ipa migrate-ds, the remote system user, specified by the --bind-dn option, must have read access to the userPassword attribute, otherwise passwords will not be migrated.
+The IdM server must be configured to run in migration mode, and then the migration script can be used. For details, see Migrating an LDAP server to IdM.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.4.7. Improving LDAP to IdM migration performance
+An LDAP migration is essentially a specialized import operation for the 389 Directory Server (DS) instance within the IdM server. Tuning the 389 DS instance for better import operation performance can help improve the overall migration performance.
+There are two parameters that directly affect import performance:
+The nsslapd-cachememsize attribute, which defines the size allowed for the entry cache. This is a buffer that is automatically set to 80% of the total cache memory size. For large import operations, you can increase this parameter and possibly the memory cache itself. This increase will improve the efficiency of the directory service in handling a large number of entries or entries with large attributes.
+For details on how to modify the attribute using the dsconf command, see Adjusting the entry cache size.
+The system ulimit configuration option sets the maximum number of allowed processes for a system user. Processing a large database can exceed the limit. If this happens, increase the value:
+[root@server ~]# ulimit -u 4096
+Additional resources
+Adjusting IdM Directory Server performance
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.4.8. LDAP to IdM migration sequence
+There are four major steps when migrating to IdM, but their order varies depending on whether you want to first migrate the server or the clients.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.5. Customizing the migration from LDAP to IdM
+You can migrate your authentication and authorization services from an LDAP server to Identity Management (IdM) using the ipa migrate-ds command. Without additional options, the command takes the LDAP URL of the directory to migrate and exports the data based on common default settings.
+You can customize the migration process and how data is identified and exported by using different ipa migrate-ds command options. Customize the migration if your LDAP directory tree has a unique structure or if you know you must exclude certain entries or attributes within entries.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.5.1. Examples of customizing the Bind DN and Base DN during the migration from LDAP to IdM
+Use the ipa migrate-ds command to migrate from LDAP to Identity Management (IdM). Without additional options, the command takes the LDAP URL of the directory to migrate and exports the data based on common default settings. The following are examples of modifying the default settings:
+# ipa migrate-ds ldap://ldap.example.com:389
+Additional resources
+ipa migrate-ds --help
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.5.2. The migration of specific subtrees
+The default directory structure places person entries in the ou=People subtree and group entries in the ou=Groups subtree. These subtrees are container entries for those different types of directory data. If you do not use any options with the migrate-ds command, then the utility assumes that the given LDAP directory uses the ou=People and ou=Groups structure.
+Many deployments may have an entirely different directory structure or you may only want to export certain parts of the original directory tree. As an administrator, you can use the following options to specify the RDN of a different user or group subtree on the source LDAP server:
+--user-container
+--group-container
+For example:
+[ipaserver ~]# ipa migrate-ds --user-container=ou=employees \
+--group-container="ou=employee groups" ldap://ldap.example.com:389
+Optionally, add the --scope option to the ipa migrate-ds command to set the scope:
+onelevel: Default. Only entries in the specified container are migrated.
+subtree: Entries in the specified container and all subcontainers are migrated.
+base: Only the specified object itself is migrated.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.5.3. The inclusion and exclusion of entries
+By default, the ipa migrate-ds script imports every user entry with the person object class and every group entry with the groupOfUniqueNames or groupOfNames object class.
+In some migration paths, only specific types of users and groups may need to be exported, or, alternatively, specific users and groups may need to be excluded. You can select which types of users and groups to include by setting which object classes to search for when looking for user or group entries.
+This option is particularly useful when you use custom object classes for different user types. For example, the following command migrates only users with the custom fullTimeEmployee object class:
+[root@ipaserver ~]# ipa migrate-ds --user-objectclass=fullTimeEmployee ldap://ldap.example.com:389
+Because of the different types of groups, this is also very useful for migrating only certain types of groups, such as user groups, while excluding other types of groups, like certificate groups. For example:
+[root@ipaserver ~]# ipa migrate-ds --group-objectclass=groupOfNames --group-objectclass=groupOfUniqueNames ldap://ldap.example.com:389
+Specifying user and group entries to migrate based on object class implicitly excludes all other users and groups from migration.
+Alternatively, it can be useful to migrate all user and group entries except for just a small handful of entries. You can exclude specific user or group accounts while migrating all others of that type. For example, this excludes only a hobbies group and two users:
+[root@ipaserver ~]# ipa migrate-ds --exclude-groups="Golfers Group" --exclude-users=idmuser101 --exclude-users=idmuser102 ldap://ldap.example.com:389
+Exclude statements are applied to users matching the pattern in the uid and to groups matching it in the cn attribute.
+You can migrate a general object class but exclude specific entries of that class. For example, this specifically includes users with the fullTimeEmployee object class, yet excludes three managers:
+[root@ipaserver ~]# ipa migrate-ds --user-objectclass=fullTimeEmployee --exclude-users=jsmith --exclude-users=bjensen --exclude-users=mreynolds ldap://ldap.example.com:389
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.5.4. The exclusion of entry attributes
+By default, every attribute and object class for a user or group entry is migrated. In certain scenarios, that may not be realistic, either because of bandwidth and network constraints or because the attribute data are no longer relevant. For example, if users are going to be assigned new user certificates as they join the Identity Management (IdM) domain, then migrating the userCertificate attribute would be useless.
+You can ignore specific object classes and attributes by using the following options with the migrate-ds command:
+--user-ignore-objectclass
+--user-ignore-attribute
+--group-ignore-objectclass
+--group-ignore-attribute
+For example, to exclude the userCertificate attribute and strongAuthenticationUser object class for users and the groupOfCertificates object class for groups:
+[root@ipaserver ~]# ipa migrate-ds --user-ignore-attribute=userCertificate --user-ignore-objectclass=strongAuthenticationUser --group-ignore-objectclass=groupOfCertificates ldap://ldap.example.com:389
+Additional resources
+LDAP environment requirements for migration
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.5.5. The schema to use when migrating from LDAP to IdM and the schema compat feature
+Identity Management (IdM) uses the RFC2307bis schema to define user, host, host group, and other network identities. However, if the LDAP server used as the source for the migration uses the RFC2307 schema instead, specify the --schema option with the ipa migrate-ds command:
+[root@ipaserver ~]# ipa migrate-ds --schema=RFC2307 ldap://ldap.example.com:389
+Alternatively, IdM has a built-in schema compat feature that allows IdM to reformat data for systems that do not support RFC2307bis. The compat plugin is enabled by default, which means that the directory server computes an alternate view of the users and groups and provides this view in the cn=users,cn=compat,dc=example,dc=com container entry. It does this by precomputing the contents of its entries at startup-time and refreshing its entries as needed.
+It is recommended that this feature is disabled during the migration to reduce system overhead.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.6. Migrating an LDAP server to IdM
+You can migrate your authentication and authorization services from an LDAP server to Identity Management (IdM) using the ipa migrate-ds command.
+Prerequisites
+You have administrator privileges to the LDAP directory.
+If IdM is already installed, you have administrator privileges to IdM.
+You are logged in as root on the RHEL system on which you are executing the procedure below.
+You have read and understood the following chapters:
+Considerations in migrating from LDAP to IdM.
+Planning the client configuration when migrating from LDAP to IdM.
+Planning password migration when migrating from LDAP to IdM.
+Further migration considerations and requirements.
+Customizing the migration from LDAP to IdM.
+Procedure
+If IdM is not yet installed: install the IdM server, including any custom LDAP directory schema, on a different machine from the one on which the existing LDAP directory is installed. For details, see Installing Identity Management.
+For performance reasons, disable the compat plug-in:
+# ipa-compat-manage disable
+For more information about the schema compat feature and the benefits of disabling it for the migration, see The schema to use when migrating from LDAP to IdM and the schema compat feature.
+Restart the IdM Directory Server instance:
+# systemctl restart dirsrv.target
+Configure the IdM server to allow migration:
+# ipa config-mod --enable-migration=TRUE
+By setting --enable-migration to TRUE, you do the following:
+Allow pre-hashed passwords during an LDAP add operation.
+Configure SSSD to try the password migration sequence if the initial Kerberos authentication fails. For more information, see the Workflow section in Using SSSD when migrating passwords from LDAP to IdM.
+Run the IdM migration script, ipa migrate-ds, with the options that are relevant for your use case. For more information, see Customizing the migration from LDAP to IdM.
+# ipa migrate-ds --your-options ldap://ldap.example.com:389
+Re-enable the compat plug-in:
+# ipa-compat-manage enable
+Restart the IdM Directory Server:
+# systemctl restart dirsrv.target
+When all users have had their passwords migrated, disable the migration mode:
+# ipa config-mod --enable-migration=FALSE
+Optional: When all of the users have been migrated, reconfigure non-SSSD clients to use Kerberos authentication, that is pam_krb5, instead of LDAP authentication, that is pam_ldap. For more information, see Configuring a Kerberos Client in the RHEL 7 System-level Authentication Guide.
+Have users generate their hashed Kerberos passwords. Choose one of the methods described in Planning password migration when migrating from LDAP to IdM.
+If you decide on the SSSD method:
+Move clients that have SSSD installed from the LDAP directory to the IdM directory, and enroll them as clients with IdM. This downloads the required keys and certificates.
+On Red Hat Enterprise Linux clients, this can be done using the ipa-client-install command. For example:
+# ipa-client-install --enable-dns-update
+If you decide on the IdM migration web page method:
+Instruct users to log into IdM using the migration web page:
+https://ipaserver.example.com/ipa/migration
+To monitor the user migration process, query the existing LDAP directory to see which user accounts have a password but do not yet have a Kerberos principal key.
+$ ldapsearch -LL -x -D 'cn=Directory Manager' -w secret -b 'cn=users,cn=accounts,dc=example,dc=com' '(&(!(krbprincipalkey=))(userpassword=))' uid
+When the migration of all clients and users is complete, decommission the LDAP directory.
+Verification
+Create a test user in IdM by using the ipa user-add command. Compare the output of migrated users to that of the test user. Ensure that the migrated users contain the minimal set of attributes and object classes present on the test user. For example:
+$ ipa user-show --all testing_user
+dn: uid=testing_user,cn=users,cn=accounts,dc=idm,dc=example,dc=com
+User login: testing_user
+First name: testing
+Last name: user
+Full name: testing user
+Display name: testing user
+Initials: tu
+Home directory: /home/testing_user
+GECOS: testing user
+Login shell: /bin/sh
+Principal name: testing_user@IDM.EXAMPLE.COM
+Principal alias: testing_user@IDM.EXAMPLE.COM
+Email address: testing_user@idm.example.com
+UID: 1689700012
+GID: 1689700012
+Account disabled: False
+Preserved user: False
+Password: False
+Member of groups: ipausers
+Kerberos keys available: False
+ipauniqueid: 843b1ac8-6e38-11ec-8dfe-5254005aad3e
+mepmanagedentry: cn=testing_user,cn=groups,cn=accounts,dc=idm,dc=example,dc=com
+objectclass: top, person, organizationalperson, inetorgperson, inetuser, posixaccount, krbprincipalaux, krbticketpolicyaux, ipaobject,
+             ipasshuser, ipaSshGroupOfPubKeys, mepOriginEntry
+Compare the output of migrated users, as seen on IdM, to the source users, as seen on the original LDAP server. Ensure that imported attributes are not copied twice and that they have the correct values.
+Additional resources
+Migrating from LDAP to IdM over SSL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.7. Migrating from LDAP to IdM over SSL
+You can migrate your authentication and authorization services from an LDAP server to Identity Management (IdM) using the ipa migrate-ds command. Follow this procedure to encrypt the data transmitted during the migration.
+Prerequisites
+You have administrator privileges to the LDAP directory.
+If IdM is already installed, you have administrator privileges to IdM.
+You are logged in as root on the RHEL system on which you are executing the procedure below.
+You have read and understood the following chapters:
+Considerations in migrating from LDAP to IdM.
+Planning the client configuration when migrating from LDAP to IdM.
+Planning password migration when migrating from LDAP to IdM.
+Further migration considerations and requirements.
+Customizing the migration from LDAP to IdM.
+Procedure
+Store the certificate of the CA that issued the remote LDAP server certificate in a file on the future IdM server. For example: /tmp/remote.crt.
+Follow the steps described in Migrating an LDAP server to IdM. However, for an encrypted LDAP connection during the migration, use the ldaps protocol in the URL and pass the --ca-cert-file option to the ipa migrate-ds command. For example:
+# ipa migrate-ds --ca-cert-file=/tmp/remote.crt --your-other-options ldaps://ldap.example.com:636
+Verification
+Create a test user in IdM by using the ipa user-add command. Compare the output of migrated users to that of the test user. Ensure that the migrated users contain the minimal set of attributes and object classes present on the test user. For example:
+$ ipa user-show --all testing_user
+dn: uid=testing_user,cn=users,cn=accounts,dc=idm,dc=example,dc=com
+User login: testing_user
+First name: testing
+Last name: user
+Full name: testing user
+Display name: testing user
+Initials: tu
+Home directory: /home/testing_user
+GECOS: testing user
+Login shell: /bin/sh
+Principal name: testing_user@IDM.EXAMPLE.COM
+Principal alias: testing_user@IDM.EXAMPLE.COM
+Email address: testing_user@idm.example.com
+UID: 1689700012
+GID: 1689700012
+Account disabled: False
+Preserved user: False
+Password: False
+Member of groups: ipausers
+Kerberos keys available: False
+ipauniqueid: 843b1ac8-6e38-11ec-8dfe-5254005aad3e
+mepmanagedentry: cn=testing_user,cn=groups,cn=accounts,dc=idm,dc=example,dc=com
+objectclass: top, person, organizationalperson, inetorgperson, inetuser, posixaccount, krbprincipalaux, krbticketpolicyaux, ipaobject,
+             ipasshuser, ipaSshGroupOfPubKeys, mepOriginEntry
+Compare the output of migrated users, as seen on IdM, to the source users, as seen on the original LDAP server. Ensure that imported attributes are not copied twice and that they have the correct values.

@@ -1,0 +1,680 @@
+Abstract
+You can join Red Hat Enterprise Linux (RHEL) hosts to an Active Directory (AD) domain by using the System Security Services Daemon (SSSD) or the Samba Winbind service to access AD resources. Alternatively, it is also possible to access AD resources without domain integration by using a Managed Service Account (MSA).
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 1. Connecting RHEL systems directly to AD using SSSD
+You need two components to connect a RHEL system to Active Directory (AD). One component, SSSD, interacts with the central identity and authentication source, and the other component, realmd, detects available domains and configures the underlying RHEL system services, in this case SSSD, to connect to the domain.
+This section describes using the System Security Services Daemon (SSSD) to connect a RHEL system to Active Directory (AD).
+Overview of direct integration using SSSD
+Supported Windows platforms for direct integration
+Connecting directly to AD
+How the AD provider handles dynamic DNS updates
+Modifying dynamic DNS settings for the AD provider
+How the AD provider handles trusted domains
+Overriding Active Directory site autodiscovery with SSSD
+realm commands
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.1. Overview of direct integration using SSSD
+You use SSSD to access a user directory for authentication and authorization through a common framework with user caching to permit offline logins. SSSD is highly configurable; it provides Pluggable Authentication Modules (PAM) and Name Switch Service (NSS) integration and a database to store local users as well as extended user data retrieved from a central server. SSSD is the recommended component to connect a RHEL system with one of the following types of identity server:
+Active Directory
+Identity Management (IdM) in RHEL
+Any generic LDAP or Kerberos server
+The most convenient way to configure SSSD to directly integrate a Linux system with AD is to use the realmd service. It allows callers to configure network authentication and domain membership in a standard way. The realmd service automatically discovers information about accessible domains and realms and does not require advanced configuration to join a domain or realm.
+You can use SSSD for both direct and indirect integration with AD and it allows you to switch from one integration approach to another. Direct integration is a simple way to introduce RHEL systems to an AD environment. However, as the share of RHEL systems grows, your deployments usually need a better centralized management of the identity-related policies such as host-based access control, sudo, or SELinux user mappings. Initially, you can maintain the configuration of these aspects of the RHEL systems in local configuration files. However, with a growing number of systems, distribution and management of the configuration files is easier with a provisioning system such as Red Hat Satellite. When direct integration does not scale anymore, you should consider indirect integration. For more information about moving from direct integration (RHEL clients are in the AD domain) to indirect integration (IdM with trust to AD), see Moving RHEL clients from AD domain to IdM Server.
+For more information about which type of integration fits your use case, see Deciding between indirect and direct integration.
+Additional resources
+realm(8), sssd-ad(5), and sssd(8) man pages on your system
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.2. Supported Windows platforms for direct integration
+You can directly integrate your RHEL system with Active Directory forests that use the following forest and domain functional levels:
+Forest functional level range: Windows Server 2008 - Windows Server 2016
+Domain functional level range: Windows Server 2008 - Windows Server 2016
+Direct integration has been tested on the following supported operating systems:
+Windows Server 2022 (RHEL 9.1 and above)
+Windows Server 2019
+Windows Server 2016
+Windows Server 2012 R2
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.3. Connecting directly to AD
+The System Security Services Daemon (SSSD) is the recommended component to connect a Red Hat Enterprise Linux (RHEL) system with Active Directory (AD). This section describes how to integrate directly with AD by using either ID mapping, which is the default for SSSD, or by using POSIX attributes.
+Options for integrating with AD: using ID mapping or POSIX attributes
+Discovering and joining an AD domain using SSSD
+Connecting to AD using POSIX attributes defined in Active Directory
+Connecting to multiple domains in different AD forests with SSSD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.3.1. Options for integrating with AD: using ID mapping or POSIX attributes
+Linux and Windows systems use different identifiers for users and groups:
+Linux uses user IDs (UID) and group IDs (GID). See Introduction to managing user and group accounts in Configuring Basic System Settings. Linux UIDs and GIDs are compliant with the POSIX standard.
+Windows use security IDs (SID).
+To authenticate to a RHEL system as an AD user, you must have a UID and GID assigned. SSSD provides the option to integrate with AD either using ID mapping or POSIX attributes. The default is to use ID mapping.
+Automatically generate new UIDs and GIDs for AD users
+SSSD can use the SID of an AD user to algorithmically generate POSIX IDs in a process called ID mapping. ID mapping creates a map between SIDs in AD and IDs on Linux.
+When SSSD detects a new AD domain, it assigns a range of available IDs to the new domain.
+When an AD user logs in to an SSSD client machine for the first time, SSSD creates an entry for the user in the SSSD cache, including a UID based on the user’s SID and the ID range for that domain.
+Because the IDs for an AD user are generated in a consistent way from the same SID, the user has the same UID and GID when logging in to any Red Hat Enterprise Linux system.
+See Discovering and joining an AD domain using SSSD.
+Use POSIX attributes defined in AD
+AD can create and store POSIX attributes, such as uidNumber, gidNumber, unixHomeDirectory, or loginShell.
+When using ID mapping described above, SSSD creates new UIDs and GIDs, which overrides the values defined in AD. To keep the AD-defined values, you must disable ID mapping in SSSD.
+See Connecting to AD using POSIX attributes defined in Active Directory.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.3.2. Discovering and joining an AD Domain using SSSD
+Follow this procedure to discover an AD domain and connect a RHEL system to that domain using SSSD.
+Prerequisites
+Ensure that the following ports on the AD domain controllers are open and accessible to the RHEL host.
+Ensure that you are using the AD domain controller server for DNS.
+Verify that the system time on both systems is synchronized. This ensures that Kerberos is able to work correctly.
+Procedure
+Install the following packages:
+# dnf install samba-common-tools realmd oddjob oddjob-mkhomedir sssd adcli krb5-workstation
+To display information for a specific domain, run realm discover and add the name of the domain you want to discover:
+# realm discover ad.example.com
+ad.example.com
+  type: kerberos
+  realm-name: AD.EXAMPLE.COM
+  domain-name: ad.example.com
+  configured: no
+  server-software: active-directory
+  client-software: sssd
+  required-package: oddjob
+  required-package: oddjob-mkhomedir
+  required-package: sssd
+  required-package: adcli
+  required-package: samba-common
+The realmd system uses DNS SRV lookups to find the domain controllers in this domain automatically.
+Configure the local RHEL system with the realm join command. The realmd suite edits all required configuration files automatically. For example, for a domain named ad.example.com:
+# realm join ad.example.com
+Verification
+Display an AD user details, such as the administrator user:
+# getent passwd administrator@ad.example.com
+administrator@ad.example.com:*:1450400500:1450400513:Administrator:/home/administrator@ad.example.com:/bin/bash
+Additional resources
+See the realm(8) and nmcli(1) man pages on your system
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.3.3. Connecting to AD using POSIX attributes defined in Active Directory
+For best performance, publish the POSIX attributes to the AD global catalog. If POSIX attributes are not present in the global catalog, SSSD connects to the individual domain controllers directly on the LDAP port.
+Prerequisites
+Ensure that the following ports on the RHEL host are open and accessible to the AD domain controllers.
+Ensure that you are using the AD domain controller server for DNS.
+Verify that the system time on both systems is synchronized. This ensures that Kerberos is able to work correctly.
+Procedure
+Install the following packages:
+# dnf install realmd oddjob oddjob-mkhomedir sssd adcli krb5-workstation
+Configure the local RHEL system with ID mapping disabled using the realm join command with the --automatic-id-mapping=no option. The realmd suite edits all required configuration files automatically. For example, for a domain named ad.example.com:
+# realm join --automatic-id-mapping=no ad.example.com
+If you already joined a domain, you can manually disable ID Mapping in SSSD:
+Open the /etc/sssd/sssd.conf file.
+In the AD domain section, add the ldap_id_mapping = false setting.
+Remove the SSSD caches:
+rm -f /var/lib/sss/db/*
+Restart SSSD:
+systemctl restart sssd
+SSSD now uses POSIX attributes from AD, instead of creating them locally.
+Verification
+Display an AD user details, such as the administrator user:
+# getent passwd administrator@ad.example.com
+administrator@ad.example.com:*:10000:10000:Administrator:/home/Administrator:/bin/bash
+Additional resources
+For further details about ID mapping and the ldap_id_mapping parameter, see the sssd-ldap(8) man page on your system.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.3.4. Connecting to multiple domains in different AD forests with SSSD
+You can use an Active Directory (AD) Managed Service Account (MSA) to access AD domains from different forests where there is no trust between them.
+See Accessing AD with a Managed Service Account.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.4. How the AD provider handles dynamic DNS updates
+Active Directory (AD) actively maintains its DNS records by timing out (aging) and removing (scavenging) inactive records.
+By default, the SSSD service refreshes a RHEL client’s DNS record at the following intervals:
+Every time the identity provider comes online.
+Every time the RHEL system reboots.
+At the interval specified by the dyndns_refresh_interval option in the /etc/sssd/sssd.conf configuration file. The default value is 86400 seconds (24 hours).
+SSSD sends dynamic DNS updates to the AD server using Kerberos/GSSAPI for DNS (GSS-TSIG). This means that you only need to enable secure connections to AD.
+Additional resources
+sssd-ad(5) man page on your system
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.5. Modifying dynamic DNS settings for the AD provider
+The System Security Services Daemon (SSSD) service refreshes the DNS record of a Red Hat Enterprise Linux (RHEL) client joined to an AD environment at default intervals. The following procedure adjusts these intervals.
+Prerequisites
+You have joined a RHEL host to an Active Directory environment with the SSSD service.
+You need root permissions to edit the /etc/sssd/sssd.conf configuration file.
+Procedure
+Open the /etc/sssd/sssd.conf configuration file in a text editor.
+Add the following options to the [domain] section for your AD domain to set the DNS record refresh interval to 12 hours, disable updating PTR records, and set the DNS record Time To Live (TTL) to 1 hour.
+[domain/ad.example.com]
+id_provider = ad
+...
+dyndns_refresh_interval = 43200
+dyndns_update_ptr = false
+dyndns_ttl = 3600
+Save and close the /etc/sssd/sssd.conf configuration file.
+Restart the SSSD service to load the configuration changes.
+[root@client ~]# systemctl restart sssd
+Additional resources
+How the AD provider handles dynamic DNS updates
+sssd-ad(5) man page on your system
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.6. How the AD provider handles trusted domains
+If you set the id_provider = ad option in the /etc/sssd/sssd.conf configuration file, SSSD handles trusted domains as follows:
+SSSD only supports domains in a single AD forest. If SSSD requires access to multiple domains from multiple forests, consider using IPA with trusts (preferred) or the winbindd service instead of SSSD.
+By default, SSSD discovers all domains in the forest and, if a request for an object in a trusted domain arrives, SSSD tries to resolve it.
+If the trusted domains are not reachable or geographically distant, which makes them slow, you can set the ad_enabled_domains parameter in /etc/sssd/sssd.conf to limit from which trusted domains SSSD resolves objects.
+By default, you must use fully-qualified user names to resolve users from trusted domains.
+Additional resources
+sssd.conf(5) man page on your system
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.7. Overriding Active Directory site autodiscovery with SSSD
+Active Directory (AD) forests can be very large, with numerous different domain controllers, domains, child domains and physical sites. AD uses the concept of sites to identify the physical location for its domain controllers. This enables clients to connect to the domain controller that is geographically closest, which increases client performance.
+This section describes how SSSD uses autodiscovery to find an AD site to connect to, and how you can override autodiscovery and specify a site manually.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.7.1. How SSSD handles AD site autodiscovery
+By default, SSSD clients use autodiscovery to find its AD site and connect to the closest domain controller. The process consists of these steps:
+SSSD performs an SRV query to find Domain Controllers (DCs) in the domain. SSSD reads the discovery domain from the dns_discovery_domain or the ad_domain options in the SSSD configuration file.
+SSSD performs Connection-Less LDAP (CLDAP) pings to these DCs in 3 batches to avoid pinging too many DCs and avoid timeouts from unreachable DCs. If SSSD receives site and forest information during any of these batches, it skips the rest of the batches.
+SSSD creates and saves a list of site-specific and backup servers.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.7.2. Overriding AD site autodiscovery
+To override the autodiscovery process, specify the AD site to which you want the client to connect by adding the ad_site option to the [domain] section of the /etc/sssd/sssd.conf file. This example configures the client to connect to the ExampleSite AD site.
+Prerequisites
+You have joined a RHEL host to an Active Directory environment using the SSSD service.
+You can authenticate as the root user so you can edit the /etc/sssd/sssd.conf configuration file.
+Procedure
+Open the /etc/sssd/sssd.conf file in a text editor.
+Add the ad_site option to the [domain] section for your AD domain:
+[domain/ad.example.com]
+id_provider = ad
+...
+ad_site = ExampleSite
+Save and close the /etc/sssd/sssd.conf configuration file.
+Restart the SSSD service to load the configuration changes:
+# systemctl restart sssd
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.8. realm commands
+The realmd system has two major task areas:
+Managing system enrollment in a domain.
+Controlling which domain users are allowed to access local system resources.
+In realmd use the command line tool realm to run commands. Most realm commands require the user to specify the action that the utility should perform, and the entity, such as a domain or user account, for which to perform the action.
+Additional resources
+realm(8) man page on your system
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 2. Connecting RHEL systems directly to AD using Samba Winbind
+You need two components to connect a RHEL system to AD. One component, Samba Winbind, interacts with the AD identity and authentication source, and the other component, realmd, detects available domains and configures the underlying RHEL system services, in this case Samba Winbind, to connect to the AD domain.
+This section describes using Samba Winbind to connect a RHEL system to Active Directory (AD).
+Overview of direct integration using Samba Winbind
+Supported Windows platforms for direct integration
+Joining a RHEL system to an AD domain
+realm commands
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.1. Overview of direct integration using Samba Winbind
+Samba Winbind emulates a Windows client on a Linux system and communicates with AD servers.
+You can use the realmd service to configure Samba Winbind by:
+Configuring network authentication and domain membership in a standard way.
+Automatically discovering information about accessible domains and realms.
+Not requiring advanced configuration to join a domain or realm.
+Note that:
+Direct integration with Winbind in a multi-forest AD setup requires bidirectional trusts.
+Remote forests must trust the local forest to ensure that the idmap_ad plug-in handles remote forest users correctly.
+Samba’s winbindd service provides an interface for the Name Service Switch (NSS) and enables domain users to authenticate to AD when logging into the local system.
+Using winbindd provides the benefit that you can enhance the configuration to share directories and printers without installing additional software. For further detail, see the section about Using Samba as a server in the Deploying Different Types of Servers Guide.
+Additional resources
+See the realmd man page on your system.
+See the winbindd man page on your system.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.2. Supported Windows platforms for direct integration
+You can directly integrate your RHEL system with Active Directory forests that use the following forest and domain functional levels:
+Forest functional level range: Windows Server 2008 - Windows Server 2016
+Domain functional level range: Windows Server 2008 - Windows Server 2016
+Direct integration has been tested on the following supported operating systems:
+Windows Server 2022 (RHEL 9.1 and above)
+Windows Server 2019
+Windows Server 2016
+Windows Server 2012 R2
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.3. Joining a RHEL system to an AD domain
+Samba Winbind is an alternative to the System Security Services Daemon (SSSD) for connecting a Red Hat Enterprise Linux (RHEL) system with Active Directory (AD). You can join a RHEL system to an AD domain by using realmd to configure Samba Winbind.
+Procedure
+If your AD requires the deprecated RC4 encryption type for Kerberos authentication, enable support for these ciphers in RHEL:
+# update-crypto-policies --set DEFAULT:AD-SUPPORT
+Install the following packages:
+# dnf install realmd oddjob-mkhomedir oddjob samba-winbind-clients \
+       samba-winbind samba-common-tools samba-winbind-krb5-locator krb5-workstation
+To share directories or printers on the domain member, install the samba package:
+# dnf install samba
+Backup the existing /etc/samba/smb.conf Samba configuration file:
+# mv /etc/samba/smb.conf /etc/samba/smb.conf.bak
+Join the domain. For example, to join a domain named ad.example.com:
+# realm join --membership-software=samba --client-software=winbind ad.example.com
+Using the previous command, the realm utility automatically:
+Creates a /etc/samba/smb.conf file for a membership in the ad.example.com domain
+Adds the winbind module for user and group lookups to the /etc/nsswitch.conf file
+Updates the Pluggable Authentication Module (PAM) configuration files in the /etc/pam.d/ directory
+Starts the winbind service and enables the service to start when the system boots
+Optional: Set an alternative ID mapping back end or customized ID mapping settings in the /etc/samba/smb.conf file.
+For details, see the Understanding and configuring Samba ID mapping
+Edit the /etc/krb5.conf file and add the following section:
+[plugins]
+    localauth = {
+        module = winbind:/usr/lib64/samba/krb5/winbind_krb5_localauth.so
+        enable_only = winbind
+    }
+Verify that the winbind service is running:
+# systemctl status winbind
+...
+   Active: active (running) since Tue 2018-11-06 19:10:40 CET; 15s ago
+If you installed the samba package to share directories and printers, enable and start the smb service:
+# systemctl enable --now smb
+Verification
+Display an AD user’s details, such as the AD administrator account in the AD domain:
+# getent passwd "AD\administrator"
+AD\administrator:*:10000:10000::/home/administrator@AD:/bin/bash
+Query the members of the domain users group in the AD domain:
+# getent group "AD\Domain Users"
+    AD\domain users:x:10000:user1,user2
+Optional: Verify that you can use domain users and groups when you set permissions on files and directories. For example, to set the owner of the /srv/samba/example.txt file to AD\administrator and the group to AD\Domain Users:
+# chown "AD\administrator":"AD\Domain Users" /srv/samba/example.txt
+Verify that Kerberos authentication works as expected:
+On the AD domain member, obtain a ticket for the administrator@AD.EXAMPLE.COM principal:
+# kinit administrator@AD.EXAMPLE.COM
+Display the cached Kerberos ticket:
+# klist
+Ticket cache: KCM:0
+Default principal: administrator@AD.EXAMPLE.COM
+
+Valid starting       Expires              Service principal
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+01.11.2018 10:00:00  01.11.2018 20:00:00  krbtgt/AD.EXAMPLE.COM@AD.EXAMPLE.COM
+        renew until 08.11.2018 05:00:00
+Display the available domains:
+# wbinfo --all-domains
+BUILTIN
+SAMBA-SERVER
+AD
+Additional resources
+If you do not want to use the deprecated RC4 ciphers, you can enable the AES encryption type in AD. See
+Enabling the AES encryption type in Active Directory using a GPO
+realm(8) man page on your system
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.4. realm commands
+The realmd system has two major task areas:
+Managing system enrollment in a domain.
+Controlling which domain users are allowed to access local system resources.
+In realmd use the command line tool realm to run commands. Most realm commands require the user to specify the action that the utility should perform, and the entity, such as a domain or user account, for which to perform the action.
+Additional resources
+realm(8) man page on your system
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 3. Joining RHEL systems to an Active Directory by using RHEL system roles
+If your organization uses Microsoft Active Directory (AD) to centrally manage users, groups, and other resources, you can join your Red Hat Enterprise Linux (RHEL) host to this AD. For example, AD users can then log into RHEL and you can make services on the RHEL host available for authenticated AD users. By using the ad_integration RHEL system role, you can automate the integration of Red Hat Enterprise Linux system into an Active Directory (AD) domain.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.1. Joining RHEL to an Active Directory domain by using the ad_integration RHEL system role
+You can use the ad_integration RHEL system role to automate the process of joining RHEL to an Active Directory (AD) domain.
+Prerequisites
+You have prepared the control node and the managed nodes
+You are logged in to the control node as a user who can run playbooks on the managed nodes.
+The account you use to connect to the managed nodes has sudo permissions on them.
+The managed node uses a DNS server that can resolve AD DNS entries.
+Credentials of an AD account which has permissions to join computers to the domain.
+The managed node can establish connections to AD domain controllers by using the following ports:
+Procedure
+Store your sensitive variables in an encrypted file:
+Create the vault:
+$ ansible-vault create vault.yml
+New Vault password: <vault_password>
+Confirm New Vault password: <vault_password>
+After the ansible-vault create command opens an editor, enter the sensitive data in the <key>: <value> format:
+usr: administrator
+pwd: <password>
+Save the changes, and close the editor. Ansible encrypts the data in the vault.
+Create a playbook file, for example ~/playbook.yml, with the following content:
+---
+- name: Active Directory integration
+  hosts: managed-node-01.example.com
+  vars_files:
+    - vault.yml
+  tasks:
+    - name: Join an Active Directory
+      ansible.builtin.include_role:
+        name: rhel-system-roles.ad_integration
+      vars:
+        ad_integration_user: "{{ usr }}"
+        ad_integration_password: "{{ pwd }}"
+        ad_integration_realm: "ad.example.com"
+        ad_integration_allow_rc4_crypto: false
+        ad_integration_timesync_source: "time_server.ad.example.com"
+The settings specified in the example playbook include the following:
+For details about all variables used in the playbook, see the /usr/share/ansible/roles/rhel-system-roles.ad_integration/README.md file on the control node.
+Validate the playbook syntax:
+$ ansible-playbook --ask-vault-pass --syntax-check ~/playbook.yml
+Note that this command only validates the syntax and does not protect against a wrong but valid configuration.
+Run the playbook:
+$ ansible-playbook --ask-vault-pass ~/playbook.yml
+Verification
+Check if AD users, such as administrator, are available locally on the managed node:
+$ ansible managed-node-01.example.com -m command -a 'getent passwd administrator@ad.example.com'
+administrator@ad.example.com:*:1450400500:1450400513:Administrator:/home/administrator@ad.example.com:/bin/bash
+Additional resources
+/usr/share/ansible/roles/rhel-system-roles.ad_integration/README.md file
+/usr/share/doc/rhel-system-roles/ad_integration/ directory
+Ansible vault
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 4. Managing direct connections to AD
+You can use the System Security Services Daemon (SSSD) or Samba Winbind to connect your Red Hat Enterprise Linux (RHEL) system to Active Directory (AD). This section describes how to modify and manage your connection to AD when your RHEL system is already configured as an AD client.
+Prerequisites
+You have connected your RHEL system to the Active Directory domain, either with SSSD or Samba Winbind.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.1. Modifying the default Kerberos host keytab renewal interval
+SSSD automatically renews the Kerberos host keytab file in an AD environment if the adcli package is installed. The daemon checks daily if the machine account password is older than the configured value and renews it if necessary.
+The default renewal interval is 30 days. To change the default, follow the steps in this procedure.
+Procedure
+Add the following parameter to the AD provider in your /etc/sssd/sssd.conf file:
+ad_maximum_machine_account_password_age = value_in_days
+Restart SSSD:
+# systemctl restart sssd
+To disable the automatic Kerberos host keytab renewal, set ad_maximum_machine_account_password_age = 0.
+Additional resources
+adcli(8)
+sssd.conf(5)
+SSSD service is failing with an error 'Failed to initialize credentials using keytab [MEMORY:/etc/krb5.keytab]: Preauthentication failed.' (Red Hat Knowledgebase)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.2. Removing a RHEL system from an AD domain
+Follow this procedure to remove a Red Hat Enterprise Linux (RHEL) system that is integrated into Active Directory (AD) directly from the AD domain.
+Prerequisites
+You have used the System Security Services Daemon (SSSD) or Samba Winbind to connect your RHEL system to AD.
+Procedure
+Remove a system from an identity domain using the realm leave command. The command removes the domain configuration from SSSD and the local system.
+# realm leave ad.example.com
+Use the -U option with the realm leave command to specify a different user to remove a system from an identity domain.
+By default, the realm leave command is executed as the default administrator. For AD, the administrator account is called Administrator. If a different user was used to join to the domain, it might be required to perform the removal as that user.
+# realm leave [ad.example.com] -U [AD.EXAMPLE.COM\user]'
+The command first attempts to connect without credentials, but it prompts for a password if required.
+Verification
+Verify the domain is no longer configured:
+# realm discover [ad.example.com]
+ad.example.com
+    type: kerberos
+    realm-name: EXAMPLE.COM
+    domain-name: example.com
+    configured: no
+    server-software: active-directory
+    client-software: sssd
+    required-package: oddjob
+    required-package: oddjob-mkhomedir
+    required-package: sssd
+    required-package: adcli
+    required-package: samba-common-tools
+Additional resources
+See the realm(8) man page on your system.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.3. Setting the domain resolution order in SSSD to resolve short AD user names
+By default, you must specify fully qualified usernames, like ad_username@ad.example.com and group@ad.example.com, to resolve Active Directory (AD) users and groups on a RHEL host connected to AD with the SSSD service.
+This procedure sets the domain resolution order in the SSSD configuration so you can resolve AD users and groups using short names, like ad_username. This example configuration searches for users and groups in the following order:
+Active Directory (AD) child domain subdomain2.ad.example.com
+AD child domain subdomain1.ad.example.com
+AD root domain ad.example.com
+Prerequisites
+You have used the SSSD service to connect the RHEL host directly to AD.
+Procedure
+Open the /etc/sssd/sssd.conf file in a text editor.
+Set the domain_resolution_order option in the [sssd] section of the file.
+domain_resolution_order = subdomain2.ad.example.com, subdomain1.ad.example.com, ad.example.com
+Save and close the file.
+Restart the SSSD service to load the new configuration settings.
+[root@ad-client ~]# systemctl restart sssd
+Verification
+Verify you can retrieve user information for a user from the first domain using only a short name.
+[root@ad-client ~]# id <user_from_subdomain2>
+uid=1916901142(user_from_subdomain2) gid=1916900513(domain users) groups=1916900513(domain users)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.4. Managing login permissions for domain users
+By default, domain-side access control is applied, which means that login policies for Active Directory (AD) users are defined in the AD domain itself. This default behavior can be overridden so that client-side access control is used. With client-side access control, login permission is defined by local policies only.
+If a domain applies client-side access control, you can use the realmd to configure basic allow or deny access rules for users from that domain.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.4.1. Enabling access to users within a domain
+By default, login policies for Active Directory (AD) users are defined in the AD domain itself. Follow this procedure to override this default behavior and configure a RHEL host to enable access for users within an AD domain.
+Prerequisites
+Your RHEL system is a member of the Active Directory domain.
+Procedure
+Grant access to all users:
+# realm permit --all
+Grant access to specific users:
+$ realm permit aduser01@example.com
+$ realm permit 'AD.EXAMPLE.COM\aduser01'
+Currently, you can only allow access to users in primary domains and not to users in trusted domains. This is due to the fact that user login must contain the domain name and SSSD cannot currently provide realmd with information about available child domains.
+Verification
+Use SSH to log in to the server as the aduser01@example.com user:
+$ ssh aduser01@example.com@server_name
+[aduser01@example.com@server_name ~]$
+Use the ssh command a second time to access the same server, this time as the aduser02@example.com user:
+$ ssh aduser02@example.com@server_name
+Authentication failed.
+Notice how the aduser02@example.com user is denied access to the system. You have granted the permission to log in to the system to the aduser01@example.com user only. All other users from that Active Directory domain are rejected because of the specified login policy.
+Additional resources
+See the realm(8) man page on your system.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.4.2. Denying access to users within a domain
+By default, login policies for Active Directory (AD) users are defined in the AD domain itself. Follow this procedure to override this default behavior and configure a RHEL host to deny access to users within an AD domain.
+Prerequisites
+Your RHEL system is a member of the Active Directory domain.
+Procedure
+Deny access to all users within the domain:
+# realm deny --all
+This command prevents realm accounts from logging into the local machine. Use realm permit to restrict login to specific accounts.
+Verify that the domain user’s login-policy is set to deny-any-login:
+[root@replica1 ~]# realm list
+example.net
+  type: kerberos
+  realm-name: EXAMPLE.NET
+  domain-name: example.net
+  configured: kerberos-member
+  server-software: active-directory
+  client-software: sssd
+  required-package: oddjob
+  required-package: oddjob-mkhomedir
+  required-package: sssd
+  required-package: adcli
+  required-package: samba-common-tools
+  login-formats: %U@example.net
+  login-policy: deny-any-login
+Deny access to specific users by using the -x option:
+$ realm permit -x 'AD.EXAMPLE.COM\aduser02'
+Verification
+Use SSH to log in to the server as the aduser01@example.net user.
+$ ssh aduser01@example.net@server_name
+Authentication failed.
+Additional resources
+See the realm(8) man page on your system.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.5. Applying Group Policy Object access control in RHEL
+A Group Policy Object (GPO) is a collection of access control settings stored in Microsoft Active Directory (AD) that can apply to computers and users in an AD environment. By specifying GPOs in AD, administrators can define login policies honored by both Windows clients and Red Hat Enterprise Linux (RHEL) hosts joined to AD.
+The following sections describe how you can manage GPOs in your environment:
+How SSSD interprets GPO access control rules
+List of GPO settings that SSSD supports
+List of SSSD options to control GPO enforcement
+Changing the GPO access control mode
+Creating and configuring a GPO for a RHEL host
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.5.1. How SSSD interprets GPO access control rules
+By default, SSSD retrieves Group Policy Objects (GPOs) from Active Directory (AD) domain controllers and evaluates them to determine if a user is allowed to log in to a particular RHEL host joined to AD.
+SSSD maps AD Windows Logon Rights to Pluggable Authentication Module (PAM) service names to enforce those permissions in a GNU/Linux environment.
+As an AD Administrator, you can limit the scope of GPO rules to specific users, groups, or hosts by listing them in a security filter.
+Limitations on filtering by hosts
+Older versions of SSSD do not evaluate hosts in AD GPO security filters.
+RHEL 8.3.0 and newer: SSSD supports users, groups, and hosts in security filters.
+RHEL versions older than 8.3.0: SSSD ignores host entries and only supports users and groups in security filters. To ensure that SSSD applies GPO-based access control to a specific host, create a new Organizational Unit (OU) in the AD domain, move the system to the new OU, and then link the GPO to this OU.
+Limitations on filtering by groups
+SSSD currently does not support Active Directory’s built-in groups, such as Administrators with Security Identifier (SID) S-1-5-32-544. Red Hat recommends against using AD built-in groups in AD GPOs targeting RHEL hosts.
+Additional resources
+For a list of Windows GPO options and their corresponding SSSD options, see List of GPO settings that SSSD supports.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.5.2. List of GPO settings that SSSD supports
+The following table shows the SSSD options that correspond to Active Directory GPO options as specified in the Group Policy Management Editor on Windows.
+Additional resources
+For more information about these sssd.conf settings, such as the Pluggable Authentication Module (PAM) services that map to GPO options, see the sssd-ad(5) Manual page entry.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.5.3. List of SSSD options to control GPO enforcement
+You can set the following SSSD options to limit the scope of GPO rules.
+The ad_gpo_access_control option
+You can set the ad_gpo_access_control option in the /etc/sssd/sssd.conf file to choose between three different modes in which GPO-based access control operates.
+The ad_gpo_implicit_deny option
+The ad_gpo_implicit_deny option is set to False by default. In this default state, users are allowed access if applicable GPOs are not found. If you set this option to True, you must explicitly allow users access with a GPO rule.
+You can use this feature to harden security, but be careful not to deny access unintentionally. Red Hat recommends testing this feature while ad_gpo_access_control is set to permissive.
+The following two tables illustrate when a user is allowed or rejected access based on the allow and deny login rights defined on the AD server-side and the value of ad_gpo_implicit_deny.
+Additional resources
+For the procedure to change the GPO enforcement mode in SSSD, see Changing the GPO access control mode.
+For more details on each of the different GPO modes of operation, see the ad_gpo_access_control entry in the sssd-ad(5) Manual page.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.5.4. Changing the GPO access control mode
+This procedure changes how GPO-based access control rules are evaluated and enforced on a RHEL host joined to an Active Directory (AD) environment.
+In this example, you will change the GPO operation mode from enforcing (the default) to permissive for testing purposes.
+Prerequisites
+You have joined a RHEL host to an AD environment using SSSD.
+Editing the /etc/sssd/sssd.conf configuration file requires root permissions.
+Procedure
+Stop the SSSD service.
+[root@server ~]# systemctl stop sssd
+Open the /etc/sssd/sssd.conf file in a text editor.
+Set ad_gpo_access_control to permissive in the domain section for the AD domain.
+[domain/example.com]
+ad_gpo_access_control=permissive
+...
+Save the /etc/sssd/sssd.conf file.
+Restart the SSSD service to load configuration changes.
+[root@server ~]# systemctl restart sssd
+Additional resources
+For the list of different GPO access control modes, see List of SSSD options to control GPO enforcement.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.5.5. Creating and configuring a GPO for a RHEL host in the AD GUI
+A Group Policy Object (GPO) is a collection of access control settings stored in Microsoft Active Directory (AD) that can apply to computers and users in an AD environment. The following procedure creates a GPO in the AD graphical user interface (GUI) to control logon access to a RHEL host that is integrated directly to the AD domain.
+Prerequisites
+You have joined a RHEL host to an AD environment using SSSD.
+You have AD Administrator privileges to make changes in AD using the GUI.
+Procedure
+Within Active Directory Users and Computers, create an Organizational Unit (OU) to associate with the new GPO:
+Right-click on the domain.
+Choose New.
+Choose Organizational Unit.
+Click on the name of the Computer Object that represents the RHEL host (created when it joined Active Directory) and drag it into the new OU. By having the RHEL host in its own OU, the GPO targets this host.
+Within the Group Policy Management Editor, create a new GPO for the OU you created:
+Expand Forest.
+Expand Domains.
+Expand your domain.
+Right-click on the new OU.
+Choose Create a GPO in this domain.
+Specify a name for the new GPO, such as Allow SSH access or Allow Console/GUI access and click OK.
+Edit the new GPO:
+Select the OU within the Group Policy Management editor.
+Right-click and choose Edit.
+Select User Rights Assignment.
+Select Computer Configuration
+Select Policies.
+Select Windows Settings.
+Select Security Settings.
+Select Local Policies.
+Select User Rights Assignment.
+Assign login permissions:
+Double-Click on Allow log on locally to grant local console/GUI access.
+Double-click on Allow log on through Remote Desktop Services to grant SSH access.
+Add the user(s) you want to access either of these policies to the policies themselves:
+Click Add User or Group.
+Enter the username within the blank field.
+Click OK.
+Additional resources
+For more details on Group Policy Objects, see Group Policy Objects in Microsoft documentation.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.5.6. Additional resources
+For more information about joining a RHEL host to an Active Directory environment, see Connecting RHEL systems directly to AD using SSSD.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 5. Accessing AD with a Managed Service Account
+Active Directory (AD) Managed Service Accounts (MSAs) allow you to create an account in AD that corresponds to a specific computer. You can use an MSA to connect to AD resources as a specific user principal, without joining the RHEL host to the AD domain.
+This section discusses the following topics:
+The benefits of a Managed Service Account
+Configuring a Managed Service Account for a RHEL host
+Updating the password for a Managed Service Account
+Managed Service Account specifications
+Options for the adcli create-msa command
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.1. The benefits of a Managed Service Account
+If you want to allow a RHEL host to access an Active Directory (AD) domain without joining it, you can use a Managed Service Account (MSA) to access that domain. An MSA is an account in AD that corresponds to a specific computer, which you can use to connect to AD resources as a specific user principal.
+For example, if the AD domain production.example.com has a one-way trust relationship with the lab.example.com AD domain, the following conditions apply:
+The lab domain trusts users and hosts from the production domain.
+The production domain does not trust users and hosts from the lab domain.
+This means that a host joined to the lab domain, such as client.lab.example.com, cannot access resources from the production domain through the trust.
+If you want to create an exception for the client.lab.example.com host, you can use the adcli utility to create a MSA for the client host in the production.example.com domain. By authenticating with the Kerberos principal of the MSA, you can perform secure LDAP searches in the production domain from the client host.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.2. Configuring a Managed Service Account for a RHEL host
+This procedure creates a Managed Service Account (MSA) for a host from the lab.example.com Active Directory (AD) domain, and configures SSSD so you can access and authenticate to the production.example.com AD domain.
+Prerequisites
+Ensure that the following ports on the RHEL host are open and accessible to the AD domain controllers.
+You have the password for an AD Administrator that has rights to create MSAs in the production.example.com domain.
+You have root permissions that are required to run the adcli command, and to modify the /etc/sssd/sssd.conf configuration file..
+(Optional) You have the krb5-workstation package installed, which includes the klist diagnostic utility.
+Procedure
+Create an MSA for the host in the production.example.com AD domain.
+[root@client ~]# adcli create-msa --domain=production.example.com
+Display information about the MSA from the Kerberos keytab that was created. Make note of the MSA name:
+[root@client ~]# klist -k /etc/krb5.keytab.production.example.com
+Keytab name: FILE:/etc/krb5.keytab.production.example.com
+KVNO Principal
+---- ------------------------------------------------------------
+   2 CLIENT!S3A$@PRODUCTION.EXAMPLE.COM (aes256-cts-hmac-sha1-96)
+   2 CLIENT!S3A$@PRODUCTION.EXAMPLE.COM (aes128-cts-hmac-sha1-96)
+Open the /etc/sssd/sssd.conf file and choose the appropriate SSSD domain configuration to add:
+If the MSA corresponds to an AD domain from a different forest, create a new domain section named [domain/<name_of_domain>], and enter information about the MSA and the keytab. The most important options are ldap_sasl_authid, ldap_krb5_keytab, and krb5_keytab:
+[domain/production.example.com]
+ldap_sasl_authid = CLIENT!S3A$@PRODUCTION.EXAMPLE.COM
+ldap_krb5_keytab = /etc/krb5.keytab.production.example.com
+krb5_keytab = /etc/krb5.keytab.production.example.com
+ad_domain = production.example.com
+krb5_realm = PRODUCTION.EXAMPLE.COM
+access_provider = ad
+...
+If the MSA corresponds to an AD domain from the local forest, create a new sub-domain section in the format [domain/root.example.com/sub-domain.example.com], and enter information about the MSA and the keytab. The most important options are ldap_sasl_authid, ldap_krb5_keytab, and krb5_keytab:
+[domain/ad.example.com/production.example.com]
+ldap_sasl_authid = CLIENT!S3A$@PRODUCTION.EXAMPLE.COM
+ldap_krb5_keytab = /etc/krb5.keytab.production.example.com
+krb5_keytab = /etc/krb5.keytab.production.example.com
+ad_domain = production.example.com
+krb5_realm = PRODUCTION.EXAMPLE.COM
+access_provider = ad
+...
+Verification
+Verify you can retrieve a Kerberos ticket-granting ticket (TGT) as the MSA:
+[root@client ~]# kinit -k -t /etc/krb5.keytab.production.example.com 'CLIENT!S3A$'
+[root@client ~]# klist
+Ticket cache: KCM:0:54655
+Default principal: CLIENT!S3A$@PRODUCTION.EXAMPLE.COM
+
+Valid starting       Expires              Service principal
+11/22/2021 15:48:03  11/23/2021 15:48:03  krbtgt/PRODUCTION.EXAMPLE.COM@PRODUCTION.EXAMPLE.COM
+In AD, verify you have an MSA for the host in the Managed Service Accounts Organizational Unit (OU).
+Additional resources
+Connecting RHEL systems directly to AD using SSSD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.3. Updating the password for a Managed Service Account
+Managed Service Accounts (MSAs) have a complex password that is maintained automatically by Active Directory (AD). By default, the System Services Security Daemon (SSSD) automatically updates the MSA password in the Kerberos keytab if it is older than 30 days, which keeps it up to date with the password in AD. This procedure explains how to manually update the password for your MSA.
+Prerequisites
+You have previously created an MSA for a host in the production.example.com AD domain.
+(Optional) You have the krb5-workstation package installed, which includes the klist diagnostic utility.
+Procedure
+Optional: Display the current Key Version Number (KVNO) for the MSA in the Kerberos keytab. The current KVNO is 2.
+[root@client ~]# klist -k /etc/krb5.keytab.production.example.com
+Keytab name: FILE:/etc/krb5.keytab.production.example.com
+KVNO Principal
+---- ------------------------------------------------------------
+   2 CLIENT!S3A$@PRODUCTION.EXAMPLE.COM (aes256-cts-hmac-sha1-96)
+   2 CLIENT!S3A$@PRODUCTION.EXAMPLE.COM (aes128-cts-hmac-sha1-96)
+Update the password for the MSA in the production.example.com AD domain.
+[root@client ~]# adcli update --domain=production.example.com --host-keytab=/etc/krb5.keytab.production.example.com --computer-password-lifetime=0
+Verification
+Verify that you have incremented the KVNO in the Kerberos keytab:
+[root@client ~]# klist -k /etc/krb5.keytab.production.example.com
+Keytab name: FILE:/etc/krb5.keytab.production.example.com
+KVNO Principal
+---- ------------------------------------------------------------
+   3 CLIENT!S3A$@PRODUCTION.EXAMPLE.COM (aes256-cts-hmac-sha1-96)
+   3 CLIENT!S3A$@PRODUCTION.EXAMPLE.COM (aes128-cts-hmac-sha1-96)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.4. Managed Service Account specifications
+The Managed Service Accounts (MSAs) that the adcli utility creates have the following specifications:
+They cannot have additional service principal names (SPNs).
+By default, the Kerberos principal for the MSA is stored in a Kerberos keytab named <default_keytab_location>.<Active_Directory_domain>, like /etc/krb5.keytab.production.example.com.
+MSA names are limited to 20 characters or fewer. The last 4 characters are a suffix of 3 random characters from number and upper- and lowercase ASCII ranges appended to the short host name you provide, using a ! character as a separator. For example, a host with the short name myhost receives an MSA with the following specifications:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.5. Options for the adcli create-msa command
+In addition to the global options you can pass to the adcli utility, you can specify the following options to specifically control how it handles Managed Service Accounts (MSAs).

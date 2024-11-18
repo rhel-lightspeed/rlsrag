@@ -1,0 +1,980 @@
+Abstract
+Administrators can integrate services and Red Hat products in a Red Hat Identity Management (IdM) domain. This includes services, such as Samba, Ansible, and automount, and also products, such as OpenShift Container Platform, OpenStack, and Satellite. IdM users can then access these services and products.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 1. IdM integration with Red Hat products
+Find documentation for other Red Hat products that integrate with IdM. You can configure these products to allow your IdM users to access their services.
+Ansible Automation Platform
+OpenShift Container Platform
+Red Hat OpenStack Platform
+Red Hat Satellite
+Red Hat Single Sign-On
+Red Hat Virtualization
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 2. Using external identity providers to authenticate to IdM
+You can associate users with external identity providers (IdP) that support the OAuth 2 device authorization flow. When these users authenticate with the SSSD version available in RHEL 9.1 or later, they receive RHEL Identity Management (IdM) single sign-on capabilities with Kerberos tickets after performing authentication and authorization at the external IdP.
+Notable features include:
+Adding, modifying, and deleting references to external IdPs with ipa idp-* commands.
+Enabling IdP authentication for users with the ipa user-mod --user-auth-type=idp command.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.1. The benefits of connecting IdM to an external IdP
+As an administrator, you might want to allow users stored in an external identity source, such as a cloud services provider, to access RHEL systems joined to your Identity Management (IdM) environment. To achieve this, you can delegate the authentication and authorization process of issuing Kerberos tickets for these users to that external entity.
+You can use this feature to expand IdM’s capabilities and allow users stored in external identity providers (IdPs) to access Linux systems managed by IdM.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.2. How IdM incorporates logins via external IdPs
+SSSD 2.7.0 contains the sssd-idp package, which implements the idp Kerberos pre-authentication method. This authentication method follows the OAuth 2.0 Device Authorization Grant flow to delegate authorization decisions to external IdPs:
+An IdM client user initiates OAuth 2.0 Device Authorization Grant flow, for example, by attempting to retrieve a Kerberos TGT with the kinit utility at the command line.
+A special code and website link are sent from the Authorization Server to the IdM KDC backend.
+The IdM client displays the link and the code to the user. In this example, the IdM client outputs the link and code on the command line.
+The user opens the website link in a browser, which can be on another host, a mobile phone, and so on:
+The user enters the special code.
+If necessary, the user logs in to the OAuth 2.0-based IdP.
+The user is prompted to authorize the client to access information.
+The user confirms access at the original device prompt. In this example, the user hits the Enter key at the command line.
+The IdM KDC backend polls the OAuth 2.0 Authorization Server for access to user information.
+What is supported:
+Logging in remotely via SSH with the keyboard-interactive authentication method enabled, which allows calling Pluggable Authentication Module (PAM) libraries.
+Logging in locally with the console via the logind service.
+Retrieving a Kerberos ticket-granting ticket (TGT) with the kinit utility.
+What is currently not supported:
+Logging in to the IdM WebUI directly. To log in to the IdM WebUI, you must first acquire a Kerberos ticket.
+Logging in to Cockpit WebUI directly. To log in to the Cockpit WebUI, you must first acquire a Kerberos ticket.
+Additional resources
+Authentication against external Identity Providers
+RFC 8628: OAuth 2.0 Device Authorization Grant
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.3. Creating a reference to an external identity provider
+To connect external identity providers (IdPs) to your Identity Management (IdM) environment, create IdP references in IdM. Complete this procedure to create a reference called my-keycloak-idp to an IdP based on the Keycloak template. For more reference templates, see Example references to different external IdPs in IdM.
+Prerequisites
+You have registered IdM as an OAuth application to your external IdP, and obtained a client ID.
+You can authenticate as the IdM admin account.
+Your IdM servers are using RHEL 9.1 or later.
+Your IdM servers are using SSSD 2.7.0 or later.
+Procedure
+Authenticate as the IdM admin on an IdM server.
+[root@server ~]# kinit admin
+Create a reference called my-keycloak-idp to an IdP based on the Keycloak template, where the --base-url option specifies the URL to the Keycloak server in the format server-name.$DOMAIN:$PORT/prefix.
+[root@server ~]# ipa idp-add my-keycloak-idp \
+                 --provider keycloak --organization main \
+                 --base-url keycloak.idm.example.com:8443/auth \
+                 --client-id id13778
+------------------------------------------------
+Added Identity Provider reference "my-keycloak-idp"
+------------------------------------------------
+  Identity Provider reference name: my-keycloak-idp
+  Authorization URI: https://keycloak.idm.example.com:8443/auth/realms/main/protocol/openid-connect/auth
+  Device authorization URI: https://keycloak.idm.example.com:8443/auth/realms/main/protocol/openid-connect/auth/device
+  Token URI: https://keycloak.idm.example.com:8443/auth/realms/main/protocol/openid-connect/token
+  User info URI: https://keycloak.idm.example.com:8443/auth/realms/main/protocol/openid-connect/userinfo
+  Client identifier: ipa_oidc_client
+  Scope: openid email
+  External IdP user identifier attribute: email
+Verification
+Verify that the output of the ipa idp-show command shows the IdP reference you have created.
+[root@server ~]# ipa idp-show my-keycloak-idp
+Additional resources
+Example references to different external IdPs in IdM
+Options for the ipa idp-* commands to manage external identity providers in IdM
+The --provider option in the ipa idp-* commands
+ipa help idp-add
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.4. Example references to different external IdPs in IdM
+The following table lists examples of the ipa idp-add command for creating references to different IdPs in IdM.
+Additional resources
+Creating a reference to an external identity provider
+Options for the ipa idp-* commands to manage external identity providers in IdM
+The --provider option in the ipa idp-* commands
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.5. Options for the ipa idp-* commands to manage external identity providers in IdM
+The following examples show how to configure references to external IdPs based on the different IdP templates. Use the following options to specify your settings:
+Additional resources
+Creating a reference to an external identity provider
+Example references to different external IdPs in IdM
+The --provider option in the ipa idp-* commands
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.6. Managing references to external IdPs
+After you have created a reference to an external identity provider (IdP), you can find, show, modify, and delete that reference. This example shows you how to manage a reference to an external IdP named keycloak-server1.
+Prerequisites
+You can authenticate as the IdM admin account.
+Your IdM servers are using RHEL 9.1 or later.
+Your IdM servers are using SSSD 2.7.0 or later.
+You have created a reference to an external IdP in IdM. See Creating a reference to an external identity provider.
+Procedure
+Authenticate as the IdM admin on an IdM server.
+[root@server ~]# kinit admin
+Manage the IdP reference.
+To find an IdP reference whose entry includes the string keycloak:
+[root@server ~]# ipa idp-find keycloak
+To display an IdP reference named my-keycloak-idp:
+[root@server ~]# ipa idp-show my-keycloak-idp
+To modify an IdP reference, use the ipa idp-mod command. For example, to change the secret for an IdP reference named my-keycloak-idp, specify the --secret option to be prompted for the secret:
+[root@server ~]# ipa idp-mod my-keycloak-idp --secret
+To delete an IdP reference named my-keycloak-idp:
+[root@server ~]# ipa idp-del my-keycloak-idp
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.7. Enabling an IdM user to authenticate via an external IdP
+To enable an IdM user to authenticate via an external identity provider (IdP), associate the external IdP reference you have previously created with the user account. This example associates the external IdP reference keycloak-server1 with the user idm-user-with-external-idp.
+Prerequisites
+Your IdM client and IdM servers are using RHEL 9.1 or later.
+Your IdM client and IdM servers are using SSSD 2.7.0 or later.
+You have created a reference to an external IdP in IdM. See Creating a reference to an external identity provider.
+Procedure
+Modify the IdM user entry to associate an IdP reference with the user account:
+[root@server ~]# ipa user-mod idm-user-with-external-idp \
+               --idp my-keycloak-idp \
+               --idp-user-id idm-user-with-external-idp@idm.example.com \
+               --user-auth-type=idp
+---------------------------------
+Modified user "idm-user-with-external-idp"
+---------------------------------
+  User login: idm-user-with-external-idp
+  First name: Test
+  Last name: User1
+  Home directory: /home/idm-user-with-external-idp
+  Login shell: /bin/sh
+  Principal name: idm-user-with-external-idp@idm.example.com
+  Principal alias: idm-user-with-external-idp@idm.example.com
+  Email address: idm-user-with-external-idp@idm.example.com
+  UID: 35000003
+  GID: 35000003
+  User authentication types: idp
+  External IdP configuration: keycloak
+  External IdP user identifier: idm-user-with-external-idp@idm.example.com
+  Account disabled: False
+  Password: False
+  Member of groups: ipausers
+  Kerberos keys available: False
+Verification
+Verify that the output of the ipa user-show command for that user displays references to the IdP:
+[root@server ~]# ipa user-show idm-user-with-external-idp
+  User login: idm-user-with-external-idp
+  First name: Test
+  Last name: User1
+  Home directory: /home/idm-user-with-external-idp
+  Login shell: /bin/sh
+  Principal name: idm-user-with-external-idp@idm.example.com
+  Principal alias: idm-user-with-external-idp@idm.example.com
+  Email address: idm-user-with-external-idp@idm.example.com
+  ID: 35000003
+  GID: 35000003
+  User authentication types: idp
+  External IdP configuration: keycloak
+  External IdP user identifier: idm-user-with-external-idp@idm.example.com
+  Account disabled: False
+  Password: False
+  Member of groups: ipausers
+  Kerberos keys available: False
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.8. Retrieving an IdM ticket-granting ticket as an external IdP user
+If you have delegated authentication for an Identity Management (IdM) user to an external identity provider (IdP), the IdM user can request a Kerberos ticket-granting ticket (TGT) by authenticating to the external IdP.
+Complete this procedure to:
+Retrieve and store an anonymous Kerberos ticket locally.
+Request the TGT for the idm-user-with-external-idp user by using kinit with the -T option to enable Flexible Authentication via Secure Tunneling (FAST) channel to provide a secure connection between the Kerberos client and Kerberos Distribution Center (KDC).
+Prerequisites
+Your IdM client and IdM servers use RHEL 9.1 or later.
+Your IdM client and IdM servers use SSSD 2.7.0 or later.
+You have created a reference to an external IdP in IdM. See Creating a reference to an external identity provider.
+You have associated an external IdP reference with the user account. See Enabling an IdM user to authenticate via an external IdP.
+The user that you are initially logged in as has write permissions on a directory in the local filesystem.
+Procedure
+Use Anonymous PKINIT to obtain a Kerberos ticket and store it in a file named ./fast.ccache.
+$ kinit -n -c ./fast.ccache
+Optional: View the retrieved ticket:
+$ klist -c fast.ccache
+Ticket cache: FILE:fast.ccache
+Default principal: WELLKNOWN/ANONYMOUS@WELLKNOWN:ANONYMOUS
+
+Valid starting       Expires              Service principal
+03/03/2024 13:36:37  03/04/2024 13:14:28  krbtgt/IDM.EXAMPLE.COM@IDM.EXAMPLE.COM
+Begin authenticating as the IdM user, using the -T option to enable the FAST communication channel.
+[root@client ~]# kinit -T ./fast.ccache idm-user-with-external-idp
+Authenticate at https://oauth2.idp.com:8443/auth/realms/master/device?user_code=YHMQ-XKTL and press ENTER.:
+In a browser, authenticate as the user at the website provided in the command output.
+At the command line, press the Enter key to finish the authentication process.
+Verification
+Display your Kerberos ticket information and confirm that the line config: pa_type shows 152 for pre-authentication with an external IdP.
+[root@client ~]# klist -C
+Ticket cache: KCM:0:58420
+Default principal: idm-user-with-external-idp@IDM.EXAMPLE.COM
+
+Valid starting     Expires            Service principal
+05/09/22 07:48:23  05/10/22 07:03:07  krbtgt/IDM.EXAMPLE.COM@IDM.EXAMPLE.COM
+config: fast_avail(krbtgt/IDM.EXAMPLE.COM@IDM.EXAMPLE.COM) = yes
+08/17/2022 20:22:45  08/18/2022 20:22:43  krbtgt/IDM.EXAMPLE.COM@IDM.EXAMPLE.COM
+config: pa_type(krbtgt/IDM.EXAMPLE.COM@IDM.EXAMPLE.COM) = 152
+The pa_type = 152 indicates external IdP authentication.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.9. Logging in to an IdM client via SSH as an external IdP user
+To log in to an IdM client via SSH as an external identity provider (IdP) user, begin the login process on the command linel. When prompted, perform the authentication process at the website associated with the IdP, and finish the process at the Identity Management (IdM) client.
+Prerequisites
+Your IdM client and IdM servers are using RHEL 9.1 or later.
+Your IdM client and IdM servers are using SSSD 2.7.0 or later.
+You have created a reference to an external IdP in IdM. See Creating a reference to an external identity provider.
+You have associated an external IdP reference with the user account. See Enabling an IdM user to authenticate via an external IdP.
+Procedure
+Attempt to log in to the IdM client via SSH.
+[user@client ~]$ ssh idm-user-with-external-idp@client.idm.example.com
+(idm-user-with-external-idp@client.idm.example.com) Authenticate at https://oauth2.idp.com:8443/auth/realms/main/device?user_code=XYFL-ROYR and press ENTER.
+In a browser, authenticate as the user at the website provided in the command output.
+At the command line, press the Enter key to finish the authentication process.
+Verification
+Display your Kerberos ticket information and confirm that the line config: pa_type shows 152 for pre-authentication with an external IdP.
+[idm-user-with-external-idp@client ~]$ klist -C
+Ticket cache: KCM:0:58420
+Default principal: idm-user-with-external-idp@IDM.EXAMPLE.COM
+
+Valid starting     Expires            Service principal
+05/09/22 07:48:23  05/10/22 07:03:07  krbtgt/IDM.EXAMPLE.COM@IDM.EXAMPLE.COM
+config: fast_avail(krbtgt/IDM.EXAMPLE.COM@IDM.EXAMPLE.COM) = yes
+08/17/2022 20:22:45  08/18/2022 20:22:43  krbtgt/IDM.EXAMPLE.COM@IDM.EXAMPLE.COM
+config: pa_type(krbtgt/IDM.EXAMPLE.COM@IDM.EXAMPLE.COM) = 152
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.10. The --provider option in the ipa idp-* commands
+The following identity providers (IdPs) support OAuth 2.0 device authorization grant flow:
+Microsoft Identity Platform, including Azure AD
+Google
+GitHub
+Keycloak, including Red Hat Single Sign-On (SSO)
+Okta
+When using the ipa idp-add command to create a reference to one of these external IdPs, you can specify the IdP type with the --provider option, which expands into additional options as described below:
+Additional resources
+Pre-populated IdP templates
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 3. Setting up Samba on an IdM domain member
+You can set up Samba on a host that is joined to a Red Hat Identity Management (IdM) domain. Users from IdM and also, if available, from trusted Active Directory (AD) domains, can access shares and printer services provided by Samba.
+If users from AD domains need to access shares and printer services provided by Samba, ensure the AES encryption type is enabled is AD. For more information, see Enabling the AES encryption type in Active Directory using a GPO.
+Prerequisites
+The host is joined as a client to the IdM domain.
+Both the IdM servers and the client must run on RHEL 9.0 or later.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.1. Preparing the IdM domain for installing Samba on domain members
+Before you can set up Samba on an IdM client, you must prepare the IdM domain using the ipa-adtrust-install utility on an IdM server.
+Prerequisites
+IdM server is installed.
+You need root privileges to install packages and restart IdM services.
+Procedure
+Install the required packages:
+[root@ipaserver ~]# dnf install ipa-server-trust-ad samba-client
+Authenticate as the IdM administrative user:
+[root@ipaserver ~]# kinit admin
+Run the ipa-adtrust-install utility:
+[root@ipaserver ~]# ipa-adtrust-install
+The DNS service records are created automatically if IdM was installed with an integrated DNS server.
+If you installed IdM without an integrated DNS server, ipa-adtrust-install prints a list of service records that you must manually add to DNS before you can continue.
+The script prompts you that the /etc/samba/smb.conf already exists and will be rewritten:
+WARNING: The smb.conf already exists. Running ipa-adtrust-install will break your existing Samba configuration.
+
+Do you wish to continue? [no]: yes
+The script prompts you to configure the slapi-nis plug-in, a compatibility plug-in that allows older Linux clients to work with trusted users:
+Do you want to enable support for trusted domains in Schema Compatibility plugin?
+This will allow clients older than SSSD 1.9 and non-Linux clients to work with trusted users.
+
+Enable trusted domains support in slapi-nis? [no]: yes
+You are prompted to run the SID generation task to create a SID for any existing users:
+Do you want to run the ipa-sidgen task? [no]: yes
+This is a resource-intensive task, so if you have a high number of users, you can run this at another time.
+Optional: By default, the Dynamic RPC port range is defined as 49152-65535 for Windows Server 2008 and later. If you need to define a different Dynamic RPC port range for your environment, configure Samba to use different ports and open those ports in your firewall settings. The following example sets the port range to 55000-65000.
+[root@ipaserver ~]# net conf setparm global 'rpc server dynamic port range' 55000-65000
+[root@ipaserver ~]# firewall-cmd --add-port=55000-65000/tcp
+[root@ipaserver ~]# firewall-cmd --runtime-to-permanent
+Restart the ipa service:
+[root@ipaserver ~]# ipactl restart
+Use the smbclient utility to verify that Samba responds to Kerberos authentication from the IdM side:
+[root@ipaserver ~]# smbclient -L ipaserver.idm.example.com -U user_name --use-kerberos=required
+lp_load_ex: changing to config backend registry
+    Sharename       Type      Comment
+    ---------       ----      -------
+    IPC$            IPC       IPC Service (Samba 4.15.2)
+...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.2. Installing and configuring a Samba server on an IdM client
+You can install and configure Samba on a client enrolled in an IdM domain.
+Prerequisites
+Both the IdM servers and the client must run on RHEL 9.0 or later.
+The IdM domain is prepared as described in Preparing the IdM domain for installing Samba on domain members.
+If IdM has a trust configured with AD, enable the AES encryption type for Kerberos. For example, use a group policy object (GPO) to enable the AES encryption type. For details, see Enabling AES encryption in Active Directory using a GPO.
+Procedure
+Install the ipa-client-samba package:
+[root@idm_client]# dnf install ipa-client-samba
+Use the ipa-client-samba utility to prepare the client and create an initial Samba configuration:
+[root@idm_client]# ipa-client-samba
+Searching for IPA server...
+IPA server: DNS discovery
+Chosen IPA master: idm_server.idm.example.com
+SMB principal to be created: cifs/idm_client.idm.example.com@IDM.EXAMPLE.COM
+NetBIOS name to be used: IDM_CLIENT
+Discovered domains to use:
+
+ Domain name: idm.example.com
+NetBIOS name: IDM
+         SID: S-1-5-21-525930803-952335037-206501584
+    ID range: 212000000 - 212199999
+
+ Domain name: ad.example.com
+NetBIOS name: AD
+         SID: None
+    ID range: 1918400000 - 1918599999
+
+Continue to configure the system with these values? [no]: yes
+Samba domain member is configured. Please check configuration at /etc/samba/smb.conf and start smb and winbind services
+By default, ipa-client-samba automatically adds the [homes] section to the /etc/samba/smb.conf file that dynamically shares a user’s home directory when the user connects. If users do not have home directories on this server, or if you do not want to share them, remove the following lines from /etc/samba/smb.conf:
+[homes]
+    read only = no
+Share directories and printers. For details, see the following sections:
+Setting up a Samba file share that uses POSIX ACLs
+Setting up a share that uses Windows ACLs
+Setting up Samba as a print server
+Open the ports required for a Samba client in the local firewall:
+[root@idm_client]# firewall-cmd --permanent --add-service=samba-client
+[root@idm_client]# firewall-cmd --reload
+Enable and start the smb and winbind services:
+[root@idm_client]# systemctl enable --now smb winbind
+Verification
+Run the following verification step on a different IdM domain member that has the samba-client package installed:
+List the shares on the Samba server using Kerberos authentication:
+$ smbclient -L idm_client.idm.example.com -U user_name --use-kerberos=required
+lp_load_ex: changing to config backend registry
+
+    Sharename       Type      Comment
+    ---------       ----      -------
+    example         Disk
+    IPC$            IPC       IPC Service (Samba 4.15.2)
+...
+Additional resources
+ipa-client-samba(1) man page on your system
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.3. Manually adding an ID mapping configuration if IdM trusts a new domain
+Samba requires an ID mapping configuration for each domain from which users access resources. On an existing Samba server running on an IdM client, you must manually add an ID mapping configuration after the administrator added a new trust to an Active Directory (AD) domain.
+Prerequisites
+You configured Samba on an IdM client. Afterward, a new trust was added to IdM.
+The DES and RC4 encryption types for Kerberos must be disabled in the trusted AD domain. For security reasons, RHEL 9 does not support these weak encryption types.
+Procedure
+Authenticate using the host’s keytab:
+[root@idm_client]# kinit -k
+Use the ipa idrange-find command to display both the base ID and the ID range size of the new domain. For example, the following command displays the values for the ad.example.com domain:
+[root@idm_client]# ipa idrange-find --name="AD.EXAMPLE.COM_id_range" --raw
+---------------
+1 range matched
+---------------
+  cn: AD.EXAMPLE.COM_id_range
+  ipabaseid: 1918400000
+  ipaidrangesize: 200000
+  ipabaserid: 0
+  ipanttrusteddomainsid: S-1-5-21-968346183-862388825-1738313271
+  iparangetype: ipa-ad-trust
+----------------------------
+Number of entries returned 1
+----------------------------
+You need the values from the ipabaseid and ipaidrangesize attributes in the next steps.
+To calculate the highest usable ID, use the following formula:
+maximum_range = ipabaseid + ipaidrangesize - 1
+With the values from the previous step, the highest usable ID for the ad.example.com domain is 1918599999 (1918400000 + 200000 - 1).
+Edit the /etc/samba/smb.conf file, and add the ID mapping configuration for the domain to the [global] section:
+idmap config AD : range = 1918400000 - 1918599999
+idmap config AD : backend = sss
+Specify the value from ipabaseid attribute as the lowest and the computed value from the previous step as the highest value of the range.
+Restart the smb and winbind services:
+[root@idm_client]# systemctl restart smb winbind
+Verification
+List the shares on the Samba server using Kerberos authentication:
+$ smbclient -L idm_client.idm.example.com -U user_name --use-kerberos=required
+lp_load_ex: changing to config backend registry
+
+    Sharename       Type      Comment
+    ---------       ----      -------
+    example         Disk
+    IPC$            IPC       IPC Service (Samba 4.15.2)
+...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.4. Additional resources
+Installing an Identity Management client
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 4. Migrating from NIS to Identity Management
+A Network Information Service (NIS) server can contain information about users, groups, hosts, netgroups and automount maps. As a system administrator you can migrate these entry types, authentication, and authorization from NIS server to an Identity Management (IdM) server so that all user management operations are performed on the IdM server. Migrating from NIS to IdM will also allow you access to more secure protocols such as Kerberos.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.1. Enabling NIS in IdM
+To allow communication between NIS and Identity Management (IdM) server, you must enable NIS compatibility options on IdM server.
+Prerequisites
+You have root access on IdM server.
+Procedure
+Enable the NIS listener and compatibility plug-ins on IdM server:
+[root@ipaserver ~]# ipa-nis-manage enable
+[root@ipaserver ~]# ipa-compat-manage enable
+Optional: For a more strict firewall configuration, set a fixed port.
+For example, to set the port to unused port 514:
+[root@ipaserver ~]# ldapmodify -x -D 'cn=directory manager' -W
+dn: cn=NIS Server,cn=plugins,cn=config
+changetype: modify
+add: nsslapd-pluginarg0
+nsslapd-pluginarg0: 514
+Enable and start the port mapper service:
+[root@ipaserver ~]# systemctl enable rpcbind.service
+[root@ipaserver ~]# systemctl start rpcbind.service
+Restart Directory Server:
+[root@ipaserver ~]# systemctl restart dirsrv.target
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.2. Migrating user entries from NIS to IdM
+The NIS passwd map contains information about users, such as names, UIDs, primary group, GECOS, shell, and home directory. Use this data to migrate NIS user accounts to Identity Management (IdM):
+Prerequisites
+You have root access on NIS server.
+NIS is enabled in IdM.
+The NIS server is enrolled into IdM.
+Procedure
+Install the yp-tools package:
+[root@nis-server ~]# dnf install yp-tools -y
+On the NIS server create the /root/nis-users.sh script with the following content:
+#!/bin/sh
+# $1 is the NIS domain, $2 is the primary NIS server
+ypcat -d $1 -h $2 passwd > /dev/shm/nis-map.passwd 2>&1
+
+IFS=$'\n'
+for line in $(cat /dev/shm/nis-map.passwd) ; do
+	IFS=' '
+	username=$(echo $line | cut -f1 -d:)
+	# Not collecting encrypted password because we need cleartext password
+	# to create kerberos key
+	uid=$(echo $line | cut -f3 -d:)
+	gid=$(echo $line | cut -f4 -d:)
+	gecos=$(echo $line | cut -f5 -d:)
+	homedir=$(echo $line | cut -f6 -d:)
+	shell=$(echo $line | cut -f7 -d:)
+
+	# Now create this entry
+	echo passw0rd1 | ipa user-add $username --first=NIS --last=USER \
+	     --password --gidnumber=$gid --uid=$uid --gecos="$gecos" --homedir=$homedir \
+	     --shell=$shell
+	ipa user-show $username
+done
+Authenticate as the IdM admin user:
+[root@nis-server ~]# kinit admin
+Run the script. For example:
+[root@nis-server ~]# sh /root/nis-users.sh nisdomain nis-server.example.com
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.3. Migrating user group from NIS to IdM
+The NIS group map contains information about groups, such as group names, GIDs, or group members. Use this data to migrate NIS groups to Identity Management (IdM):
+Prerequisites
+You have root access on NIS server.
+NIS is enabled in IdM.
+The NIS server is enrolled into IdM.
+Procedure
+Install the yp-tools package:
+[root@nis-server ~]# dnf install yp-tools -y
+Create the /root/nis-groups.sh script with the following content on the NIS server:
+#!/bin/sh
+# $1 is the NIS domain, $2 is the primary NIS server
+ypcat -d $1 -h $2 group > /dev/shm/nis-map.group 2>&1
+
+IFS=$'\n'
+for line in $(cat /dev/shm/nis-map.group); do
+	IFS=' '
+	groupname=$(echo $line | cut -f1 -d:)
+	# Not collecting encrypted password because we need cleartext password
+	# to create kerberos key
+	gid=$(echo $line | cut -f3 -d:)
+	members=$(echo $line | cut -f4 -d:)
+
+	# Now create this entry
+	ipa group-add $groupname --desc=NIS_GROUP_$groupname --gid=$gid
+	if [ -n "$members" ]; then
+		ipa group-add-member $groupname --users={$members}
+	fi
+	ipa group-show $groupname
+done
+Authenticate as the IdM admin user:
+[root@nis-server ~]# kinit admin
+Run the script. For example:
+[root@nis-server ~]# sh /root/nis-groups.sh nisdomain nis-server.example.com
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.4. Migrating host entries from NIS to IdM
+The NIS hosts map contains information about hosts, such as host names and IP addresses. Use this data to migrate NIS host entries to Identity Management (IdM):
+Prerequisites
+You have root access on NIS server.
+NIS is enabled in IdM.
+The NIS server is enrolled into IdM.
+Procedure
+Install the yp-tools package:
+[root@nis-server ~]# dnf install yp-tools -y
+Create the /root/nis-hosts.sh script with the following content on the NIS server:
+#!/bin/sh
+# $1 is the NIS domain, $2 is the primary NIS server
+ypcat -d $1 -h $2 hosts | egrep -v "localhost|127.0.0.1" > /dev/shm/nis-map.hosts 2>&1
+
+IFS=$'\n'
+for line in $(cat /dev/shm/nis-map.hosts); do
+	IFS=' '
+	ipaddress=$(echo $line | awk '{print $1}')
+	hostname=$(echo $line | awk '{print $2}')
+	primary=$(ipa env xmlrpc_uri | tr -d '[:space:]' | cut -f3 -d: | cut -f3 -d/)
+	domain=$(ipa env domain | tr -d '[:space:]' | cut -f2 -d:)
+	if [ $(echo $hostname | grep "\." |wc -l) -eq 0 ] ; then
+		hostname=$(echo $hostname.$domain)
+	fi
+	zone=$(echo $hostname | cut -f2- -d.)
+	if [ $(ipa dnszone-show $zone 2>/dev/null | wc -l) -eq 0 ] ; then
+		ipa dnszone-add --name-server=$primary --admin-email=root.$primary
+	fi
+	ptrzone=$(echo $ipaddress | awk -F. '{print $3 "." $2 "." $1 ".in-addr.arpa."}')
+	if [ $(ipa dnszone-show $ptrzone 2>/dev/null | wc -l) -eq 0 ] ; then
+		ipa dnszone-add  $ptrzone --name-server=$primary --admin-email=root.$primary
+	fi
+	# Now create this entry
+	ipa host-add $hostname --ip-address=$ipaddress
+	ipa host-show $hostname
+done
+Authenticate as the IdM admin user:
+[root@nis-server ~]# kinit admin
+Run the script. For example:
+[root@nis-server ~]# sh /root/nis-hosts.sh nisdomain nis-server.example.com
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.5. Migrating netgroup entries from NIS to IdM
+The NIS netgroup map contains information about netgroups. Use this data to migrate NIS netgroups to Identity Management (IdM):
+Prerequisites
+You have root access on NIS server.
+NIS is enabled in IdM.
+The NIS server is enrolled into IdM.
+Procedure
+Install the yp-tools package:
+[root@nis-server ~]# dnf install yp-tools -y
+Create the /root/nis-netgroups.sh script with the following content on the NIS server:
+#!/bin/sh
+# $1 is the NIS domain, $2 is the primary NIS server
+ypcat -k -d $1 -h $2 netgroup > /dev/shm/nis-map.netgroup 2>&1
+
+IFS=$'\n'
+for line in $(cat /dev/shm/nis-map.netgroup); do
+	IFS=' '
+	netgroupname=$(echo $line | awk '{print $1}')
+	triples=$(echo $line | sed "s/^$netgroupname //")
+	echo "ipa netgroup-add $netgroupname --desc=NIS_NG_$netgroupname"
+	if [ $(echo $line | grep "(," | wc -l) -gt 0 ]; then
+		echo "ipa netgroup-mod $netgroupname --hostcat=all"
+	fi
+	if [ $(echo $line | grep ",," | wc -l) -gt 0 ]; then
+		echo "ipa netgroup-mod $netgroupname --usercat=all"
+	fi
+
+	for triple in $triples; do
+		triple=$(echo $triple | sed -e 's/-//g' -e 's/(//' -e 's/)//')
+		if [ $(echo $triple | grep ",.*," | wc -l) -gt 0 ]; then
+			hostname=$(echo $triple | cut -f1 -d,)
+			username=$(echo $triple | cut -f2 -d,)
+			domain=$(echo $triple | cut -f3 -d,)
+			hosts=""; users=""; doms="";
+			[ -n "$hostname" ] && hosts="--hosts=$hostname"
+			[ -n "$username" ] && users="--users=$username"
+			[ -n "$domain"   ] && doms="--nisdomain=$domain"
+			echo "ipa netgroup-add-member $netgroup $hosts $users $doms"
+		else
+			netgroup=$triple
+			echo "ipa netgroup-add $netgroup --desc=<NIS_NG>_$netgroup"
+		fi
+	done
+done
+Authenticate as the IdM admin user:
+[root@nis-server ~]# kinit admin
+Run the script. For example:
+[root@nis-server ~]# sh /root/nis-netgroups.sh nisdomain nis-server.example.com
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.6. Migrating automount maps from NIS to IdM
+Automount maps are a series of nested and interrelated entries that define the location (the parent entry), the associated keys, and maps. To migrate NIS automount maps to Identity Management (IdM):
+Prerequisites
+You have root access on NIS server.
+NIS is enabled in IdM.
+The NIS server is enrolled into IdM.
+Procedure
+Install the yp-tools package:
+[root@nis-server ~]# dnf install yp-tools -y
+Create the /root/nis-automounts.sh script with the following content on the NIS server:
+#!/bin/sh
+# $1 is for the automount entry in ipa
+
+ipa automountlocation-add $1
+
+# $2 is the NIS domain, $3 is the primary NIS server, $4 is the map name
+
+ypcat -k -d $2 -h $3 $4 > /dev/shm/nis-map.$4 2>&1
+
+ipa automountmap-add $1 $4
+
+basedn=$(ipa env basedn | tr -d '[:space:]' | cut -f2 -d:)
+cat > /tmp/amap.ldif <<EOF
+dn: nis-domain=$2+nis-map=$4,cn=NIS Server,cn=plugins,cn=config
+objectClass: extensibleObject
+nis-domain: $2
+nis-map: $4
+nis-base: automountmapname=$4,cn=$1,cn=automount,$basedn
+nis-filter: (objectclass=\*)
+nis-key-format: %{automountKey}
+nis-value-format: %{automountInformation}
+EOF
+ldapadd -x -h $3 -D "cn=Directory Manager" -W -f /tmp/amap.ldif
+
+IFS=$'\n'
+for line in $(cat /dev/shm/nis-map.$4); do
+	IFS=" "
+	key=$(echo "$line" | awk '{print $1}')
+	info=$(echo "$line" | sed -e "s^$key[ \t]*")
+	ipa automountkey-add nis $4 --key="$key" --info="$info"
+done
+Authenticate as the IdM admin user:
+[root@nis-server ~]# kinit admin
+Run the script. For example:
+[root@nis-server ~]# sh /root/nis-automounts.sh location nisdomain
+     nis-server.example.com map_name
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 5. Using automount in IdM
+Automount is a way to manage, organize, and access directories across multiple systems. Automount automatically mounts a directory whenever access to it is requested. This works well within an Identity Management (IdM) domain as it allows you to share directories on clients within the domain easily.
+The example uses the following scenario:
+nfs-server.idm.example.com is the fully-qualified domain name (FQDN) of a Network File System (NFS) server.
+For the sake of simplicity, nfs-server.idm.example.com is an IdM client that provides the maps for the raleigh automount location.
+The NFS server exports the /exports/project directory as read-write.
+Any IdM user belonging to the developers group can access the contents of the exported directory as /devel/project/ on any IdM client that uses the raleigh automount location.
+idm-client.idm.example.com is an IdM client that uses the raleigh automount location.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.1. Autofs and automount in IdM
+The autofs service automates the mounting of directories, as needed, by directing the automount daemon to mount directories when they are accessed. In addition, after a period of inactivity, autofs directs automount to unmount auto-mounted directories. Unlike static mounting, on-demand mounting saves system resources.
+Additional resources
+Mounting file systems on demand
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.2. Setting up an NFS server with Kerberos in a Red Hat Identity Management domain
+If you use Red Hat Identity Management (IdM), you can join your NFS server to the IdM domain. This enables you to centrally manage users and groups and to use Kerberos for authentication, integrity protection, and traffic encryption.
+Prerequisites
+The NFS server is enrolled in a Red Hat Identity Management (IdM) domain.
+The NFS server is running and configured.
+Procedure
+Obtain a kerberos ticket as an IdM administrator:
+# kinit admin
+Create a nfs/<FQDN> service principal:
+# ipa service-add nfs/nfs_server.idm.example.com
+Retrieve the nfs service principal from IdM, and store it in the /etc/krb5.keytab file:
+# ipa-getkeytab -s idm_server.idm.example.com -p nfs/nfs_server.idm.example.com -k /etc/krb5.keytab
+Optional: Display the principals in the /etc/krb5.keytab file:
+# klist -k /etc/krb5.keytab
+Keytab name: FILE:/etc/krb5.keytab
+KVNO Principal
+---- --------------------------------------------------------------------------
+   1 nfs/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+   1 nfs/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+   1 nfs/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+   1 nfs/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+   7 host/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+   7 host/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+   7 host/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+   7 host/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+By default, the IdM client adds the host principal to the /etc/krb5.keytab file when you join the host to the IdM domain. If the host principal is missing, use the ipa-getkeytab -s idm_server.idm.example.com -p host/nfs_server.idm.example.com -k /etc/krb5.keytab command to add it.
+Use the ipa-client-automount utility to configure mapping of IdM IDs:
+#  ipa-client-automount
+Searching for IPA server...
+IPA server: DNS discovery
+Location: default
+Continue to configure the system with these values? [no]: yes
+Configured /etc/idmapd.conf
+Restarting sssd, waiting for it to become available.
+Started autofs
+Update your /etc/exports file, and add the Kerberos security method to the client options. For example:
+/nfs/projects/      	192.0.2.0/24(rw,sec=krb5i)
+If you want that your clients can select from multiple security methods, specify them separated by colons:
+/nfs/projects/      	192.0.2.0/24(rw,sec=krb5:krb5i:krb5p)
+Reload the exported file systems:
+# exportfs -r
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.3. Configuring automount locations and maps in IdM using the IdM CLI
+A location is a set of maps, which are all stored in auto.master. A location can store multiple maps. The location entry only works as a container for map entries; it is not an automount configuration in and of itself.
+As a system administrator in Identity Management (IdM), you can configure automount locations and maps in IdM so that IdM users in the specified locations can access shares exported by an NFS server by navigating to specific mount points on their hosts. Both the exported NFS server directory and the mount points are specified in the maps. The example describes how to configure the raleigh location and a map that mounts the nfs-server.idm.example.com:/exports/project share on the /devel/ mount point on the IdM client as a read-write directory.
+Prerequisites
+You are logged in as an IdM administrator on any IdM-enrolled host.
+Procedure
+Create the raleigh automount location:
+$ ipa automountlocation-add raleigh
+----------------------------------
+Added automount location "raleigh"
+----------------------------------
+  Location: raleigh
+Create an auto.devel automount map in the raleigh location:
+$ ipa automountmap-add raleigh auto.devel
+--------------------------------
+Added automount map "auto.devel"
+--------------------------------
+  Map: auto.devel
+Add the keys and mount information for the exports/ share:
+Add the key and mount information for the auto.devel map:
+$ ipa automountkey-add raleigh auto.devel --key='*' --info='-sec=krb5p,vers=4 nfs-server.idm.example.com:/exports/&'
+-----------------------
+Added automount key "*"
+-----------------------
+  Key: *
+  Mount information: -sec=krb5p,vers=4 nfs-server.idm.example.com:/exports/&
+Add the key and mount information for the auto.master map:
+$ ipa automountkey-add raleigh auto.master --key=/devel --info=auto.devel
+----------------------------
+Added automount key "/devel"
+----------------------------
+  Key: /devel
+  Mount information: auto.devel
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.4. Configuring automount on an IdM client
+As an Identity Management (IdM) system administrator, you can configure automount services on an IdM client so that NFS shares configured for a location to which the client has been added are accessible to an IdM user automatically when the user logs in to the client. The example describes how to configure an IdM client to use automount services that are available in the raleigh location.
+Prerequisites
+You have root access to the IdM client.
+You are logged in as IdM administrator.
+The automount location exists. The example location is raleigh.
+Procedure
+On the IdM client, enter the ipa-client-automount command and specify the location. Use the -U option to run the script unattended:
+# ipa-client-automount --location raleigh -U
+Stop the autofs service, clear the SSSD cache, and start the autofs service to load the new configuration settings:
+# systemctl stop autofs ; sss_cache -E ; systemctl start autofs
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.5. Verifying that an IdM user can access NFS shares on an IdM client
+As an Identity Management (IdM) system administrator, you can test if an IdM user that is a member of a specific group can access NFS shares when logged in to a specific IdM client.
+In the example, the following scenario is tested:
+An IdM user named idm_user belonging to the developers group can read and write the contents of the files in the /devel/project directory automounted on idm-client.idm.example.com, an IdM client located in the raleigh automount location.
+Prerequisites
+You have set up an NFS server with Kerberos on an IdM host.
+You have configured automount locations, maps, and mount points in IdM in which you configured how IdM users can access the NFS share.
+You have configured automount on the IdM client.
+Procedure
+Verify that the IdM user can access the read-write directory:
+Connect to the IdM client as the IdM user:
+$ ssh idm_user@idm-client.idm.example.com
+Password:
+Obtain the ticket-granting ticket (TGT) for the IdM user:
+$ kinit idm_user
+Optional: View the group membership of the IdM user:
+$ ipa user-show idm_user
+  User login: idm_user
+  [...]
+  Member of groups: developers, ipausers
+Navigate to the /devel/project directory:
+$ cd /devel/project
+List the directory contents:
+$ ls
+rw_file
+Add a line to the file in the directory to test the write permission:
+$ echo "idm_user can write into the file" > rw_file
+Optional: View the updated contents of the file:
+$ cat rw_file
+this is a read-write file
+idm_user can write into the file
+The output confirms that idm_user can write into the file.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 6. Using Ansible to automount NFS shares for IdM users
+Automount is a way to manage, organize, and access directories across multiple systems. Automount automatically mounts a directory whenever access to it is requested. This works well within an Identity Management (IdM) domain as it allows you to share directories on clients within the domain easily.
+You can use Ansible to configure NFS shares to be mounted automatically for IdM users logged in to IdM clients in an IdM location.
+The example in this chapter uses the following scenario:
+nfs-server.idm.example.com is the fully-qualified domain name (FQDN) of a Network File System (NFS) server.
+nfs-server.idm.example.com is an IdM client located in the raleigh automount location.
+The NFS server exports the /exports/project directory as read-write.
+Any IdM user belonging to the developers group can access the contents of the exported directory as /devel/project/ on any IdM client that is located in the same raleigh automount location as the NFS server.
+idm-client.idm.example.com is an IdM client located in the raleigh automount location.
+The chapter contains the following sections:
+Autofs and automount in IdM
+Setting up an NFS server with Kerberos in IdM
+Configuring automount locations, maps, and keys in IdM by using Ansible
+Using Ansible to add IdM users to a group that owns NFS shares
+Configuring automount on an IdM client
+Verifying that an IdM user can access NFS shares on an IdM client
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.1. Autofs and automount in IdM
+The autofs service automates the mounting of directories, as needed, by directing the automount daemon to mount directories when they are accessed. In addition, after a period of inactivity, autofs directs automount to unmount auto-mounted directories. Unlike static mounting, on-demand mounting saves system resources.
+Additional resources
+Mounting file systems on demand
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.2. Setting up an NFS server with Kerberos in a Red Hat Identity Management domain
+If you use Red Hat Identity Management (IdM), you can join your NFS server to the IdM domain. This enables you to centrally manage users and groups and to use Kerberos for authentication, integrity protection, and traffic encryption.
+Prerequisites
+The NFS server is enrolled in a Red Hat Identity Management (IdM) domain.
+The NFS server is running and configured.
+Procedure
+Obtain a kerberos ticket as an IdM administrator:
+# kinit admin
+Create a nfs/<FQDN> service principal:
+# ipa service-add nfs/nfs_server.idm.example.com
+Retrieve the nfs service principal from IdM, and store it in the /etc/krb5.keytab file:
+# ipa-getkeytab -s idm_server.idm.example.com -p nfs/nfs_server.idm.example.com -k /etc/krb5.keytab
+Optional: Display the principals in the /etc/krb5.keytab file:
+# klist -k /etc/krb5.keytab
+Keytab name: FILE:/etc/krb5.keytab
+KVNO Principal
+---- --------------------------------------------------------------------------
+   1 nfs/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+   1 nfs/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+   1 nfs/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+   1 nfs/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+   7 host/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+   7 host/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+   7 host/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+   7 host/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+By default, the IdM client adds the host principal to the /etc/krb5.keytab file when you join the host to the IdM domain. If the host principal is missing, use the ipa-getkeytab -s idm_server.idm.example.com -p host/nfs_server.idm.example.com -k /etc/krb5.keytab command to add it.
+Use the ipa-client-automount utility to configure mapping of IdM IDs:
+#  ipa-client-automount
+Searching for IPA server...
+IPA server: DNS discovery
+Location: default
+Continue to configure the system with these values? [no]: yes
+Configured /etc/idmapd.conf
+Restarting sssd, waiting for it to become available.
+Started autofs
+Update your /etc/exports file, and add the Kerberos security method to the client options. For example:
+/nfs/projects/      	192.0.2.0/24(rw,sec=krb5i)
+If you want that your clients can select from multiple security methods, specify them separated by colons:
+/nfs/projects/      	192.0.2.0/24(rw,sec=krb5:krb5i:krb5p)
+Reload the exported file systems:
+# exportfs -r
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.3. Configuring automount locations, maps, and keys in IdM by using Ansible
+As an Identity Management (IdM) system administrator, you can configure automount locations and maps in IdM so that IdM users in the specified locations can access shares exported by an NFS server by navigating to specific mount points on their hosts. Both the exported NFS server directory and the mount points are specified in the maps. In LDAP terms, a location is a container for such map entries.
+The example describes how to use Ansible to configure the raleigh location and a map that mounts the nfs-server.idm.example.com:/exports/project share on the /devel/project mount point on the IdM client as a read-write directory.
+Prerequisites
+You know the IdM admin password.
+You have configured your Ansible control node to meet the following requirements:
+You are using Ansible version 2.15 or later.
+You have installed the ansible-freeipa package on the Ansible controller.
+The example assumes that in the ~/MyPlaybooks/ directory, you have created an Ansible inventory file with the fully-qualified domain name (FQDN) of the IdM server.
+The example assumes that the secret.yml Ansible vault stores your ipaadmin_password.
+The target node, that is the node on which the ansible-freeipa module is executed, is part of the IdM domain as an IdM client, server or replica.
+Procedure
+On your Ansible control node, navigate to your ~/MyPlaybooks/ directory:
+$ cd ~/MyPlaybooks/
+Copy the automount-location-present.yml Ansible playbook file located in the /usr/share/doc/ansible-freeipa/playbooks/automount/ directory:
+$ cp /usr/share/doc/ansible-freeipa/playbooks/automount/automount-location-present.yml automount-location-map-and-key-present.yml
+Open the automount-location-map-and-key-present.yml file for editing.
+Adapt the file by setting the following variables in the ipaautomountlocation task section:
+Set the ipaadmin_password variable to the password of the IdM admin.
+Set the name variable to raleigh.
+Ensure that the state variable is set to present.
+This is the modified Ansible playbook file for the current example:
+---
+- name: Automount location present example
+  hosts: ipaserver
+  vars_files:
+  - /home/user_name/MyPlaybooks/secret.yml
+  tasks:
+  - name: Ensure automount location is present
+    ipaautomountlocation:
+      ipaadmin_password: "{{ ipaadmin_password }}"
+      name: raleigh
+      state: present
+Continue editing the automount-location-map-and-key-present.yml file:
+In the tasks section, add a task to ensure the presence of an automount map:
+[...]
+  vars_files:
+  - /home/user_name/MyPlaybooks/secret.yml
+  tasks:
+[...]
+  - name: ensure map named auto.devel in location raleigh is created
+    ipaautomountmap:
+      ipaadmin_password: "{{ ipaadmin_password }}"
+      name: auto.devel
+      location: raleigh
+      state: present
+Add another task to add the mount point and NFS server information to the map:
+[...]
+  vars_files:
+  - /home/user_name/MyPlaybooks/secret.yml
+  tasks:
+[...]
+  - name: ensure automount key /devel/project is present
+    ipaautomountkey:
+      ipaadmin_password: "{{ ipaadmin_password }}"
+      location: raleigh
+      mapname: auto.devel
+      key: /devel/project
+      info: nfs-server.idm.example.com:/exports/project
+      state: present
+Add another task to ensure auto.devel is connected to auto.master:
+[...]
+  vars_files:
+  - /home/user_name/MyPlaybooks/secret.yml
+  tasks:
+[...]
+- name: Ensure auto.devel is connected in auto.master:
+  ipaautomountkey:
+    ipaadmin_password: "{{ ipaadmin_password }}"
+    location: raleigh
+    mapname: auto.map
+    key: /devel
+    info: auto.devel
+    state: present
+Save the file.
+Run the Ansible playbook and specify the playbook and inventory files:
+$ ansible-playbook --vault-password-file=password_file -v -i inventory automount-location-map-and-key-present.yml
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.4. Using Ansible to add IdM users to a group that owns NFS shares
+As an Identity Management (IdM) system administrator, you can use Ansible to create a group of users that is able to access NFS shares, and add IdM users to this group.
+This example describes how to use an Ansible playbook to ensure that the idm_user account belongs to the developers group, so that idm_user can access the /exports/project NFS share.
+Prerequisites
+You have root access to the nfs-server.idm.example.com NFS server, which is an IdM client located in the raleigh automount location.
+You know the IdM admin password.
+You have configured your Ansible control node to meet the following requirements:
+You are using Ansible version 2.15 or later.
+You have installed the ansible-freeipa package on the Ansible controller.
+The example assumes that in the ~/MyPlaybooks/ directory, you have created an Ansible inventory file with the fully-qualified domain name (FQDN) of the IdM server.
+The example assumes that the secret.yml Ansible vault stores your ipaadmin_password.
+The target node, that is the node on which the ansible-freeipa module is executed, is part of the IdM domain as an IdM client, server or replica.
+In ~/MyPlaybooks/, you have created the automount-location-map-and-key-present.yml file that already contains tasks from Configuring automount locations, maps, and keys in IdM by using Ansible.
+Procedure
+On your Ansible control node, navigate to the ~/MyPlaybooks/ directory:
+$ cd ~/MyPlaybooks/
+Open the automount-location-map-and-key-present.yml file for editing.
+In the tasks section, add a task to ensure that the IdM developers group exists and idm_user is added to this group:
+[...]
+  vars_files:
+  - /home/user_name/MyPlaybooks/secret.yml
+  tasks:
+[...]
+  - ipagroup:
+     ipaadmin_password: "{{ ipaadmin_password }}"
+      name: developers
+      user:
+      - idm_user
+      state: present
+Save the file.
+Run the Ansible playbook and specify the playbook and inventory files:
+$ ansible-playbook --vault-password-file=password_file -v -i inventory automount-location-map-and-key-present.yml
+On the NFS server, change the group ownership of the /exports/project directory to developers so that every IdM user in the group can access the directory:
+# chgrp developers /exports/project
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.5. Configuring automount on an IdM client
+As an Identity Management (IdM) system administrator, you can configure automount services on an IdM client so that NFS shares configured for a location to which the client has been added are accessible to an IdM user automatically when the user logs in to the client. The example describes how to configure an IdM client to use automount services that are available in the raleigh location.
+Prerequisites
+You have root access to the IdM client.
+You are logged in as IdM administrator.
+The automount location exists. The example location is raleigh.
+Procedure
+On the IdM client, enter the ipa-client-automount command and specify the location. Use the -U option to run the script unattended:
+# ipa-client-automount --location raleigh -U
+Stop the autofs service, clear the SSSD cache, and start the autofs service to load the new configuration settings:
+# systemctl stop autofs ; sss_cache -E ; systemctl start autofs
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.6. Verifying that an IdM user can access NFS shares on an IdM client
+As an Identity Management (IdM) system administrator, you can test if an IdM user that is a member of a specific group can access NFS shares when logged in to a specific IdM client.
+In the example, the following scenario is tested:
+An IdM user named idm_user belonging to the developers group can read and write the contents of the files in the /devel/project directory automounted on idm-client.idm.example.com, an IdM client located in the raleigh automount location.
+Prerequisites
+You have set up an NFS server with Kerberos on an IdM host.
+You have configured automount locations, maps, and mount points in IdM in which you configured how IdM users can access the NFS share.
+You have used Ansible to add IdM users to the developers group that owns the NFS shares.
+You have configured automount on the IdM client.
+Procedure
+Verify that the IdM user can access the read-write directory:
+Connect to the IdM client as the IdM user:
+$ ssh idm_user@idm-client.idm.example.com
+Password:
+Obtain the ticket-granting ticket (TGT) for the IdM user:
+$ kinit idm_user
+Optional: View the group membership of the IdM user:
+$ ipa user-show idm_user
+  User login: idm_user
+  [...]
+  Member of groups: developers, ipausers
+Navigate to the /devel/project directory:
+$ cd /devel/project
+List the directory contents:
+$ ls
+rw_file
+Add a line to the file in the directory to test the write permission:
+$ echo "idm_user can write into the file" > rw_file
+Optional: View the updated contents of the file:
+$ cat rw_file
+this is a read-write file
+idm_user can write into the file
+The output confirms that idm_user can write into the file.

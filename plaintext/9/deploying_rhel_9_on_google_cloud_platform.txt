@@ -1,0 +1,701 @@
+Abstract
+To use Red Hat Enterprise Linux (RHEL) in a public cloud environment, you can create and deploy RHEL system images on various cloud platforms, including Google Cloud Platform (GCP). You can also create and configure a Red Hat High Availability (HA) cluster on GCP.
+The following chapters provide instructions for creating cloud RHEL instances and HA clusters on GCP. These processes include installing the required packages and agents, configuring fencing, and installing network resource agents.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 1. Introducing RHEL on public cloud platforms
+Public cloud platforms provide computing resources as a service. Instead of using on-premises hardware, you can run your IT workloads, including Red Hat Enterprise Linux (RHEL) systems, as public cloud instances.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.1. Benefits of using RHEL in a public cloud
+RHEL as a cloud instance located on a public cloud platform has the following benefits over RHEL on-premises physical systems or virtual machines (VMs):
+Flexible and fine-grained allocation of resources
+A cloud instance of RHEL runs as a VM on a cloud platform, which typically means a cluster of remote servers maintained by the provider of the cloud service. Therefore, allocating hardware resources to the instance, such as a specific type of CPU or storage, happens on the software level and is easily customizable.
+In comparison to a local RHEL system, you are also not limited by the capabilities of your physical host. Instead, you can choose from a variety of features, based on selection offered by the cloud provider.
+Space and cost efficiency
+You do not need to own any on-premises servers to host your cloud workloads. This avoids the space, power, and maintenance requirements associated with physical hardware.
+Instead, on public cloud platforms, you pay the cloud provider directly for using a cloud instance. The cost is typically based on the hardware allocated to the instance and the time you spend using it. Therefore, you can optimize your costs based on your requirements.
+Software-controlled configurations
+The entire configuration of a cloud instance is saved as data on the cloud platform, and is controlled by software. Therefore, you can easily create, remove, clone, or migrate the instance. A cloud instance is also operated remotely in a cloud provider console and is connected to remote storage by default.
+In addition, you can back up the current state of a cloud instance as a snapshot at any time. Afterwards, you can load the snapshot to restore the instance to the saved state.
+Separation from the host and software compatibility
+Similarly to a local VM, the RHEL guest operating system on a cloud instance runs on a virtualized kernel. This kernel is separate from the host operating system and from the client system that you use to connect to the instance.
+Therefore, any operating system can be installed on the cloud instance. This means that on a RHEL public cloud instance, you can run RHEL-specific applications that cannot be used on your local operating system.
+In addition, even if the operating system of the instance becomes unstable or is compromised, your client system is not affected in any way.
+Additional resources
+What is public cloud?
+What is a hyperscaler?
+Types of cloud computing
+Public cloud use cases for RHEL
+Obtaining RHEL for public cloud deployments
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.2. Public cloud use cases for RHEL
+Deploying on a public cloud provides many benefits, but might not be the most efficient solution in every scenario. If you are evaluating whether to migrate your RHEL deployments to the public cloud, consider whether your use case will benefit from the advantages of the public cloud.
+Beneficial use cases
+Deploying public cloud instances is very effective for flexibly increasing and decreasing the active computing power of your deployments, also known as scaling up and scaling down. Therefore, using RHEL on public cloud is recommended in the following scenarios:
+Clusters with high peak workloads and low general performance requirements. Scaling up and down based on your demands can be highly efficient in terms of resource costs.
+Quickly setting up or expanding your clusters. This avoids high upfront costs of setting up local servers.
+Cloud instances are not affected by what happens in your local environment. Therefore, you can use them for backup and disaster recovery.
+Potentially problematic use cases
+You are running an existing environment that cannot be adjusted. Customizing a cloud instance to fit the specific needs of an existing deployment may not be cost-effective in comparison with your current host platform.
+You are operating with a hard limit on your budget. Maintaining your deployment in a local data center typically provides less flexibility but more control over the maximum resource costs than the public cloud does.
+Next steps
+Obtaining RHEL for public cloud deployments
+Additional resources
+Should I migrate my application to the cloud? Here’s how to decide.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.3. Frequent concerns when migrating to a public cloud
+Moving your RHEL workloads from a local environment to a public cloud platform might raise concerns about the changes involved. The following are the most commonly asked questions.
+Will my RHEL work differently as a cloud instance than as a local virtual machine?
+In most respects, RHEL instances on a public cloud platform work the same as RHEL virtual machines on a local host, such as an on-premises server. Notable exceptions include:
+Instead of private orchestration interfaces, public cloud instances use provider-specific console interfaces for managing your cloud resources.
+Certain features, such as nested virtualization, may not work correctly. If a specific feature is critical for your deployment, check the feature’s compatibility in advance with your chosen public cloud provider.
+Will my data stay safe in a public cloud as opposed to a local server?
+The data in your RHEL cloud instances is in your ownership, and your public cloud provider does not have any access to it. In addition, major cloud providers support data encryption in transit, which improves the security of data when migrating your virtual machines to the public cloud.
+The general security of your RHEL public cloud instances is managed as follows:
+Your public cloud provider is responsible for the security of the cloud hypervisor
+Red Hat provides the security features of the RHEL guest operating systems in your instances
+You manage the specific security settings and practices in your cloud infrastructure
+What effect does my geographic region have on the functionality of RHEL public cloud instances?
+You can use RHEL instances on a public cloud platform regardless of your geographical location. Therefore, you can run your instances in the same region as your on-premises server.
+However, hosting your instances in a physically distant region might cause high latency when operating them. In addition, depending on the public cloud provider, certain regions may provide additional features or be more cost-efficient. Before creating your RHEL instances, review the properties of the hosting regions available for your chosen cloud provider.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.4. Obtaining RHEL for public cloud deployments
+To deploy a RHEL system in a public cloud environment, you need to:
+Select the optimal cloud provider for your use case, based on your requirements and the current offer on the market.
+The cloud providers currently certified for running RHEL instances are:
+Amazon Web Services (AWS)
+Google Cloud Platform (GCP)
+Microsoft Azure
+Create a RHEL cloud instance on your chosen cloud platform. For more information, see Methods for creating RHEL cloud instances.
+To keep your RHEL deployment up-to-date, use Red Hat Update Infrastructure (RHUI).
+Additional resources
+RHUI documentation
+Red Hat Open Hybrid Cloud
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.5. Methods for creating RHEL cloud instances
+To deploy a RHEL instance on a public cloud platform, you can use one of the following methods:
+Additional resources
+What is a golden image?
+Configuring and managing cloud-init for RHEL 9
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 2. Uploading images to GCP with RHEL image builder
+With RHEL image builder, you can build a gce image, provide credentials for your user or GCP service account, and then upload the gce image directly to the GCP environment.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.1. Uploading a gce image to GCP by using the CLI
+Set up a configuration file with credentials to upload your gce image to GCP.
+Prerequisites
+You have a valid Google account and credentials to upload your image to GCP. The credentials can be from a user account or a service account. The account associated with the credentials must have at least the following IAM roles assigned:
+roles/storage.admin - to create and delete storage objects
+roles/compute.storageAdmin - to import a VM image to Compute Engine.
+You have an existing GCP bucket.
+Procedure
+Use a text editor to create a gcp-config.toml configuration file with the following content:
+provider = "gcp"
+
+[settings]
+bucket = "GCP_BUCKET"
+region = "GCP_STORAGE_REGION"
+object = "OBJECT_KEY"
+credentials = "GCP_CREDENTIALS"
+GCP_BUCKET points to an existing bucket. It is used to store the intermediate storage object of the image which is being uploaded.
+GCP_STORAGE_REGION is both a regular Google storage region and, a dual or multi region.
+OBJECT_KEY is the name of an intermediate storage object. It must not exist before the upload, and it is deleted when the upload process is done. If the object name does not end with .tar.gz, the extension is automatically added to the object name.
+GCP_CREDENTIALS is a Base64-encoded scheme of the credentials JSON file downloaded from GCP. The credentials determine which project the GCP uploads the image to.
+Retrieve the GCP_CREDENTIALS from the JSON file downloaded from GCP.
+$ sudo base64 -w 0 cee-gcp-nasa-476a1fa485b7.json
+Create a compose with an additional image name and cloud provider profile:
+$ sudo composer-cli compose start BLUEPRINT-NAME gce IMAGE_KEY gcp-config.toml
+The image build, upload, and cloud registration processes can take up to ten minutes to complete.
+Verification
+Verify that the image status is FINISHED:
+$ sudo composer-cli compose status
+Additional resources
+Identity and Access Management
+Create storage buckets
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.2. How RHEL image builder sorts the authentication order of different GCP credentials
+You can use several different types of credentials with RHEL image builder to authenticate with GCP. If RHEL image builder configuration is set to authenticate with GCP using multiple sets of credentials, it uses the credentials in the following order of preference:
+Credentials specified with the composer-cli command in the configuration file.
+Credentials configured in the osbuild-composer worker configuration.
+Application Default Credentials from the Google GCP SDK library, which tries to automatically find a way to authenticate by using the following options:
+If the GOOGLE_APPLICATION_CREDENTIALS environment variable is set, Application Default Credentials tries to load and use credentials from the file pointed to by the variable.
+Application Default Credentials tries to authenticate by using the service account attached to the resource that is running the code. For example, Google Compute Engine VM.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.2.1. Specifying GCP credentials with the composer-cli command
+You can specify GCP authentication credentials in the upload target configuration gcp-config.toml file. Use a Base64-encoded scheme of the Google account credentials JSON file to save time.
+Procedure
+Get the encoded content of the Google account credentials file with the path stored in GOOGLE_APPLICATION_CREDENTIALS environment variable, by running the following command:
+$ base64 -w 0 "${GOOGLE_APPLICATION_CREDENTIALS}"
+In the upload target configuration gcp-config.toml file, set the credentials:
+provider = "gcp"
+
+[settings]
+provider = "gcp"
+
+[settings]
+...
+credentials = "GCP_CREDENTIALS"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.2.2. Specifying credentials in the osbuild-composer worker configuration
+You can configure GCP authentication credentials to be used for GCP globally for all image builds. This way, if you want to import images to the same GCP project, you can use the same credentials for all image uploads to GCP.
+Procedure
+In the /etc/osbuild-worker/osbuild-worker.toml worker configuration, set the following credential value:
+[gcp]
+credentials = "PATH_TO_GCP_ACCOUNT_CREDENTIALS"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 3. Deploying a Red Hat Enterprise Linux image as a Google Compute Engine instance on Google Cloud Platform
+To set up a deployment of Red Hat Enterprise Linux 9 (RHEL 9) on Google Cloud Platform (GCP), you can deploy RHEL 9 as a Google Compute Engine (GCE) instance on GCP.
+Prerequisites
+You need a Red Hat Customer Portal account to complete the procedures in this chapter.
+Create an account with GCP to access the Google Cloud Platform Console. See Google Cloud for more information.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.1. Red Hat Enterprise Linux image options on GCP
+You can use multiple types of images for deploying RHEL 9 on Google Cloud Platform. Based on your requirements, consider which option is optimal for your use case.
+Additional resources
+Red Hat in the Public Cloud
+Compute Engine images
+Creating an instance from a custom image
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.2. Understanding base images
+To create a base VM from an ISO image, you can use preconfigured base images and their configuration settings.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.2.1. Using a custom base image
+To manually configure a virtual machine (VM), first create a base (starter) VM image. Then, you can modify configuration settings and add the packages the VM requires to operate on the cloud. You can make additional configuration changes for your specific application after you upload the image.
+Additional resources
+Red Hat Enterprise Linux
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.2.2. Virtual machine configuration settings
+Cloud VMs must have the following configuration settings.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.3. Creating a base VM from an ISO image
+To create a RHEL 9 base image from an ISO image, enable your host machine for virtualization and create a RHEL virtual machine (VM).
+Prerequisites
+Virtualization is enabled on your host machine.
+You have downloaded the latest Red Hat Enterprise Linux ISO image from the Red Hat Customer Portal and moved the image to /var/lib/libvirt/images.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.3.1. Creating a VM from the RHEL ISO image
+Procedure
+Ensure that you have enabled your host machine for virtualization. See Enabling virtualization in RHEL 9 for information and procedures.
+Create and start a basic Red Hat Enterprise Linux VM. For instructions, see Creating virtual machines.
+If you use the command line to create your VM, ensure that you set the default memory and CPUs to the capacity you want for the VM. Set your virtual network interface to virtio.
+For example, the following command creates a kvmtest VM by using the /home/username/Downloads/rhel9.iso image:
+# virt-install \
+    --name kvmtest --memory 2048 --vcpus 2 \
+    --cdrom /home/username/Downloads/rhel9.iso,bus=virtio \
+    --os-variant=rhel9.0
+If you use the web console to create your VM, follow the procedure in Creating virtual machines by using the web console, with these caveats:
+Do not check Immediately Start VM.
+Change your Memory size to your preferred settings.
+Before you start the installation, ensure that you have changed Model under Virtual Network Interface Settings to virtio and change your vCPUs to the capacity settings you want for the VM.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.3.2. Completing the RHEL installation
+To finish the installation of a RHEL system that you want to deploy on Amazon Web Services (AWS), customize the Installation Summary view, begin the installation, and enable root access once the VM launches.
+Procedure
+Choose the language you want to use during the installation process.
+On the Installation Summary view:
+Click Software Selection and check Minimal Install.
+Click Done.
+Click Installation Destination and check Custom under Storage Configuration.
+Verify at least 500 MB for /boot. You can use the remaining space for root /.
+Standard partitions are recommended, but you can use Logical Volume Management (LVM).
+You can use xfs, ext4, or ext3 for the file system.
+Click Done when you are finished with changes.
+Click Begin Installation.
+Set a Root Password. Create other users as applicable.
+Reboot the VM and log in as root once the installation completes.
+Configure the image.
+Register the VM and enable the Red Hat Enterprise Linux 9 repository.
+# subscription-manager register --auto-attach
+Ensure that the cloud-init package is installed and enabled.
+# dnf install cloud-init
+# systemctl enable --now cloud-init.service
+Power down the VM.
+Additional resources
+Introduction to cloud-init
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.4. Uploading the RHEL image to GCP
+To run your RHEL 9 instance on Google Cloud Platform (GCP), you must upload your RHEL 9 image to GCP.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.4.1. Creating a new project on GCP
+To upload your Red Hat Enterprise Linux 9 image to Google Cloud Platform (GCP), you must first create a new project on GCP.
+Prerequisites
+You must have an account with GCP. If you do not, see Google Cloud for more information.
+Procedure
+Launch the GCP Console.
+Click the drop-down menu to the right of Google Cloud Platform.
+From the pop-up menu, click NEW PROJECT.
+From the New Project window, enter a name for your new project.
+Check Organization. Click the drop-down menu to change the organization, if necessary.
+Confirm the Location of your parent organization or folder. Click Browse to search for and change this value, if necessary.
+Click CREATE to create your new GCP project.
+Additional resources
+Creating and Managing Resources in Google Cloud
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.4.2. Installing the Google Cloud SDK
+Many of the procedures to manage HA clusters on Google Cloud Platform (GCP) require the tools in the Google Cloud SDK.
+Procedure
+Follow the GCP instructions for downloading and extracting the Google Cloud SDK archive. See the GCP document Quickstart for Linux for details.
+Follow the same instructions for initializing the Google Cloud SDK.
+Additional resources
+Quickstart for Linux
+gcloud command reference
+gcloud command-line tool overview
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.4.3. Creating SSH keys for Google Compute Engine
+Generate and register SSH keys with GCE so that you can SSH directly into an instance by using its public IP address.
+Procedure
+Use the ssh-keygen command to generate an SSH key pair for use with GCE.
+# ssh-keygen -t rsa -f ~/.ssh/google_compute_engine
+From the GCP Console Dashboard page, click the Navigation menu to the left of the Google Cloud Console banner and select Compute Engine and then select Metadata.
+Click SSH Keys and then click Edit.
+Enter the output generated from the ~/.ssh/google_compute_engine.pub file and click Save.
+You can now connect to your instance by using standard SSH.
+# ssh -i ~/.ssh/google_compute_engine <username>@<instance_external_ip>
+Additional resources
+gcloud compute config-ssh
+Connecting to instances
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.4.4. Creating a storage bucket in GCP Storage
+To import your RHEL 9 image to GCP, you must first create a GCP Storage Bucket.
+Procedure
+If you are not already logged in to GCP, log in with the following command.
+# gcloud auth login
+Create a storage bucket.
+# gsutil mb gs://bucket_name
+Additional resources
+Create a bucket
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.4.5. Converting and uploading your image to your GCP Bucket
+Before a local RHEL 9 image can be deployed in GCP, you must first convert and upload the image to your GCP Bucket. The following steps describe converting an qcow2 image to raw format and then uploading the image as a tar archive. However, using different formats is possible as well.
+Procedure
+Run the qemu-img command to convert your image. The converted image must have the name disk.raw.
+# qemu-img convert -f qcow2 -O raw rhel-9.0-sample.qcow2 disk.raw
+Tar the image.
+# tar --format=oldgnu -Sczf disk.raw.tar.gz disk.raw
+Upload the image to the bucket you created previously. Upload could take a few minutes.
+# gsutil cp disk.raw.tar.gz gs://bucket_name
+From the Google Cloud Platform home screen, click the collapsed menu icon and select Storage and then select Browser.
+Click the name of your bucket.
+The tarred image is listed under your bucket name.
+Additional resources
+Manually importing virtual disks
+Choosing an import method
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.4.6. Creating an image from the object in the GCP bucket
+Before you can create a GCE image from an object that you uploaded to your GCP bucket, you must convert the object into a GCE image.
+Procedure
+Run the following command to create an image for GCE. Specify the name of the image you are creating, the bucket name, and the name of the tarred image.
+# gcloud compute images create my-image-name --source-uri gs://my-bucket-name/disk.raw.tar.gz
+Optionally, find the image in the GCP Console.
+Click the Navigation menu to the left of the Google Cloud Console banner.
+Select Compute Engine and then Images.
+Additional resources
+Creating, deleting, and deprecating custom images
+gcloud compute images create
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.4.7. Creating a Google Compute Engine instance from an image
+To configure a GCE VM instance from an image, use the GCP Console.
+Procedure
+From the GCP Console Dashboard page, click the Navigation menu to the left of the Google Cloud Console banner and select Compute Engine and then select Images.
+Select your image.
+Click Create Instance.
+On the Create an instance page, enter a Name for your instance.
+Choose a Region and Zone.
+Choose a Machine configuration that meets or exceeds the requirements of your workload.
+Ensure that Boot disk specifies the name of your image.
+Optionally, under Firewall, select Allow HTTP traffic or Allow HTTPS traffic.
+Click Create.
+Find your image under VM instances.
+From the GCP Console Dashboard, click the Navigation menu to the left of the Google Cloud Console banner and select Compute Engine and then select VM instances.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.4.8. Connecting to your instance
+Connect to your GCE instance by using its public IP address.
+Procedure
+Ensure that your instance is running. The following command lists information about your GCE instance, including whether the instance is running, and, if so, the public IP address of the running instance.
+# gcloud compute instances list
+Connect to your instance by using standard SSH. The example uses the google_compute_engine key created earlier.
+# ssh -i ~/.ssh/google_compute_engine <user_name>@<instance_external_ip>
+Additional resources
+gcloud compute instances list
+Connecting to instances
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.4.9. Attaching Red Hat subscriptions
+Using the subscription-manager command, you can register and attach your Red Hat subscription to a RHEL instance.
+Prerequisites
+You must have enabled your subscriptions.
+Procedure
+Register your system.
+# subscription-manager register --auto-attach
+Attach your subscriptions.
+You can use an activation key to attach subscriptions. See Creating Red Hat Customer Portal Activation Keys for more information.
+Alternatively, you can manually attach a subscription by using the ID of the subscription pool (Pool ID). See Attaching a host-based subscription to hypervisors.
+Optional: To collect various system metrics about the instance in the Red Hat Hybrid Cloud Console, you can register the instance with Red Hat Insights.
+# insights-client register --display-name <display-name-value>
+For information on further configuration of Red Hat Insights, see Client Configuration Guide for Red Hat Insights.
+Additional resources
+Creating Red Hat Customer Portal Activation Keys
+Attaching a host-based subscription to hypervisors
+Client Configuration Guide for Red Hat Insights
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.5. Additional resources
+Red Hat in the Public Cloud
+Google Cloud
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 4. Configuring a Red Hat High Availability Cluster on Google Cloud Platform
+To create a cluster where RHEL nodes automatically redistribute their workloads if a node failure occurs, use the Red Hat High Availability Add-On. Such high availability (HA) clusters can also be hosted on public cloud platforms, including Google Cloud Platform (GCP). Creating RHEL HA clusters on GCP is similar to creating HA clusters in non-cloud environments, with certain specifics.
+To configure a Red Hat HA cluster on Google Cloud Platform (GCP) using Google Compute Engine (GCE) virtual machine (VM) instances as cluster nodes, see the following sections.
+These provide information on:
+Prerequisite procedures for setting up your environment for GCP. Once you have set up your environment, you can create and configure VM instances.
+Procedures specific to the creation of HA clusters, which transform individual nodes into a cluster of HA nodes on GCP. These include procedures for installing the High Availability packages and agents on each cluster node, configuring fencing, and installing network resource agents.
+Prerequisites
+Red Hat Enterprise Linux 9 Server: rhel-9-server-rpms/8Server/x86_64
+Red Hat Enterprise Linux 9 Server (High Availability): rhel-9-server-ha-rpms/8Server/x86_64
+You must belong to an active GCP project and have sufficient permissions to create resources in the project.
+Your project should have a service account that belongs to a VM instance and not an individual user. See Using the Compute Engine Default Service Account for information about using the default service account instead of creating a separate service account.
+If you or your project administrator create a custom service account, the service account should be configured for the following roles.
+Cloud Trace Agent
+Compute Admin
+Compute Network Admin
+Cloud Datastore User
+Logging Admin
+Monitoring Editor
+Monitoring Metric Writer
+Service Account Administrator
+Storage Admin
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.1. The benefits of using high-availability clusters on public cloud platforms
+A high-availability (HA) cluster is a set of computers (called nodes) that are linked together to run a specific workload. The purpose of HA clusters is to provide redundancy in case of a hardware or software failure. If a node in the HA cluster fails, the Pacemaker cluster resource manager distributes the workload to other nodes and no noticeable downtime occurs in the services that are running on the cluster.
+You can also run HA clusters on public cloud platforms. In this case, you would use virtual machine (VM) instances in the cloud as the individual cluster nodes. Using HA clusters on a public cloud platform has the following benefits:
+Improved availability: In case of a VM failure, the workload is quickly redistributed to other nodes, so running services are not disrupted.
+Scalability: Additional nodes can be started when demand is high and stopped when demand is low.
+Cost-effectiveness: With the pay-as-you-go pricing, you pay only for nodes that are running.
+Simplified management: Some public cloud platforms offer management interfaces to make configuring HA clusters easier.
+To enable HA on your Red Hat Enterprise Linux (RHEL) systems, Red Hat offers a High Availability Add-On. The High Availability Add-On provides all necessary components for creating HA clusters on RHEL systems. The components include high availability service management and cluster administration tools.
+Additional resources
+High Availability Add-On overview
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.2. Required system packages
+To create and configure a base image of RHEL, your host system must have the following packages installed.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.3. Red Hat Enterprise Linux image options on GCP
+You can use multiple types of images for deploying RHEL 9 on Google Cloud Platform. Based on your requirements, consider which option is optimal for your use case.
+Additional resources
+Red Hat in the Public Cloud
+Compute Engine images
+Creating an instance from a custom image
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.4. Installing the Google Cloud SDK
+Many of the procedures to manage HA clusters on Google Cloud Platform (GCP) require the tools in the Google Cloud SDK.
+Procedure
+Follow the GCP instructions for downloading and extracting the Google Cloud SDK archive. See the GCP document Quickstart for Linux for details.
+Follow the same instructions for initializing the Google Cloud SDK.
+Additional resources
+Quickstart for Linux
+gcloud command reference
+gcloud command-line tool overview
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.5. Creating a GCP image bucket
+The following document includes the minimum requirements for creating a multi-regional bucket in your default location.
+Prerequisites
+GCP storage utility (gsutil)
+Procedure
+If you are not already logged in to Google Cloud Platform, log in with the following command.
+# gcloud auth login
+Create a storage bucket.
+$ gsutil mb gs://BucketName
+Example:
+$ gsutil mb gs://rhel-ha-bucket
+Additional resources
+Make buckets
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.6. Creating a custom virtual private cloud network and subnet
+A custom virtual private cloud (VPC) network and subnet are required for a cluster to be configured with a High Availability (HA) function.
+Procedure
+Launch the GCP Console.
+Select VPC networks under Networking in the left navigation pane.
+Click Create VPC Network.
+Enter a name for the VPC network.
+Under the New subnet, create a Custom subnet in the region where you want to create the cluster.
+Click Create.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.7. Preparing and importing a base GCP image
+Before a local RHEL 9 image can be deployed in GCP, you must first convert and upload the image to your GCP Bucket.
+Procedure
+Convert the file. Images uploaded to GCP must be in raw format and named disk.raw.
+$ qemu-img convert -f qcow2 ImageName.qcow2 -O raw disk.raw
+Compress the raw file. Images uploaded to GCP must be compressed.
+$ tar -Sczf ImageName.tar.gz disk.raw
+Import the compressed image to the bucket created earlier.
+$ gsutil cp ImageName.tar.gz gs://BucketName
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.8. Creating and configuring a base GCP instance
+To create and configure a GCP instance that complies with GCP operating and security requirements, complete the following steps.
+Procedure
+Create an image from the compressed file in the bucket.
+$ gcloud compute images create BaseImageName --source-uri gs://BucketName/BaseImageName.tar.gz
+Example:
+[admin@localhost ~] $ gcloud compute images create rhel-76-server --source-uri gs://user-rhelha/rhel-server-76.tar.gz
+Created [https://www.googleapis.com/compute/v1/projects/MyProject/global/images/rhel-server-76].
+NAME            PROJECT                 FAMILY  DEPRECATED  STATUS
+rhel-76-server  rhel-ha-testing-on-gcp                      READY
+Create a template instance from the image. The minimum size required for a base RHEL instance is n1-standard-2. See gcloud compute instances create for additional configuration options.
+$ gcloud compute instances create BaseInstanceName --can-ip-forward --machine-type n1-standard-2 --image BaseImageName --service-account ServiceAccountEmail
+Example:
+[admin@localhost ~] $ gcloud compute instances create rhel-76-server-base-instance --can-ip-forward --machine-type n1-standard-2 --image rhel-76-server --service-account account@project-name-on-gcp.iam.gserviceaccount.com
+Created [https://www.googleapis.com/compute/v1/projects/rhel-ha-testing-on-gcp/zones/us-east1-b/instances/rhel-76-server-base-instance].
+NAME   ZONE   MACHINE_TYPE   PREEMPTIBLE  INTERNAL_IP  EXTERNAL_IP     STATUS
+rhel-76-server-base-instance  us-east1-bn1-standard-2          10.10.10.3   192.227.54.211  RUNNING
+Connect to the instance with an SSH terminal session.
+$ ssh root@PublicIPaddress
+Update the RHEL software.
+Register with Red Hat Subscription Manager (RHSM).
+Enable a Subscription Pool ID (or use the --auto-attach command).
+Disable all repositories.
+# subscription-manager repos --disable=*
+Enable the following repository.
+# subscription-manager repos --enable=rhel-9-server-rpms
+Run the dnf update command.
+# dnf update -y
+Install the GCP Linux Guest Environment on the running instance (in-place installation).
+See Install the guest environment in-place for instructions.
+Select the CentOS/RHEL option.
+Copy the command script and paste it at the command prompt to run the script immediately.
+Make the following configuration changes to the instance. These changes are based on GCP recommendations for custom images. See gcloudcompute images list for more information.
+Edit the /etc/chrony.conf file and remove all NTP servers.
+Add the following NTP server.
+metadata.google.internal iburst Google NTP server
+Remove any persistent network device rules.
+# rm -f /etc/udev/rules.d/70-persistent-net.rules
+
+# rm -f /etc/udev/rules.d/75-persistent-net-generator.rules
+Set the network service to start automatically.
+# chkconfig network on
+Set the sshd service to start automatically.
+# systemctl enable sshd
+# systemctl is-enabled sshd
+Set the time zone to UTC.
+# ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+(Optional) Edit the /etc/ssh/ssh_config file and add the following lines to the end of the file. This keeps your SSH session active during longer periods of inactivity.
+# Server times out connections after several minutes of inactivity.
+# Keep alive ssh connections by sending a packet every 7 minutes.
+ServerAliveInterval 420
+Edit the /etc/ssh/sshd_config file and make the following changes, if necessary. The ClientAliveInterval 420 setting is optional; this keeps your SSH session active during longer periods of inactivity.
+PermitRootLogin no
+PasswordAuthentication no
+AllowTcpForwarding yes
+X11Forwarding no
+PermitTunnel no
+# Compute times out connections after 10 minutes of inactivity.
+# Keep ssh connections alive by sending a packet every 7 minutes.
+ClientAliveInterval 420
+Disable password access.
+ssh_pwauth from 1 to 0.
+ssh_pwauth: 0
+Unregister the instance from the subscription manager.
+# subscription-manager unregister
+Clean the shell history. Keep the instance running for the next procedure.
+# export HISTSIZE=0
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.9. Creating a snapshot image
+To preserve the configuration and disk data of a GCP HA instance, create a snapshot of it.
+Procedure
+On the running instance, synchronize data to disk.
+# sync
+On your host system, create the snapshot.
+$ gcloud compute disks snapshot InstanceName --snapshot-names SnapshotName
+On your host system, create the configured image from the snapshot.
+$ gcloud compute images create ConfiguredImageFromSnapshot --source-snapshot SnapshotName
+Additional resources
+Creating Persistent Disk Snapshots
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.10. Creating an HA node template instance and HA nodes
+After you have configured an image from the snapshot, you can create a node template. Then, you can use this template to create all HA nodes.
+Procedure
+Create an instance template.
+$ gcloud compute instance-templates create InstanceTemplateName --can-ip-forward --machine-type n1-standard-2 --image ConfiguredImageFromSnapshot --service-account ServiceAccountEmailAddress
+Example:
+[admin@localhost ~] $ gcloud compute instance-templates create rhel-91-instance-template --can-ip-forward --machine-type n1-standard-2 --image rhel-91-gcp-image --service-account account@project-name-on-gcp.iam.gserviceaccount.com
+Created [https://www.googleapis.com/compute/v1/projects/project-name-on-gcp/global/instanceTemplates/rhel-91-instance-template].
+NAME  MACHINE_TYPE   PREEMPTIBLE  CREATION_TIMESTAMP
+rhel-91-instance-template   n1-standard-2          2018-07-25T11:09:30.506-07:00
+Create multiple nodes in one zone.
+# gcloud compute instances create NodeName01 NodeName02 --source-instance-template InstanceTemplateName --zone RegionZone --network=NetworkName --subnet=SubnetName
+Example:
+[admin@localhost ~] $ gcloud compute instances create rhel81-node-01 rhel81-node-02 rhel81-node-03 --source-instance-template rhel-91-instance-template --zone us-west1-b --network=projectVPC --subnet=range0
+Created [https://www.googleapis.com/compute/v1/projects/project-name-on-gcp/zones/us-west1-b/instances/rhel81-node-01].
+Created [https://www.googleapis.com/compute/v1/projects/project-name-on-gcp/zones/us-west1-b/instances/rhel81-node-02].
+Created [https://www.googleapis.com/compute/v1/projects/project-name-on-gcp/zones/us-west1-b/instances/rhel81-node-03].
+NAME            ZONE        MACHINE_TYPE   PREEMPTIBLE  INTERNAL_IP  EXTERNAL_IP    STATUS
+rhel81-node-01  us-west1-b  n1-standard-2               10.10.10.4   192.230.25.81   RUNNING
+rhel81-node-02  us-west1-b  n1-standard-2               10.10.10.5   192.230.81.253  RUNNING
+rhel81-node-03  us-east1-b  n1-standard-2               10.10.10.6   192.230.102.15  RUNNING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.11. Installing HA packages and agents
+On each of your nodes, you need to install the High Availability packages and agents to be able to configure a Red Hat High Availability cluster on Google Cloud Platform (GCP).
+Procedure
+In the Google Cloud Console, select Compute Engine and then select VM instances.
+Select the instance, click the arrow next to SSH, and select the View gcloud command option.
+Paste this command at a command prompt for passwordless access to the instance.
+Enable sudo account access and register with Red Hat Subscription Manager.
+Enable a Subscription Pool ID (or use the --auto-attach command).
+Disable all repositories.
+# subscription-manager repos --disable=*
+Enable the following repositories.
+# subscription-manager repos --enable=rhel-9-server-rpms
+# subscription-manager repos --enable=rhel-9-for-x86_64-highavailability-rpms
+Install pcs pacemaker, the fence agents, and the resource agents.
+# dnf install -y pcs pacemaker fence-agents-gce resource-agents-gcp
+Update all packages.
+# dnf update -y
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.12. Configuring HA services
+On each of your nodes, configure the HA services.
+Procedure
+The user hacluster was created during the pcs and pacemaker installation in the previous step. Create a password for the user hacluster on all cluster nodes. Use the same password for all nodes.
+# passwd hacluster
+If the firewalld service is installed, add the HA service.
+# firewall-cmd --permanent --add-service=high-availability
+
+# firewall-cmd --reload
+Start the pcs service and enable it to start on boot.
+# systemctl start pcsd.service
+
+# systemctl enable pcsd.service
+
+Created symlink from /etc/systemd/system/multi-user.target.wants/pcsd.service to /usr/lib/systemd/system/pcsd.service.
+Verification
+Ensure the pcsd service is running.
+# systemctl status pcsd.service
+
+pcsd.service - PCS GUI and remote configuration interface
+Loaded: loaded (/usr/lib/systemd/system/pcsd.service; enabled; vendor preset: disabled)
+Active: active (running) since Mon 2018-06-25 19:21:42 UTC; 15s ago
+Docs: man:pcsd(8)
+man:pcs(8)
+Main PID: 5901 (pcsd)
+CGroup: /system.slice/pcsd.service
+└─5901 /usr/bin/ruby /usr/lib/pcsd/pcsd > /dev/null &
+Edit the /etc/hosts file. Add RHEL host names and internal IP addresses for all nodes.
+Additional resources
+How should the /etc/hosts file be set up on RHEL cluster nodes?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.13. Creating a cluster
+To convert multiple nodes into a cluster, use the following steps.
+Procedure
+On one of the nodes, authenticate the pcs user. Specify the name of each node in the cluster in the command.
+# pcs host auth hostname1 hostname2 hostname3
+Username: hacluster
+Password:
+hostname1: Authorized
+hostname2: Authorized
+hostname3: Authorized
+Create the cluster.
+# pcs cluster setup cluster-name hostname1 hostname2 hostname3
+Verification
+Run the following command to enable nodes to join the cluster automatically when started.
+# pcs cluster enable --all
+Start the cluster.
+# pcs cluster start --all
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.14. Creating a fencing device
+High Availability (HA) environments require a fencing device, which ensures that malfunctioning nodes are isolated and the cluster remains available if an outage occurs.
+Note that for most default configurations, the GCP instance names and the RHEL host names are identical.
+Procedure
+Obtain GCP instance names. Note that the output of the following command also shows the internal ID for the instance.
+# fence_gce --zone us-west1-b --project=rhel-ha-on-gcp -o list
+Example:
+[root@rhel81-node-01 ~]# fence_gce --zone us-west1-b --project=rhel-ha-testing-on-gcp -o list
+
+4435801234567893181,InstanceName-3
+4081901234567896811,InstanceName-1
+7173601234567893341,InstanceName-2
+Create a fence device.
+# pcs stonith create FenceDeviceName fence_gce zone=Region-Zone project=MyProject
+Verification
+Verify that the fence devices started.
+# pcs status
+Example:
+[root@rhel81-node-01 ~]# pcs status
+
+Cluster name: gcp-cluster
+Stack: corosync
+Current DC: rhel81-node-02 (version 1.1.18-11.el7_5.3-2b07d5c5a9) - partition with quorum
+Last updated: Fri Jul 27 12:53:25 2018
+Last change: Fri Jul 27 12:51:43 2018 by root via cibadmin on rhel81-node-01
+
+3 nodes configured
+3 resources configured
+
+Online: [ rhel81-node-01 rhel81-node-02 rhel81-node-03 ]
+
+Full list of resources:
+
+us-west1-b-fence    (stonith:fence_gce):    Started rhel81-node-01
+
+Daemon Status:
+corosync: active/enabled
+pacemaker: active/enabled
+pcsd: active/enabled
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.15. Configuring the gcp-vcp-move-vip resource agent
+The gcp-vpc-move-vip resource agent attaches a secondary IP address (alias IP) to a running instance. This is a floating IP address that can be passed between different nodes in the cluster.
+To show more information about this resource:
+# pcs resource describe gcp-vpc-move-vip
+You can configure the resource agent to use a primary subnet address range or a secondary subnet address range:
+Primary subnet address range
+Complete the following steps to configure the resource for the primary VPC subnet.
+Procedure
+Create the aliasip resource. Include an unused internal IP address. Include the CIDR block in the command.
+# pcs resource create aliasip gcp-vpc-move-vip alias_ip=UnusedIPaddress/CIDRblock
+Example:
+[root@rhel81-node-01 ~]# pcs resource create aliasip gcp-vpc-move-vip alias_ip=10.10.10.200/32
+Create an IPaddr2 resource for managing the IP on the node.
+# pcs resource create vip IPaddr2 nic=interface ip=AliasIPaddress cidr_netmask=32
+Example:
+[root@rhel81-node-01 ~]# pcs resource create vip IPaddr2 nic=eth0 ip=10.10.10.200 cidr_netmask=32
+Group the network resources under vipgrp.
+# pcs resource group add vipgrp aliasip vip
+Verification
+Verify that the resources have started and are grouped under vipgrp.
+# pcs status
+Verify that the resource can move to a different node.
+# pcs resource move vip Node
+Example:
+[root@rhel81-node-01 ~]# pcs resource move vip rhel81-node-03
+Verify that the vip successfully started on a different node.
+# pcs status
+Secondary subnet address range
+Complete the following steps to configure the resource for a secondary subnet address range.
+Prerequisites
+You have created a custom network and a subnet
+Optional: You have installed Google Cloud SDK. For instructions, see Installing the Google Cloud SDK.
+Note, however, that you can use the gcloud commands in the following procedure in the terminal that you can activate in the Google Cloud web console.
+Procedure
+Create a secondary subnet address range.
+# gcloud compute networks subnets update SubnetName --region RegionName --add-secondary-ranges SecondarySubnetName=SecondarySubnetRange
+Example:
+# gcloud compute networks subnets update range0 --region us-west1 --add-secondary-ranges range1=10.10.20.0/24
+Create the aliasip resource. Create an unused internal IP address in the secondary subnet address range. Include the CIDR block in the command.
+# pcs resource create aliasip gcp-vpc-move-vip alias_ip=UnusedIPaddress/CIDRblock
+Example:
+[root@rhel81-node-01 ~]# pcs resource create aliasip gcp-vpc-move-vip alias_ip=10.10.20.200/32
+Create an IPaddr2 resource for managing the IP on the node.
+# pcs resource create vip IPaddr2 nic=interface ip=AliasIPaddress cidr_netmask=32
+Example:
+[root@rhel81-node-01 ~]# pcs resource create vip IPaddr2 nic=eth0 ip=10.10.20.200 cidr_netmask=32
+Group the network resources under vipgrp.
+# pcs resource group add vipgrp aliasip vip
+Verification
+Verify that the resources have started and are grouped under vipgrp.
+# pcs status
+Verify that the resource can move to a different node.
+# pcs resource move vip Node
+Example:
+[root@rhel81-node-01 ~]# pcs resource move vip rhel81-node-03
+Verify that the vip successfully started on a different node.
+# pcs status
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.16. Additional resources
+Support Policies for RHEL High Availability clusters - Transport Protocols
+VPC network overview
+Exploring RHEL High Availability’s Components, Concepts, and Features - Overview of Transport Protocols
+Design Guidance for RHEL High Availability Clusters - Selecting the Transport Protocol

@@ -1,0 +1,1780 @@
+Abstract
+This document describes how to configure and run network file services on Red Hat Enterprise Linux 9, including Samba server and NFS server.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 1. Using Samba as a server
+Samba implements the Server Message Block (SMB) protocol in Red Hat Enterprise Linux. The SMB protocol is used to access resources on a server, such as file shares and shared printers. Additionally, Samba implements the Distributed Computing Environment Remote Procedure Call (DCE RPC) protocol used by Microsoft Windows.
+You can run Samba as:
+An Active Directory (AD) or NT4 domain member
+A standalone server
+An NT4 Primary Domain Controller (PDC) or Backup Domain Controller (BDC)
+Independently of the installation mode, you can optionally share directories and printers. This enables Samba to act as a file and print server.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.1. Understanding the different Samba services and modes
+The samba package provides multiple services. Depending on your environment and the scenario you want to configure, you require one or more of these services and configure Samba in different modes.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.1.1. The Samba services
+Samba provides the following services:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.1.2. The Samba security services
+The security parameter in the [global] section in the /etc/samba/smb.conf file manages how Samba authenticates users that are connecting to the service. Depending on the mode you install Samba in, the parameter must be set to different values:
+Additional resources
+security parameter in the smb.conf(5) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.1.3. Scenarios when Samba services and Samba client utilities load and reload their configuration
+The following describes when Samba services and utilities load and reload their configuration:
+Samba services reload their configuration:
+Automatically every 3 minutes
+On manual request, for example, when you run the smbcontrol all reload-config command.
+Samba client utilities read their configuration only when you start them.
+Note that certain parameters, such as security require a restart of the smb service to take effect and a reload is not sufficient.
+Additional resources
+The How configuration changes are applied section in the smb.conf(5) man page
+The smbd(8), nmbd(8), and winbindd(8) man pages
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.1.4. Editing the Samba configuration in a safe way
+Samba services automatically reload their configuration every 3 minutes. To prevent that the services reload the changes before you have verified the configuration using the testparm utility, you can edit the Samba configuration in a safe way.
+Prerequisites
+Samba is installed.
+Procedure
+Create a copy of the /etc/samba/smb.conf file:
+# cp /etc/samba/smb.conf /etc/samba/samba.conf.copy
+Edit the copied file and make the required changes.
+Verify the configuration in the /etc/samba/samba.conf.copy file:
+# testparm -s /etc/samba/samba.conf.copy
+If testparm reports errors, fix them and run the command again.
+Override the /etc/samba/smb.conf file with the new configuration:
+# mv /etc/samba/samba.conf.copy /etc/samba/smb.conf
+Wait until the Samba services automatically reload their configuration or manually reload the configuration:
+# smbcontrol all reload-config
+Additional resources
+Scenarios when Samba services and Samba client utilities load and reload their configuration
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.2. Verifying the smb.conf file by using the testparm utility
+The testparm utility verifies that the Samba configuration in the /etc/samba/smb.conf file is correct. The utility detects invalid parameters and values, but also incorrect settings, such as for ID mapping. If testparm reports no problem, the Samba services will successfully load the /etc/samba/smb.conf file. Note that testparm cannot verify that the configured services will be available or work as expected.
+Prerequisites
+You installed Samba.
+The /etc/samba/smb.conf file exits.
+Procedure
+Run the testparm utility as the root user:
+# testparm
+Load smb config files from /etc/samba/smb.conf
+rlimit_max: increasing rlimit_max (1024) to minimum Windows limit (16384)
+Unknown parameter encountered: "log levell"
+Processing section "[example_share]"
+Loaded services file OK.
+ERROR: The idmap range for the domain * (tdb) overlaps with the range of DOMAIN (ad)!
+
+Server role: ROLE_DOMAIN_MEMBER
+
+Press enter to see a dump of your service definitions
+
+# Global parameters
+[global]
+	...
+
+[example_share]
+	...
+The previous example output reports a non-existent parameter and an incorrect ID mapping configuration.
+If testparm reports incorrect parameters, values, or other errors in the configuration, fix the problem and run the utility again.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.3. Setting up Samba as a standalone server
+You can set up Samba as a server that is not a member of a domain. In this installation mode, Samba authenticates users to a local database instead of to a central DC. Additionally, you can enable guest access to allow users to connect to one or multiple services without authentication.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.3.1. Setting up the server configuration for the standalone server
+You can set up the server configuration for a Samba standalone server.
+Procedure
+Install the samba package:
+# dnf install samba
+Edit the /etc/samba/smb.conf file and set the following parameters:
+[global]
+	workgroup = Example-WG
+	netbios name = Server
+	security = user
+
+	log file = /var/log/samba/%m.log
+	log level = 1
+This configuration defines a standalone server named Server within the Example-WG work group. Additionally, this configuration enables logging on a minimal level (1) and log files will be stored in the /var/log/samba/ directory. Samba will expand the %m macro in the log file parameter to the NetBIOS name of connecting clients. This enables individual log files for each client.
+Optionally, configure file or printer sharing. See:
+Setting up a share that uses POSIX ACLs
+Setting up a share that uses Windows ACLs
+Setting up Samba as a Print Server
+Verify the /etc/samba/smb.conf file:
+# testparm
+If you set up shares that require authentication, create the user accounts.
+For details, see Creating and enabling local user accounts.
+Open the required ports and reload the firewall configuration by using the firewall-cmd utility:
+# firewall-cmd --permanent --add-service=samba
+# firewall-cmd --reload
+Enable and start the smb service:
+# systemctl enable --now smb
+Additional resources
+smb.conf(5) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.3.2. Creating and enabling local user accounts
+To enable users to authenticate when they connect to a share, you must create the accounts on the Samba host both in the operating system and in the Samba database. Samba requires the operating system account to validate the Access Control Lists (ACL) on file system objects and the Samba account to authenticate connecting users.
+If you use the passdb backend = tdbsam default setting, Samba stores user accounts in the /var/lib/samba/private/passdb.tdb database.
+You can create a local Samba user named example.
+Prerequisites
+Samba is installed and configured as a standalone server.
+Procedure
+Create the operating system account:
+# useradd -M -s /sbin/nologin example
+This command adds the example account without creating a home directory. If the account is only used to authenticate to Samba, assign the /sbin/nologin command as shell to prevent the account from logging in locally.
+Set a password to the operating system account to enable it:
+# passwd example
+Enter new UNIX password: password
+Retype new UNIX password: password
+passwd: password updated successfully
+Samba does not use the password set on the operating system account to authenticate. However, you need to set a password to enable the account. If an account is disabled, Samba denies access if this user connects.
+Add the user to the Samba database and set a password to the account:
+# smbpasswd -a example
+New SMB password: password
+Retype new SMB password: password
+Added user example.
+Use this password to authenticate when using this account to connect to a Samba share.
+Enable the Samba account:
+# smbpasswd -e example
+Enabled user example.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.4. Understanding and configuring Samba ID mapping
+Windows domains distinguish users and groups by unique Security Identifiers (SID). However, Linux requires unique UIDs and GIDs for each user and group. If you run Samba as a domain member, the winbindd service is responsible for providing information about domain users and groups to the operating system.
+To enable the winbindd service to provide unique IDs for users and groups to Linux, you must configure ID mapping in the /etc/samba/smb.conf file for:
+The local database (default domain)
+The AD or NT4 domain the Samba server is a member of
+Each trusted domain from which users must be able to access resources on this Samba server
+Samba provides different ID mapping back ends for specific configurations. The most frequently used back ends are:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.4.1. Planning Samba ID ranges
+Regardless of whether you store the Linux UIDs and GIDs in AD or if you configure Samba to generate them, each domain configuration requires a unique ID range that must not overlap with any of the other domains.
+Example 1.1. Unique ID Ranges
+The following shows non-overlapping ID mapping ranges for the default (*), AD-DOM, and the TRUST-DOM domains.
+[global]
+...
+idmap config * : backend = tdb
+idmap config * : range = 10000-999999
+
+idmap config AD-DOM:backend = rid
+idmap config AD-DOM:range = 2000000-2999999
+
+idmap config TRUST-DOM:backend = rid
+idmap config TRUST-DOM:range = 4000000-4999999
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.4.2. The * default domain
+In a domain environment, you add one ID mapping configuration for each of the following:
+The domain the Samba server is a member of
+Each trusted domain that should be able to access the Samba server
+However, for all other objects, Samba assigns IDs from the default domain. This includes:
+Local Samba users and groups
+Samba built-in accounts and groups, such as BUILTIN\Administrators
+The default domain back end must be writable to permanently store the assigned IDs.
+For the default domain, you can use one of the following back ends:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.4.3. Using the tdb ID mapping back end
+The winbindd service uses the writable tdb ID mapping back end by default to store Security Identifier (SID), UID, and GID mapping tables. This includes local users, groups, and built-in principals.
+Use this back end only for the * default domain. For example:
+idmap config * : backend = tdb
+idmap config * : range = 10000-999999
+Additional resources
+The * default domain.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.4.4. Using the ad ID mapping back end
+You can configure a Samba AD member to use the ad ID mapping back end.
+The ad ID mapping back end implements a read-only API to read account and group information from AD. This provides the following benefits:
+All user and group settings are stored centrally in AD.
+User and group IDs are consistent on all Samba servers that use this back end.
+The IDs are not stored in a local database which can corrupt, and therefore file ownerships cannot be lost.
+The ad back end reads the following attributes from AD:
+Prerequisites
+Both users and groups must have unique IDs set in AD, and the IDs must be within the range configured in the /etc/samba/smb.conf file. Objects whose IDs are outside of the range will not be available on the Samba server.
+Users and groups must have all required attributes set in AD. If required attributes are missing, the user or group will not be available on the Samba server. The required attributes depend on your configuration. .Prerequisites
+You installed Samba.
+The Samba configuration, except ID mapping, exists in the /etc/samba/smb.conf file.
+Procedure
+Edit the [global] section in the /etc/samba/smb.conf file:
+Add an ID mapping configuration for the default domain (*) if it does not exist. For example:
+idmap config * : backend = tdb
+idmap config * : range = 10000-999999
+Enable the ad ID mapping back end for the AD domain:
+idmap config DOMAIN : backend = ad
+Set the range of IDs that is assigned to users and groups in the AD domain. For example:
+idmap config DOMAIN : range = 2000000-2999999
+Set that Samba uses the RFC 2307 schema when reading attributes from AD:
+idmap config DOMAIN : schema_mode = rfc2307
+To enable Samba to read the login shell and the path to the users home directory from the corresponding AD attribute, set:
+idmap config DOMAIN : unix_nss_info = yes
+Alternatively, you can set a uniform domain-wide home directory path and login shell that is applied to all users. For example:
+template shell = /bin/bash
+template homedir = /home/%U
+By default, Samba uses the primaryGroupID attribute of a user object as the user’s primary group on Linux. Alternatively, you can configure Samba to use the value set in the gidNumber attribute instead:
+idmap config DOMAIN : unix_primary_group = yes
+Verify the /etc/samba/smb.conf file:
+# testparm
+Reload the Samba configuration:
+# smbcontrol all reload-config
+Additional resources
+The * default domain
+smb.conf(5) and idmap_ad(8) man pages
+VARIABLE SUBSTITUTIONS section in the smb.conf(5) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.4.5. Using the rid ID mapping back end
+You can configure a Samba domain member to use the rid ID mapping back end.
+Samba can use the relative identifier (RID) of a Windows SID to generate an ID on Red Hat Enterprise Linux.
+The rid ID mapping back end implements a read-only API to calculate account and group information based on an algorithmic mapping scheme for AD and NT4 domains. When you configure the back end, you must set the lowest and highest RID in the idmap config DOMAIN : range parameter. Samba will not map users or groups with a lower or higher RID than set in this parameter.
+Benefits of using the rid back end
+All domain users and groups that have an RID within the configured range are automatically available on the domain member.
+You do not need to manually assign IDs, home directories, and login shells.
+Drawbacks of using the rid back end
+All domain users get the same login shell and home directory assigned. However, you can use variables.
+User and group IDs are only the same across Samba domain members if all use the rid back end with the same ID range settings.
+You cannot exclude individual users or groups from being available on the domain member. Only users and groups outside of the configured range are excluded.
+Based on the formulas the winbindd service uses to calculate the IDs, duplicate IDs can occur in multi-domain environments if objects in different domains have the same RID.
+Prerequisites
+You installed Samba.
+The Samba configuration, except ID mapping, exists in the /etc/samba/smb.conf file.
+Procedure
+Edit the [global] section in the /etc/samba/smb.conf file:
+Add an ID mapping configuration for the default domain (*) if it does not exist. For example:
+idmap config * : backend = tdb
+idmap config * : range = 10000-999999
+Enable the rid ID mapping back end for the domain:
+idmap config DOMAIN : backend = rid
+Set a range that is big enough to include all RIDs that will be assigned in the future. For example:
+idmap config DOMAIN : range = 2000000-2999999
+Samba ignores users and groups whose RIDs in this domain are not within the range.
+Set a shell and home directory path that will be assigned to all mapped users. For example:
+template shell = /bin/bash
+template homedir = /home/%U
+Verify the /etc/samba/smb.conf file:
+# testparm
+Reload the Samba configuration:
+# smbcontrol all reload-config
+Additional resources
+The * default domain
+VARIABLE SUBSTITUTIONS section in the smb.conf(5) man page
+Calculation of the local ID from a RID, see the idmap_rid(8) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.4.6. Using the autorid ID mapping back end
+You can configure a Samba domain member to use the autorid ID mapping back end.
+The autorid back end works similar to the rid ID mapping back end, but can automatically assign IDs for different domains. This enables you to use the autorid back end in the following situations:
+Only for the * default domain
+For the * default domain and additional domains, without the need to create ID mapping configurations for each of the additional domains
+Only for specific domains
+Parts of this section were adopted from the idmap config autorid documentation published in the Samba Wiki. License: CC BY 4.0. Authors and contributors: See the history tab on the Wiki page.
+Benefits of using the autorid back end
+All domain users and groups whose calculated UID and GID is within the configured range are automatically available on the domain member.
+You do not need to manually assign IDs, home directories, and login shells.
+No duplicate IDs, even if multiple objects in a multi-domain environment have the same RID.
+Drawbacks
+User and group IDs are not the same across Samba domain members.
+All domain users get the same login shell and home directory assigned. However, you can use variables.
+You cannot exclude individual users or groups from being available on the domain member. Only users and groups whose calculated UID or GID is outside of the configured range are excluded.
+Prerequisites
+You installed Samba.
+The Samba configuration, except ID mapping, exists in the /etc/samba/smb.conf file.
+Procedure
+Edit the [global] section in the /etc/samba/smb.conf file:
+Enable the autorid ID mapping back end for the * default domain:
+idmap config * : backend = autorid
+Set a range that is big enough to assign IDs for all existing and future objects. For example:
+idmap config * : range = 10000-999999
+Samba ignores users and groups whose calculated IDs in this domain are not within the range.
+Optionally, set a range size. For example:
+idmap config * : rangesize = 200000
+Samba assigns this number of continuous IDs for each domain’s object until all IDs from the range set in the idmap config * : range parameter are taken.
+Set a shell and home directory path that will be assigned to all mapped users. For example:
+template shell = /bin/bash
+template homedir = /home/%U
+Optionally, add additional ID mapping configuration for domains. If no configuration for an individual domain is available, Samba calculates the ID using the autorid back end settings in the previously configured * default domain.
+Verify the /etc/samba/smb.conf file:
+# testparm
+Reload the Samba configuration:
+# smbcontrol all reload-config
+Additional resources
+THE MAPPING FORMULAS section in the idmap_autorid(8) man page
+rangesize parameter description in the idmap_autorid(8) man page
+VARIABLE SUBSTITUTIONS section in the smb.conf(5) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.5. Setting up Samba as an AD domain member server
+If you are running an AD or NT4 domain, use Samba to add your Red Hat Enterprise Linux server as a member to the domain to gain the following:
+Access domain resources on other domain members
+Authenticate domain users to local services, such as sshd
+Share directories and printers hosted on the server to act as a file and print server
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.5.1. Joining a RHEL system to an AD domain
+Samba Winbind is an alternative to the System Security Services Daemon (SSSD) for connecting a Red Hat Enterprise Linux (RHEL) system with Active Directory (AD). You can join a RHEL system to an AD domain by using realmd to configure Samba Winbind.
+Procedure
+If your AD requires the deprecated RC4 encryption type for Kerberos authentication, enable support for these ciphers in RHEL:
+# update-crypto-policies --set DEFAULT:AD-SUPPORT
+Install the following packages:
+# dnf install realmd oddjob-mkhomedir oddjob samba-winbind-clients \
+       samba-winbind samba-common-tools samba-winbind-krb5-locator krb5-workstation
+To share directories or printers on the domain member, install the samba package:
+# dnf install samba
+Backup the existing /etc/samba/smb.conf Samba configuration file:
+# mv /etc/samba/smb.conf /etc/samba/smb.conf.bak
+Join the domain. For example, to join a domain named ad.example.com:
+# realm join --membership-software=samba --client-software=winbind ad.example.com
+Using the previous command, the realm utility automatically:
+Creates a /etc/samba/smb.conf file for a membership in the ad.example.com domain
+Adds the winbind module for user and group lookups to the /etc/nsswitch.conf file
+Updates the Pluggable Authentication Module (PAM) configuration files in the /etc/pam.d/ directory
+Starts the winbind service and enables the service to start when the system boots
+Optionally, set an alternative ID mapping back end or customized ID mapping settings in the /etc/samba/smb.conf file.
+For details, see Understanding and configuring Samba ID mapping.
+Verify that the winbind service is running:
+# systemctl status winbind
+...
+   Active: active (running) since Tue 2018-11-06 19:10:40 CET; 15s ago
+If you installed the samba package to share directories and printers, enable and start the smb service:
+# systemctl enable --now smb
+Optionally, if you are authenticating local logins to Active Directory, enable the winbind_krb5_localauth plug-in. See Using the local authorization plug-in for MIT Kerberos.
+Verification
+Display an AD user’s details, such as the AD administrator account in the AD domain:
+# getent passwd "AD\administrator"
+AD\administrator:*:10000:10000::/home/administrator@AD:/bin/bash
+Query the members of the domain users group in the AD domain:
+# getent group "AD\Domain Users"
+    AD\domain users:x:10000:user1,user2
+Optionally, verify that you can use domain users and groups when you set permissions on files and directories. For example, to set the owner of the /srv/samba/example.txt file to AD\administrator and the group to AD\Domain Users:
+# chown "AD\administrator":"AD\Domain Users" /srv/samba/example.txt
+Verify that Kerberos authentication works as expected:
+On the AD domain member, obtain a ticket for the administrator@AD.EXAMPLE.COM principal:
+# kinit administrator@AD.EXAMPLE.COM
+Display the cached Kerberos ticket:
+# klist
+Ticket cache: KCM:0
+Default principal: administrator@AD.EXAMPLE.COM
+
+Valid starting       Expires              Service principal
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+01.11.2018 10:00:00  01.11.2018 20:00:00  krbtgt/AD.EXAMPLE.COM@AD.EXAMPLE.COM
+        renew until 08.11.2018 05:00:00
+Display the available domains:
+# wbinfo --all-domains
+BUILTIN
+SAMBA-SERVER
+AD
+Additional resources
+If you do not want to use the deprecated RC4 ciphers, you can enable the AES encryption type in AD. See
+Enabling the AES encryption type in Active Directory using a GPO
+realm(8) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.5.2. Using the local authorization plug-in for MIT Kerberos
+The winbind service provides Active Directory users to the domain member. In certain situations, administrators want to enable domain users to authenticate to local services, such as an SSH server, which are running on the domain member. When using Kerberos to authenticate the domain users, enable the winbind_krb5_localauth plug-in to correctly map Kerberos principals to Active Directory accounts through the winbind service.
+For example, if the sAMAccountName attribute of an Active Directory user is set to EXAMPLE and the user tries to log with the user name lowercase, Kerberos returns the user name in upper case. As a consequence, the entries do not match and authentication fails.
+Using the winbind_krb5_localauth plug-in, the account names are mapped correctly. Note that this only applies to GSSAPI authentication and not for getting the initial ticket granting ticket (TGT).
+Prerequisites
+Samba is configured as a member of an Active Directory.
+Red Hat Enterprise Linux authenticates log in attempts against Active Directory.
+The winbind service is running.
+Procedure
+Edit the /etc/krb5.conf file and add the following section:
+[plugins]
+localauth = {
+     module = winbind:/usr/lib64/samba/krb5/winbind_krb5_localauth.so
+     enable_only = winbind
+}
+Additional resources
+winbind_krb5_localauth(8) man page.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.6. Setting up Samba on an IdM domain member
+You can set up Samba on a host that is joined to a Red Hat Identity Management (IdM) domain. Users from IdM and also, if available, from trusted Active Directory (AD) domains, can access shares and printer services provided by Samba.
+If users from AD domains need to access shares and printer services provided by Samba, ensure the AES encryption type is enabled is AD. For more information, see Enabling the AES encryption type in Active Directory using a GPO.
+Prerequisites
+The host is joined as a client to the IdM domain.
+Both the IdM servers and the client must run on RHEL 9.0 or later.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.6.1. Preparing the IdM domain for installing Samba on domain members
+Before you can set up Samba on an IdM client, you must prepare the IdM domain using the ipa-adtrust-install utility on an IdM server.
+Prerequisites
+IdM server is installed.
+You need root privileges to install packages and restart IdM services.
+Procedure
+Install the required packages:
+[root@ipaserver ~]# dnf install ipa-server-trust-ad samba-client
+Authenticate as the IdM administrative user:
+[root@ipaserver ~]# kinit admin
+Run the ipa-adtrust-install utility:
+[root@ipaserver ~]# ipa-adtrust-install
+The DNS service records are created automatically if IdM was installed with an integrated DNS server.
+If you installed IdM without an integrated DNS server, ipa-adtrust-install prints a list of service records that you must manually add to DNS before you can continue.
+The script prompts you that the /etc/samba/smb.conf already exists and will be rewritten:
+WARNING: The smb.conf already exists. Running ipa-adtrust-install will break your existing Samba configuration.
+
+Do you wish to continue? [no]: yes
+The script prompts you to configure the slapi-nis plug-in, a compatibility plug-in that allows older Linux clients to work with trusted users:
+Do you want to enable support for trusted domains in Schema Compatibility plugin?
+This will allow clients older than SSSD 1.9 and non-Linux clients to work with trusted users.
+
+Enable trusted domains support in slapi-nis? [no]: yes
+You are prompted to run the SID generation task to create a SID for any existing users:
+Do you want to run the ipa-sidgen task? [no]: yes
+This is a resource-intensive task, so if you have a high number of users, you can run this at another time.
+(Optional) By default, the Dynamic RPC port range is defined as 49152-65535 for Windows Server 2008 and later. If you need to define a different Dynamic RPC port range for your environment, configure Samba to use different ports and open those ports in your firewall settings. The following example sets the port range to 55000-65000.
+[root@ipaserver ~]# net conf setparm global 'rpc server dynamic port range' 55000-65000
+[root@ipaserver ~]# firewall-cmd --add-port=55000-65000/tcp
+[root@ipaserver ~]# firewall-cmd --runtime-to-permanent
+Restart the ipa service:
+[root@ipaserver ~]# ipactl restart
+Use the smbclient utility to verify that Samba responds to Kerberos authentication from the IdM side:
+[root@ipaserver ~]# smbclient -L ipaserver.idm.example.com -U user_name --use-kerberos=required
+lp_load_ex: changing to config backend registry
+    Sharename       Type      Comment
+    ---------       ----      -------
+    IPC$            IPC       IPC Service (Samba 4.15.2)
+...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.6.2. Installing and configuring a Samba server on an IdM client
+You can install and configure Samba on a client enrolled in an IdM domain.
+Prerequisites
+Both the IdM servers and the client must run on RHEL 9.0 or later.
+The IdM domain is prepared as described in Preparing the IdM domain for installing Samba on domain members.
+If IdM has a trust configured with AD, enable the AES encryption type for Kerberos. For example, use a group policy object (GPO) to enable the AES encryption type. For details, see Enabling AES encryption in Active Directory using a GPO.
+Procedure
+Install the ipa-client-samba package:
+[root@idm_client]# dnf install ipa-client-samba
+Use the ipa-client-samba utility to prepare the client and create an initial Samba configuration:
+[root@idm_client]# ipa-client-samba
+Searching for IPA server...
+IPA server: DNS discovery
+Chosen IPA master: idm_server.idm.example.com
+SMB principal to be created: cifs/idm_client.idm.example.com@IDM.EXAMPLE.COM
+NetBIOS name to be used: IDM_CLIENT
+Discovered domains to use:
+
+ Domain name: idm.example.com
+NetBIOS name: IDM
+         SID: S-1-5-21-525930803-952335037-206501584
+    ID range: 212000000 - 212199999
+
+ Domain name: ad.example.com
+NetBIOS name: AD
+         SID: None
+    ID range: 1918400000 - 1918599999
+
+Continue to configure the system with these values? [no]: yes
+Samba domain member is configured. Please check configuration at /etc/samba/smb.conf and start smb and winbind services
+By default, ipa-client-samba automatically adds the [homes] section to the /etc/samba/smb.conf file that dynamically shares a user’s home directory when the user connects. If users do not have home directories on this server, or if you do not want to share them, remove the following lines from /etc/samba/smb.conf:
+[homes]
+    read only = no
+Share directories and printers. For details, see:
+Setting up a Samba file share that uses POSIX ACLs
+Setting up a share that uses Windows ACLs
+Setting up Samba as a print server
+Open the ports required for a Samba client in the local firewall:
+[root@idm_client]# firewall-cmd --permanent --add-service=samba-client
+[root@idm_client]# firewall-cmd --reload
+Enable and start the smb and winbind services:
+[root@idm_client]# systemctl enable --now smb winbind
+Verification
+Run the following verification step on a different IdM domain member that has the samba-client package installed:
+List the shares on the Samba server using Kerberos authentication:
+$ smbclient -L idm_client.idm.example.com -U user_name --use-kerberos=required
+lp_load_ex: changing to config backend registry
+
+    Sharename       Type      Comment
+    ---------       ----      -------
+    example         Disk
+    IPC$            IPC       IPC Service (Samba 4.15.2)
+...
+Additional resources
+ipa-client-samba(1) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.6.3. Manually adding an ID mapping configuration if IdM trusts a new domain
+Samba requires an ID mapping configuration for each domain from which users access resources. On an existing Samba server running on an IdM client, you must manually add an ID mapping configuration after the administrator added a new trust to an Active Directory (AD) domain.
+Prerequisites
+You configured Samba on an IdM client. Afterward, a new trust was added to IdM.
+The DES and RC4 encryption types for Kerberos must be disabled in the trusted AD domain. For security reasons, RHEL 9 does not support these weak encryption types.
+Procedure
+Authenticate using the host’s keytab:
+[root@idm_client]# kinit -k
+Use the ipa idrange-find command to display both the base ID and the ID range size of the new domain. For example, the following command displays the values for the ad.example.com domain:
+[root@idm_client]# ipa idrange-find --name="AD.EXAMPLE.COM_id_range" --raw
+---------------
+1 range matched
+---------------
+  cn: AD.EXAMPLE.COM_id_range
+  ipabaseid: 1918400000
+  ipaidrangesize: 200000
+  ipabaserid: 0
+  ipanttrusteddomainsid: S-1-5-21-968346183-862388825-1738313271
+  iparangetype: ipa-ad-trust
+----------------------------
+Number of entries returned 1
+----------------------------
+You need the values from the ipabaseid and ipaidrangesize attributes in the next steps.
+To calculate the highest usable ID, use the following formula:
+maximum_range = ipabaseid + ipaidrangesize - 1
+With the values from the previous step, the highest usable ID for the ad.example.com domain is 1918599999 (1918400000 + 200000 - 1).
+Edit the /etc/samba/smb.conf file, and add the ID mapping configuration for the domain to the [global] section:
+idmap config AD : range = 1918400000 - 1918599999
+idmap config AD : backend = sss
+Specify the value from ipabaseid attribute as the lowest and the computed value from the previous step as the highest value of the range.
+Restart the smb and winbind services:
+[root@idm_client]# systemctl restart smb winbind
+Verification
+List the shares on the Samba server using Kerberos authentication:
+$ smbclient -L idm_client.idm.example.com -U user_name --use-kerberos=required
+lp_load_ex: changing to config backend registry
+
+    Sharename       Type      Comment
+    ---------       ----      -------
+    example         Disk
+    IPC$            IPC       IPC Service (Samba 4.15.2)
+...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.6.4. Additional resources
+Installing an Identity Management client
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.7. Setting up a Samba file share that uses POSIX ACLs
+As a Linux service, Samba supports shares with POSIX ACLs. They enable you to manage permissions locally on the Samba server using utilities, such as chmod. If the share is stored on a file system that supports extended attributes, you can define ACLs with multiple users and groups.
+Parts of this section were adopted from the Setting up a Share Using POSIX ACLs documentation published in the Samba Wiki. License: CC BY 4.0. Authors and contributors: See the history tab on the Wiki page.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.7.1. Adding a share that uses POSIX ACLs
+You can create a share named example that provides the content of the /srv/samba/example/ directory and uses POSIX ACLs.
+Prerequisites
+Samba has been set up in one of the following modes:
+Standalone server
+Domain member
+Procedure
+Create the folder if it does not exist. For example:
+# mkdir -p /srv/samba/example/
+If you run SELinux in enforcing mode, set the samba_share_t context on the directory:
+# semanage fcontext -a -t samba_share_t "/srv/samba/example(/.*)?"
+# restorecon -Rv /srv/samba/example/
+Set file system ACLs on the directory. For details, see:
+Setting standard ACLs on a Samba Share that uses POSIX ACLs
+Setting extended ACLs on a share that uses POSIX ACLs.
+Add the example share to the /etc/samba/smb.conf file. For example, to add the share write-enabled:
+[example]
+	path = /srv/samba/example/
+	read only = no
+Verify the /etc/samba/smb.conf file:
+# testparm
+Open the required ports and reload the firewall configuration using the firewall-cmd utility:
+# firewall-cmd --permanent --add-service=samba
+# firewall-cmd --reload
+Restart the smb service:
+# systemctl restart smb
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.7.2. Setting standard Linux ACLs on a Samba share that uses POSIX ACLs
+The standard ACLs on Linux support setting permissions for one owner, one group, and for all other undefined users. You can use the chown, chgrp, and chmod utility to update the ACLs. If you require precise control, then you use the more complex POSIX ACLs, see
+Setting extended ACLs on a Samba share that uses POSIX ACLs.
+The following procedure sets the owner of the /srv/samba/example/ directory to the root user, grants read and write permissions to the Domain Users group, and denies access to all other users.
+Prerequisites
+The Samba share on which you want to set the ACLs exists.
+Procedure
+# chown root:"Domain Users" /srv/samba/example/
+# chmod 2770 /srv/samba/example/
+Additional resources
+chown(1) and chmod(1) man pages
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.7.3. Setting extended ACLs on a Samba share that uses POSIX ACLs
+If the file system the shared directory is stored on supports extended ACLs, you can use them to set complex permissions. Extended ACLs can contain permissions for multiple users and groups.
+Extended POSIX ACLs enable you to configure complex ACLs with multiple users and groups. However, you can only set the following permissions:
+No access
+Read access
+Write access
+Full control
+If you require the fine-granular Windows permissions, such as Create folder / append data, configure the share to use Windows ACLs.
+See Setting up a share that uses Windows ACLs.
+The following procedure shows how to enable extended ACLs on a share. Additionally, it contains an example about setting extended ACLs.
+Prerequisites
+The Samba share on which you want to set the ACLs exists.
+Procedure
+Enable the following parameter in the share’s section in the /etc/samba/smb.conf file to enable ACL inheritance of extended ACLs:
+inherit acls = yes
+For details, see the parameter description in the smb.conf(5) man page.
+Restart the smb service:
+# systemctl restart smb
+Set the ACLs on the directory. For example:
+Example 1.2. Setting Extended ACLs
+The following procedure sets read, write, and execute permissions for the Domain Admins group, read, and execute permissions for the Domain Users group, and deny access to everyone else on the /srv/samba/example/ directory:
+Disable auto-granting permissions to the primary group of user accounts:
+# setfacl -m group::--- /srv/samba/example/
+# setfacl -m default:group::--- /srv/samba/example/
+The primary group of the directory is additionally mapped to the dynamic CREATOR GROUP principal. When you use extended POSIX ACLs on a Samba share, this principal is automatically added and you cannot remove it.
+Set the permissions on the directory:
+Grant read, write, and execute permissions to the Domain Admins group:
+# setfacl -m group:"DOMAIN\Domain Admins":rwx /srv/samba/example/
+Grant read and execute permissions to the Domain Users group:
+# setfacl -m group:"DOMAIN\Domain Users":r-x /srv/samba/example/
+Set permissions for the other ACL entry to deny access to users that do not match the other ACL entries:
+# setfacl -R -m other::--- /srv/samba/example/
+These settings apply only to this directory. In Windows, these ACLs are mapped to the This folder only mode.
+To enable the permissions set in the previous step to be inherited by new file system objects created in this directory:
+# setfacl -m default:group:"DOMAIN\Domain Admins":rwx /srv/samba/example/
+# setfacl -m default:group:"DOMAIN\Domain Users":r-x /srv/samba/example/
+# setfacl -m default:other::--- /srv/samba/example/
+With these settings, the This folder only mode for the principals is now set to This folder, subfolders, and files.
+Samba maps the permissions set in the procedure to the following Windows ACLs:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.8. Setting permissions on a share that uses POSIX ACLs
+Optionally, to limit or grant access to a Samba share, you can set certain parameters in the share’s section in the /etc/samba/smb.conf file.
+Use share-based settings to restrict access to shares, for example, to deny access from specific hosts.
+Prerequisites
+A share with POSIX ACLs has been set up.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.8.1. Configuring user and group-based share access
+User and group-based access control enables you to grant or deny access to a share for certain users and groups.
+Prerequisites
+The Samba share on which you want to set user or group-based access exists.
+Procedure
+For example, to enable all members of the Domain Users group to access a share while access is denied for the user account, add the following parameters to the share’s configuration:
+valid users = +DOMAIN\"Domain Users"
+invalid users = DOMAIN\user
+The invalid users parameter has a higher priority than the valid users parameter. For example, if the user account is a member of the Domain Users group, access is denied to this account when you use the previous example.
+Reload the Samba configuration:
+# smbcontrol all reload-config
+Additional resources
+smb.conf(5) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.8.2. Configuring host-based share access
+Host-based access control enables you to grant or deny access to a share based on client’s host names, IP addresses, or IP range.
+The following procedure explains how to enable the 127.0.0.1 IP address, the 192.0.2.0/24 IP range, and the client1.example.com host to access a share, and additionally deny access for the client2.example.com host:
+Prerequisites
+The Samba share on which you want to set host-based access exists.
+Procedure
+Add the following parameters to the configuration of the share in the /etc/samba/smb.conf file:
+hosts allow = 127.0.0.1 192.0.2.0/24 client1.example.com
+hosts deny = client2.example.com
+The hosts deny parameter has a higher priority than hosts allow. For example, if client1.example.com resolves to an IP address that is listed in the hosts allow parameter, access for this host is denied.
+Reload the Samba configuration:
+# smbcontrol all reload-config
+Additional resources
+smb.conf(5) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.9. Setting up a share that uses Windows ACLs
+Samba supports setting Windows ACLs on shares and file system object. This enables you to:
+Use the fine-granular Windows ACLs
+Manage share permissions and file system ACLs using Windows
+Alternatively, you can configure a share to use POSIX ACLs.
+For details, see Setting up a Samba file share that uses POSIX ACLs.
+Parts of this section were adopted from the Setting up a Share Using Windows ACLs documentation published in the Samba Wiki. License: CC BY 4.0. Authors and contributors: See the history tab on the Wiki page.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.9.1. Granting the SeDiskOperatorPrivilege privilege
+Only users and groups having the SeDiskOperatorPrivilege privilege granted can configure permissions on shares that use Windows ACLs.
+Procedure
+For example, to grant the SeDiskOperatorPrivilege privilege to the DOMAIN\Domain Admins group:
+# net rpc rights grant "DOMAIN\Domain Admins" SeDiskOperatorPrivilege -U "DOMAIN\administrator"
+Enter DOMAIN\administrator's password:
+Successfully granted rights.
+To list all users and groups having SeDiskOperatorPrivilege granted:
+# net rpc rights list privileges SeDiskOperatorPrivilege -U "DOMAIN\administrator"
+Enter administrator's password:
+SeDiskOperatorPrivilege:
+  BUILTIN\Administrators
+  DOMAIN\Domain Admins
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.9.2. Enabling Windows ACL support
+To configure shares that support Windows ACLs, you must enable this feature in Samba.
+Prerequisites
+A user share is configured on the Samba server.
+Procedure
+To enable it globally for all shares, add the following settings to the [global] section of the /etc/samba/smb.conf file:
+vfs objects = acl_xattr
+map acl inherit = yes
+store dos attributes = yes
+Alternatively, you can enable Windows ACL support for individual shares, by adding the same parameters to a share’s section instead.
+Restart the smb service:
+# systemctl restart smb
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.9.3. Adding a share that uses Windows ACLs
+You can create a share named example that shares the content of the /srv/samba/example/ directory and uses Windows ACLs.
+Procedure
+Create the folder if it does not exists. For example:
+# mkdir -p /srv/samba/example/
+If you run SELinux in enforcing mode, set the samba_share_t context on the directory:
+# semanage fcontext -a -t samba_share_t "/srv/samba/example(/.)?"*
+# restorecon -Rv /srv/samba/example/
+Add the example share to the /etc/samba/smb.conf file. For example, to add the share write-enabled:
+[example]
+	path = /srv/samba/example/
+	read only = no
+If you have not enabled Windows ACL support in the [global] section for all shares, add the following parameters to the [example] section to enable this feature for this share:
+vfs objects = acl_xattr
+map acl inherit = yes
+store dos attributes = yes
+Verify the /etc/samba/smb.conf file:
+# testparm
+Open the required ports and reload the firewall configuration using the firewall-cmd utility:
+# firewall-cmd --permanent --add-service=samba
+# firewall-cmd --reload
+Restart the smb service:
+# systemctl restart smb
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.9.4. Managing share permissions and file system ACLs of a share that uses Windows ACLs
+To manage share permissions and file system ACLs on a Samba share that uses Windows ACLs, use a Windows applications, such as Computer Management. For details, see the Windows documentation. Alternatively, use the smbcacls utility to manage ACLs.
+Additional resources
+Managing ACLs on an SMB share using smbcacls
+Grating the SeDiskOperatorPrivilege privilege
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.10. Managing ACLs on an SMB share using smbcacls
+The smbcacls utility can list, set, and delete ACLs of files and directories stored on an SMB share. You can use smbcacls to manage file system ACLs:
+On a local or remote Samba server that uses advanced Windows ACLs or POSIX ACLs
+On Red Hat Enterprise Linux to remotely manage ACLs on a share hosted on Windows
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.10.1. Access control entries
+Each ACL entry of a file system object contains Access Control Entries (ACE) in the following format:
+security_principal:access_right/inheritance_information/permissions
+Example 1.3. Access control entries
+If the AD\Domain Users group has Modify permissions that apply to This folder, subfolders, and files on Windows, the ACL contains the following ACE:
+AD\Domain Users:ALLOWED/OI|CI/CHANGE
+An ACE contains the following parts:
+For details, see ACE mask calculation.
+An smbcacls alias. The following table displays the available aliases:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.10.2. Displaying ACLs using smbcacls
+To display ACLs on an SMB share, use the smbcacls utility. If you run smbcacls without any operation parameter, such as --add, the utility displays the ACLs of a file system object.
+Procedure
+For example, to list the ACLs of the root directory of the //server/example share:
+# smbcacls //server/example / -U "DOMAIN\administrator"
+Enter DOMAIN\administrator's password:
+REVISION:1
+CONTROL:SR|PD|DI|DP
+OWNER:AD\Administrators
+GROUP:AD\Domain Users
+ACL:AD\Administrator:ALLOWED/OI|CI/FULL
+ACL:AD\Domain Users:ALLOWED/OI|CI/CHANGE
+ACL:AD\Domain Guests:ALLOWED/OI|CI/0x00100021
+The output of the command displays:
+REVISION: The internal Windows NT ACL revision of the security descriptor
+CONTROL: Security descriptor control
+OWNER: Name or SID of the security descriptor’s owner
+GROUP: Name or SID of the security descriptor’s group
+ACL entries. For details, see Access control entries.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.10.3. ACE mask calculation
+In most situations, when you add or update an ACE, you use the smbcacls aliases listed in Existing smbcacls aliases and their corresponding Windows permission.
+However, if you want to set advanced Windows permissions as listed in Windows permissions and their corresponding smbcacls value in hex format, you must use the bit-wise OR operation to calculate the correct value. You can use the following shell command to calculate the value:
+# echo $(printf '0x%X' $(( hex_value_1 | hex_value_2 | ... )))
+Example 1.4. Calculating an ACE Mask
+You want to set the following permissions:
+Traverse folder / execute file (0x00100020)
+List folder / read data (0x00100001)
+Read attributes (0x00100080)
+To calculate the hex value for the previous permissions, enter:
+# echo $(printf '0x%X' $(( 0x00100020 | 0x00100001 | 0x00100080 )))
+0x1000A1
+Use the returned value when you set or update an ACE.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.10.4. Adding, updating, and removing an ACL using smbcacls
+Depending on the parameter you pass to the smbcacls utility, you can add, update, and remove ACLs from a file or directory.
+Adding an ACL
+To add an ACL to the root of the //server/example share that grants CHANGE permissions for This folder, subfolders, and files to the AD\Domain Users group:
+# smbcacls //server/example / -U "DOMAIN\administrator --add ACL:"AD\Domain Users":ALLOWED/OI|CI/CHANGE
+Updating an ACL
+Updating an ACL is similar to adding a new ACL. You update an ACL by overriding the ACL using the --modify parameter with an existing security principal. If smbcacls finds the security principal in the ACL list, the utility updates the permissions. Otherwise the command fails with an error:
+ACL for SID principal_name not found
+For example, to update the permissions of the AD\Domain Users group and set them to READ for This folder, subfolders, and files:
+# smbcacls //server/example / -U "DOMAIN\administrator --modify ACL:"AD\Domain Users":ALLOWED/OI|CI/READ
+Deleting an ACL
+To delete an ACL, pass the --delete parameter with the exact ACL to the smbcacls utility. For example:
+# smbcacls //server/example / -U "DOMAIN\administrator --delete ACL:"AD\Domain Users":ALLOWED/OI|CI/READ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.11. Enabling users to share directories on a Samba server
+On a Samba server, you can configure that users can share directories without root permissions.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.11.1. Enabling the user shares feature
+Before users can share directories, the administrator must enable user shares in Samba.
+For example, to enable only members of the local example group to create user shares.
+Procedure
+Create the local example group, if it does not exist:
+# groupadd example
+Prepare the directory for Samba to store the user share definitions and set its permissions properly. For example:
+Create the directory:
+# mkdir -p /var/lib/samba/usershares/
+Set write permissions for the example group:
+# chgrp example /var/lib/samba/usershares/
+# chmod 1770 /var/lib/samba/usershares/
+Set the sticky bit to prevent users to rename or delete files stored by other users in this directory.
+Edit the /etc/samba/smb.conf file and add the following to the [global] section:
+Set the path to the directory you configured to store the user share definitions. For example:
+usershare path = /var/lib/samba/usershares/
+Set how many user shares Samba allows to be created on this server. For example:
+usershare max shares = 100
+If you use the default of 0 for the usershare max shares parameter, user shares are disabled.
+Optionally, set a list of absolute directory paths. For example, to configure that Samba only allows to share subdirectories of the /data and /srv directory to be shared, set:
+usershare prefix allow list = /data /srv
+For a list of further user share-related parameters you can set, see the USERSHARES section in the smb.conf(5) man page.
+Verify the /etc/samba/smb.conf file:
+# testparm
+Reload the Samba configuration:
+# smbcontrol all reload-config
+Users are now able to create user shares.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.11.2. Adding a user share
+After you enabled the user share feature in Samba, users can share directories on the Samba server without root permissions by running the net usershare add command.
+Synopsis of the net usershare add command:
+net usershare add share_name path [[ comment ] | [ ACLs ]] [ guest_ok=y|n ]
+Note that users can only enable guest access on a user share, if the administrator set usershare allow guests = yes in the [global] section in the /etc/samba/smb.conf file.
+Example 1.5. Adding a user share
+A user wants to share the /srv/samba/ directory on a Samba server. The share should be named example, have no comment set, and should be accessible by guest users. Additionally, the share permissions should be set to full access for the AD\Domain Users group and read permissions for other users. To add this share, run as the user:
+$ net usershare add example /srv/samba/ "" "AD\Domain Users":F,Everyone:R guest_ok=yes
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.11.3. Updating settings of a user share
+To update settings of a user share, override the share by using the net usershare add command with the same share name and the new settings.
+See Adding a user share.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.11.4. Displaying information about existing user shares
+Users can enter the net usershare info command on a Samba server to display user shares and their settings.
+Prerequisites
+A user share is configured on the Samba server.
+Procedure
+To display all user shares created by any user:
+$ net usershare info -l
+[share_1]
+path=/srv/samba/
+comment=
+usershare_acl=Everyone:R,host_name\user:F,
+guest_ok=y
+...
+To list only shares created by the user who runs the command, omit the -l parameter.
+To display only the information about specific shares, pass the share name or wild cards to the command. For example, to display the information about shares whose name starts with share_:
+$ net usershare info -l share_*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.11.5. Listing user shares
+If you want to list only the available user shares without their settings on a Samba server, use the net usershare list command.
+Prerequisites
+A user share is configured on the Samba server.
+Procedure
+To list the shares created by any user:
+$ net usershare list -l
+share_1
+share_2
+...
+To list only shares created by the user who runs the command, omit the -l parameter.
+To list only specific shares, pass the share name or wild cards to the command. For example, to list only shares whose name starts with share_:
+$ net usershare list -l share_*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.11.6. Deleting a user share
+To delete a user share, use the command net usershare delete command as the user who created the share or as the root user.
+Prerequisites
+A user share is configured on the Samba server.
+Procedure
+$ net usershare delete share_name
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.12. Configuring a share to allow access without authentication
+In certain situations, you want to share a directory to which users can connect without authentication. To configure this, enable guest access on a share.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.12.1. Enabling guest access to a share
+If guest access is enabled on a share, Samba maps guest connections to the operating system account set in the guest account parameter. Guest users can access files on this share if at least one of the following conditions is satisfied:
+The account is listed in file system ACLs
+The POSIX permissions for other users allow it
+Example 1.6. Guest share permissions
+If you configured Samba to map the guest account to nobody, which is the default, the ACLs in the following example:
+Allow guest users to read file1.txt
+Allow guest users to read and modify file2.txt
+Prevent guest users to read or modify file3.txt
+rw-r--r--. 1 root       root      1024 1. Sep 10:00 file1.txt
+-rw-r-----. 1 nobody     root      1024 1. Sep 10:00 file2.txt
+-rw-r-----. 1 root       root      1024 1. Sep 10:00 file3.txt
+Procedure
+Edit the /etc/samba/smb.conf file:
+If this is the first guest share you set up on this server:
+Set map to guest = Bad User in the [global] section:
+[global]
+        ...
+        map to guest = Bad User
+With this setting, Samba rejects login attempts that use an incorrect password unless the user name does not exist. If the specified user name does not exist and guest access is enabled on a share, Samba treats the connection as a guest log in.
+By default, Samba maps the guest account to the nobody account on Red Hat Enterprise Linux. Alternatively, you can set a different account. For example:
+[global]
+        ...
+        guest account = user_name
+The account set in this parameter must exist locally on the Samba server. For security reasons, Red Hat recommends using an account that does not have a valid shell assigned.
+Add the guest ok = yes setting to the [example] share section:
+[example]
+        ...
+        guest ok = yes
+Verify the /etc/samba/smb.conf file:
+# testparm
+Reload the Samba configuration:
+# smbcontrol all reload-config
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.13. Configuring Samba for macOS clients
+The fruit virtual file system (VFS) Samba module provides enhanced compatibility with Apple server message block (SMB) clients.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.13.1. Optimizing the Samba configuration for providing file shares for macOS clients
+The fruit module provides enhanced compatibility of Samba with macOS clients. You can configure the module for all shares hosted on a Samba server to optimize the file shares for macOS clients.
+Prerequisites
+Samba is configured as a file server.
+Procedure
+Edit the /etc/samba/smb.conf file, and enable the fruit and streams_xattr VFS modules in the [global] section:
+vfs objects = fruit streams_xattr
+Optionally, to provide macOS Time Machine support on a share, add the following setting to the share configuration in the /etc/samba/smb.conf file:
+fruit:time machine = yes
+Verify the /etc/samba/smb.conf file:
+# testparm
+Reload the Samba configuration:
+# smbcontrol all reload-config
+Additional resources
+vfs_fruit(8) man page.
+Configuring file shares:
+Setting up a Samba file share that uses POSIX ACLs
+Setting up a share that uses Windows ACLs.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.14. Using the smbclient utility to access an SMB share
+The smbclient utility enables you to access file shares on an SMB server, similarly to a command-line FTP client. You can use it, for example, to upload and download files to and from a share.
+Prerequisites
+The samba-client package is installed.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.14.1. How the smbclient interactive mode works
+For example, to authenticate to the example share hosted on server using the DOMAIN\user account:
+# smbclient -U "DOMAIN\user" //server/example
+Enter domain\user's password:
+Try "help" to get a list of possible commands.
+smb: \>
+After smbclient connected successfully to the share, the utility enters the interactive mode and shows the following prompt:
+smb: \>
+To display all available commands in the interactive shell, enter:
+smb: \> help
+To display the help for a specific command, enter:
+smb: \> help command_name
+Additional resources
+smbclient(1) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.14.2. Using smbclient in interactive mode
+If you use smbclient without the -c parameter, the utility enters the interactive mode. The following procedure shows how to connect to an SMB share and download a file from a subdirectory.
+Procedure
+Connect to the share:
+# smbclient -U "DOMAIN\user_name" //server_name/share_name
+Change into the /example/ directory:
+smb: \> d /example/
+List the files in the directory:
+smb: \example\> ls
+  .                    D         0  Thu Nov 1 10:00:00 2018
+  ..                   D         0  Thu Nov 1 10:00:00 2018
+  example.txt          N   1048576  Thu Nov 1 10:00:00 2018
+
+         9950208 blocks of size 1024. 8247144 blocks available
+Download the example.txt file:
+smb: \example\> get example.txt
+getting file \directory\subdirectory\example.txt of size 1048576 as example.txt (511975,0 KiloBytes/sec) (average 170666,7 KiloBytes/sec)
+Disconnect from the share:
+smb: \example\> exit
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.14.3. Using smbclient in scripting mode
+If you pass the -c parameter to smbclient, you can automatically execute the commands on the remote SMB share. This enables you to use smbclient in scripts.
+The following procedure shows how to connect to an SMB share and download a file from a subdirectory.
+Procedure
+Use the following command to connect to the share, change into the example directory, download the example.txt file:
+# smbclient -U DOMAIN\user_name //server_name/share_name -c "cd /example/ ; get example.txt ; exit"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.15. Setting up Samba as a print server
+If you set up Samba as a print server, clients in your network can use Samba to print. Additionally, Windows clients can, if configured, download the driver from the Samba server.
+Parts of this section were adopted from the Setting up Samba as a Print Server documentation published in the Samba Wiki. License: CC BY 4.0. Authors and contributors: See the history tab on the Wiki page.
+Prerequisites
+Samba has been set up in one of the following modes:
+Standalone server
+Domain member
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.15.1. Enabling print server support in Samba
+By default, print server support is not enabled in Samba. To use Samba as a print server, you must configure Samba accordingly.
+Prerequisites
+The printers are configured in a CUPS server.
+For details about configuring printers in CUPS, see the documentation provided in the CUPS web console (https://printserver:631/help) on the print server.
+Procedure
+Edit the /etc/samba/smb.conf file:
+Add the [printers] section to enable the printing backend in Samba:
+[printers]
+        comment = All Printers
+        path = /var/tmp/
+        printable = yes
+        create mask = 0600
+If the CUPS server runs on a different host or port, specify the setting in the [printers] section:
+cups server = printserver.example.com:631
+If you have many printers, set the number of idle seconds to a higher value than the numbers of printers connected to CUPS. For example, if you have 100 printers, set in the [global] section:
+rpcd_spoolss:idle_seconds = 200
+If this setting does not scale in your environment, also increase the number of rpcd_spoolss workers in the [global] section:
+rpcd_spoolss:num_workers = 10
+By default, rpcd_spoolss starts 5 workers.
+Verify the /etc/samba/smb.conf file:
+# testparm
+Open the required ports and reload the firewall configuration using the firewall-cmd utility:
+# firewall-cmd --permanent --add-service=samba
+# firewall-cmd --reload
+Restart the smb service:
+# systemctl restart smb
+After restarting the service, Samba automatically shares all printers that are configured in the CUPS back end. If you want to manually share only specific printers, see Manually sharing specific printers.
+Verification
+Submit a print job. For example, to print a PDF file, enter:
+# smbclient -Uuser //sambaserver.example.com/printer_name -c "print example.pdf"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.15.2. Manually sharing specific printers
+If you configured Samba as a print server, by default, Samba shares all printers that are configured in the CUPS back end. The following procedure explains how to share only specific printers.
+Prerequisites
+Samba is set up as a print server
+Procedure
+Edit the /etc/samba/smb.conf file:
+In the [global] section, disable automatic printer sharing by setting:
+load printers = no
+Add a section for each printer you want to share. For example, to share the printer named example in the CUPS back end as Example-Printer in Samba, add the following section:
+[Example-Printer]
+        path = /var/tmp/
+        printable = yes
+        printer name = example
+You do not need individual spool directories for each printer. You can set the same spool directory in the path parameter for the printer as you set in the [printers] section.
+Verify the /etc/samba/smb.conf file:
+# testparm
+Reload the Samba configuration:
+# smbcontrol all reload-config
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.16. Setting up automatic printer driver downloads for Windows clients on Samba print servers
+If you are running a Samba print server for Windows clients, you can upload drivers and preconfigure printers. If a user connects to a printer, Windows automatically downloads and installs the driver locally on the client. The user does not require local administrator permissions for the installation. Additionally, Windows applies preconfigured driver settings, such as the number of trays.
+Parts of this section were adopted from the Setting up Automatic Printer Driver Downloads for Windows Clients documentation published in the Samba Wiki. License: CC BY 4.0. Authors and contributors: See the history tab on the Wiki page.
+Prerequisites
+Samba is set up as a print server
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.16.1. Basic information about printer drivers
+This section provides general information about printer drivers.
+Supported driver model version
+Samba only supports the printer driver model version 3 which is supported in Windows 2000 and later, and Windows Server 2000 and later. Samba does not support the driver model version 4, introduced in Windows 8 and Windows Server 2012. However, these and later Windows versions also support version 3 drivers.
+Package-aware drivers
+Samba does not support package-aware drivers.
+Preparing a printer driver for being uploaded
+Before you can upload a driver to a Samba print server:
+Unpack the driver if it is provided in a compressed format.
+Some drivers require to start a setup application that installs the driver locally on a Windows host. In certain situations, the installer extracts the individual files into the operating system’s temporary folder during the setup runs. To use the driver files for uploading:
+Start the installer.
+Copy the files from the temporary folder to a new location.
+Cancel the installation.
+Ask your printer manufacturer for drivers that support uploading to a print server.
+Providing 32-bit and 64-bit drivers for a printer to a client
+To provide the driver for a printer for both 32-bit and 64-bit Windows clients, you must upload a driver with exactly the same name for both architectures. For example, if you are uploading the 32-bit driver named Example PostScript and the 64-bit driver named Example PostScript (v1.0), the names do not match. Consequently, you can only assign one of the drivers to a printer and the driver will not be available for both architectures.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.16.2. Enabling users to upload and preconfigure drivers
+To be able to upload and preconfigure printer drivers, a user or a group needs to have the SePrintOperatorPrivilege privilege granted. A user must be added into the printadmin group. Red Hat Enterprise Linux automatically creates this group when you install the samba package. The printadmin group gets assigned the lowest available dynamic system GID that is lower than 1000.
+Procedure
+For example, to grant the SePrintOperatorPrivilege privilege to the printadmin group:
+# net rpc rights grant "printadmin" SePrintOperatorPrivilege -U "DOMAIN\administrator"
+Enter DOMAIN\administrator's password:
+Successfully granted rights.
+To list all users and groups having SePrintOperatorPrivilege granted:
+# net rpc rights list privileges SePrintOperatorPrivilege -U "DOMAIN\administrator"
+Enter administrator's password:
+SePrintOperatorPrivilege:
+  BUILTIN\Administrators
+  DOMAIN\printadmin
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.16.3. Setting up the print$ share
+Windows operating systems download printer drivers from a share named print$ from a print server. This share name is hard-coded in Windows and cannot be changed.
+The following procedure explains how to share the /var/lib/samba/drivers/ directory as print$, and enable members of the local printadmin group to upload printer drivers.
+Procedure
+Add the [print$] section to the /etc/samba/smb.conf file:
+[print$]
+        path = /var/lib/samba/drivers/
+        read only = no
+        write list = @printadmin
+        force group = @printadmin
+        create mask = 0664
+        directory mask = 2775
+Using these settings:
+Only members of the printadmin group can upload printer drivers to the share.
+The group of new created files and directories will be set to printadmin.
+The permissions of new files will be set to 664.
+The permissions of new directories will be set to 2775.
+To upload only 64-bit drivers for all printers, include this setting in the [global] section in the /etc/samba/smb.conf file:
+spoolss: architecture = Windows x64
+Without this setting, Windows only displays drivers for which you have uploaded at least the 32-bit version.
+Verify the /etc/samba/smb.conf file:
+# testparm
+Reload the Samba configuration
+# smbcontrol all reload-config
+Create the printadmin group if it does not exists:
+# groupadd printadmin
+Grant the SePrintOperatorPrivilege privilege to the printadmin group.
+# net rpc rights grant "printadmin" SePrintOperatorPrivilege -U "DOMAIN\administrator"
+Enter DOMAIN\administrator's password:
+Successfully granted rights.
+If you run SELinux in enforcing mode, set the samba_share_t context on the directory:
+# semanage fcontext -a -t samba_share_t "/var/lib/samba/drivers(/.*)?"
+
+# restorecon -Rv /var/lib/samba/drivers/
+Set the permissions on the /var/lib/samba/drivers/ directory:
+If you use POSIX ACLs, set:
+# chgrp -R "printadmin" /var/lib/samba/drivers/
+# chmod -R 2775 /var/lib/samba/drivers/
+If you use Windows ACLs, set:
+For details about setting ACLs on Windows, see the Windows documentation.
+Additional resources
+Enabling users to upload and preconfigure drivers.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.16.4. Creating a GPO to enable clients to trust the Samba print server
+For security reasons, recent Windows operating systems prevent clients from downloading non-package-aware printer drivers from an untrusted server. If your print server is a member in an AD, you can create a Group Policy Object (GPO) in your domain to trust the Samba server.
+Prerequisites
+The Samba print server is a member of an AD domain.
+The Windows computer you are using to create the GPO must have the Windows Remote Server Administration Tools (RSAT) installed. For details, see the Windows documentation.
+Procedure
+Log into a Windows computer using an account that is allowed to edit group policies, such as the AD domain Administrator user.
+Open the Group Policy Management Console.
+Right-click to your AD domain and select Create a GPO in this domain, and Link it here.
+Enter a name for the GPO, such as Legacy Printer Driver Policy and click OK. The new GPO will be displayed under the domain entry.
+Right-click to the newly-created GPO and select Edit to open the Group Policy Management Editor.
+Navigate to Computer Configuration → Policies → Administrative Templates → Printers.
+On the right side of the window, double-click Point and Print Restriction to edit the policy:
+Enable the policy and set the following options:
+Select Users can only point and print to these servers and enter the fully-qualified domain name (FQDN) of the Samba print server to the field next to this option.
+In both check boxes under Security Prompts, select Do not show warning or elevation prompt.
+Click OK.
+Double-click Package Point and Print - Approved servers to edit the policy:
+Enable the policy and click the Show button.
+Enter the FQDN of the Samba print server.
+Close both the Show Contents and the policy’s properties window by clicking OK.
+Close the Group Policy Management Editor.
+Close the Group Policy Management Console.
+After the Windows domain members applied the group policy, printer drivers are automatically downloaded from the Samba server when a user connects to a printer.
+Additional resources
+For using group policies, see the Windows documentation.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.16.5. Uploading drivers and preconfiguring printers
+Use the Print Management application on a Windows client to upload drivers and preconfigure printers hosted on the Samba print server. For further details, see the Windows documentation.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.17. Running Samba on a server with FIPS mode enabled
+This section provides an overview of the limitations of running Samba with FIPS mode enabled. It also provides the procedure for enabling FIPS mode on a Red Hat Enterprise Linux host running Samba.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.17.1. Limitations of using Samba in FIPS mode
+The following Samba modes and features work in FIPS mode under the indicated conditions:
+Samba as a domain member only in Active Directory (AD) or Red Hat Identity Management (IdM) environments with Kerberos authentication that uses AES ciphers.
+Samba as a file server on an Active Directory domain member. However, this requires that clients use Kerberos to authenticate to the server.
+Due to the increased security of FIPS, the following Samba features and modes do not work if FIPS mode is enabled:
+NT LAN Manager (NTLM) authentication because RC4 ciphers are blocked
+The server message block version 1 (SMB1) protocol
+The stand-alone file server mode because it uses NTLM authentication
+NT4-style domain controllers
+NT4-style domain members. Note that Red Hat continues supporting the primary domain controller (PDC) functionality IdM uses in the background.
+Password changes against the Samba server. You can only perform password changes using Kerberos against an Active Directory domain controller.
+The following feature is not tested in FIPS mode and, therefore, is not supported by Red Hat:
+Running Samba as a print server
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.17.2. Using Samba in FIPS mode
+You can enable the FIPS mode on a RHEL host that runs Samba.
+Prerequisites
+Samba is configured on the Red Hat Enterprise Linux host.
+Samba runs in a mode that is supported in FIPS mode.
+Procedure
+Enable the FIPS mode on RHEL:
+# fips-mode-setup --enable
+Reboot the server:
+# reboot
+Use the testparm utility to verify the configuration:
+# testparm -s
+If the command displays any errors or incompatibilities, fix them to ensure that Samba works correctly.
+Additional resources
+Section 1.17.1, “Limitations of using Samba in FIPS mode”
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.18. Tuning the performance of a Samba server
+Learn what settings can improve the performance of Samba in certain situations, and which settings can have a negative performance impact.
+Parts of this section were adopted from the Performance Tuning documentation published in the Samba Wiki. License: CC BY 4.0. Authors and contributors: See the history tab on the Wiki page.
+Prerequisites
+Samba is set up as a file or print server
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.18.1. Setting the SMB protocol version
+Each new SMB version adds features and improves the performance of the protocol. The recent Windows and Windows Server operating systems always supports the latest protocol version. If Samba also uses the latest protocol version, Windows clients connecting to Samba benefit from the performance improvements. In Samba, the default value of the server max protocol is set to the latest supported stable SMB protocol version.
+The following procedure explains how to use the default value in the server max protocol parameter.
+Procedure
+Remove the server max protocol parameter from the [global] section in the /etc/samba/smb.conf file.
+Reload the Samba configuration
+# smbcontrol all reload-config
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.18.2. Tuning shares with directories that contain a large number of files
+Linux supports case-sensitive file names. For this reason, Samba needs to scan directories for uppercase and lowercase file names when searching or accessing a file. You can configure a share to create new files only in lowercase or uppercase, which improves the performance.
+Prerequisites
+Samba is configured as a file server
+Procedure
+Rename all files on the share to lowercase.
+Set the following parameters in the share’s section:
+case sensitive = true
+default case = lower
+preserve case = no
+short preserve case = no
+For details about the parameters, see their descriptions in the smb.conf(5) man page.
+Verify the /etc/samba/smb.conf file:
+# testparm
+Reload the Samba configuration:
+# smbcontrol all reload-config
+After you applied these settings, the names of all newly created files on this share use lowercase. Because of these settings, Samba no longer needs to scan the directory for uppercase and lowercase, which improves the performance.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.18.3. Settings that can have a negative performance impact
+By default, the kernel in Red Hat Enterprise Linux is tuned for high network performance. For example, the kernel uses an auto-tuning mechanism for buffer sizes. Setting the socket options parameter in the /etc/samba/smb.conf file overrides these kernel settings. As a result, setting this parameter decreases the Samba network performance in most cases.
+To use the optimized settings from the Kernel, remove the socket options parameter from the [global] section in the /etc/samba/smb.conf.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.19. Configuring Samba to be compatible with clients that require an SMB version lower than the default
+Samba uses a reasonable and secure default value for the minimum server message block (SMB) version it supports. However, if you have clients that require an older SMB version, you can configure Samba to support it.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.19.1. Setting the minimum SMB protocol version supported by a Samba server
+In Samba, the server min protocol parameter in the /etc/samba/smb.conf file defines the minimum server message block (SMB) protocol version the Samba server supports. You can change the minimum SMB protocol version.
+Prerequisites
+Samba is installed and configured.
+Procedure
+Edit the /etc/samba/smb.conf file, add the server min protocol parameter, and set the parameter to the minimum SMB protocol version the server should support. For example, to set the minimum SMB protocol version to SMB3, add:
+server min protocol = SMB3
+Restart the smb service:
+# systemctl restart smb
+Additional resources
+smb.conf(5) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.20. Frequently used Samba command-line utilities
+This chapter describes frequently used commands when working with a Samba server.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.20.1. Using the net ads join and net rpc join commands
+Using the join subcommand of the net utility, you can join Samba to an AD or NT4 domain. To join the domain, you must create the /etc/samba/smb.conf file manually, and optionally update additional configurations, such as PAM.
+Procedure
+Manually create the /etc/samba/smb.conf file with the following settings:
+For an AD domain member:
+[global]
+workgroup = domain_name
+security = ads
+passdb backend = tdbsam
+realm = AD_REALM
+For an NT4 domain member:
+[global]
+workgroup = domain_name
+security = user
+passdb backend = tdbsam
+Add an ID mapping configuration for the * default domain and for the domain you want to join to the [global] section in the /etc/samba/smb.conf file.
+Verify the /etc/samba/smb.conf file:
+# testparm
+Join the domain as the domain administrator:
+To join an AD domain:
+# net ads join -U "DOMAIN\administrator"
+To join an NT4 domain:
+# net rpc join -U "DOMAIN\administrator"
+Append the winbind source to the passwd and group database entry in the /etc/nsswitch.conf file:
+passwd:     files winbind
+group:      files winbind
+Enable and start the winbind service:
+# systemctl enable --now winbind
+Optionally, configure PAM using the authselect utility.
+For details, see the authselect(8) man page.
+Optionally for AD environments, configure the Kerberos client.
+For details, see the documentation of your Kerberos client.
+Additional resources
+Joining Samba to a domain.
+Understanding and configuring Samba ID mapping.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.20.2. Using the net rpc rights command
+In Windows, you can assign privileges to accounts and groups to perform special operations, such as setting ACLs on a share or upload printer drivers. On a Samba server, you can use the net rpc rights command to manage privileges.
+Listing privileges you can set
+To list all available privileges and their owners, use the net rpc rights list command. For example:
+# net rpc rights list -U "DOMAIN\administrator"
+Enter DOMAIN\administrator's password:
+     SeMachineAccountPrivilege  Add machines to domain
+      SeTakeOwnershipPrivilege  Take ownership of files or other objects
+             SeBackupPrivilege  Back up files and directories
+            SeRestorePrivilege  Restore files and directories
+     SeRemoteShutdownPrivilege  Force shutdown from a remote system
+      SePrintOperatorPrivilege  Manage printers
+           SeAddUsersPrivilege  Add users and groups to the domain
+       SeDiskOperatorPrivilege  Manage disk shares
+           SeSecurityPrivilege  System security
+Granting privileges
+To grant a privilege to an account or group, use the net rpc rights grant command.
+For example, grant the SePrintOperatorPrivilege privilege to the DOMAIN\printadmin group:
+# net rpc rights grant "DOMAIN\printadmin" SePrintOperatorPrivilege -U "DOMAIN\administrator"
+Enter DOMAIN\administrator's password:
+Successfully granted rights.
+Revoking privileges
+To revoke a privilege from an account or group, use the net rpc rights revoke command.
+For example, to revoke the SePrintOperatorPrivilege privilege from the DOMAIN\printadmin group:
+# net rpc rights remoke "DOMAIN\printadmin" SePrintOperatorPrivilege -U "DOMAIN\administrator"
+Enter DOMAIN\administrator's password:
+Successfully revoked rights.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.20.3. Using the net rpc share command
+The net rpc share command provides the capability to list, add, and remove shares on a local or remote Samba or Windows server.
+Listing shares
+To list the shares on an SMB server, use the net rpc share list command. Optionally, pass the -S server_name parameter to the command to list the shares of a remote server. For example:
+# net rpc share list -U "DOMAIN\administrator" -S server_name
+Enter DOMAIN\administrator's password:
+IPC$
+share_1
+share_2
+...
+Adding a share
+The net rpc share add command enables you to add a share to an SMB server.
+For example, to add a share named example on a remote Windows server that shares the C:\example\ directory:
+# net rpc share add example="C:\example" -U "DOMAIN\administrator" -S server_name
+To use the command to add a share to a Samba server:
+The user specified in the -U parameter must have the SeDiskOperatorPrivilege privilege granted on the destination server.
+You must write a script that adds a share section to the /etc/samba/smb.conf file and reloads Samba. The script must be set in the add share command parameter in the [global] section in /etc/samba/smb.conf. For further details, see the add share command description in the smb.conf(5) man page.
+Removing a share
+The net rpc share delete command enables you to remove a share from an SMB server.
+For example, to remove the share named example from a remote Windows server:
+# net rpc share delete example -U "DOMAIN\administrator" -S server_name
+To use the command to remove a share from a Samba server:
+The user specified in the -U parameter must have the SeDiskOperatorPrivilege privilege granted.
+You must write a script that removes the share’s section from the /etc/samba/smb.conf file and reloads Samba. The script must be set in the delete share command parameter in the [global] section in /etc/samba/smb.conf. For further details, see the delete share command description in the smb.conf(5) man page.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.20.4. Using the net user command
+The net user command enables you to perform the following actions on an AD DC or NT4 PDC:
+List all user accounts
+Add users
+Remove Users
+Pass the -U user_name parameter to the command to specify a user that is allowed to perform the requested action.
+Listing domain user accounts
+To list all users in an AD domain:
+# net ads user -U "DOMAIN\administrator"
+To list all users in an NT4 domain:
+# net rpc user -U "DOMAIN\administrator"
+Adding a user account to the domain
+On a Samba domain member, you can use the net user add command to add a user account to the domain.
+For example, add the user account to the domain:
+Add the account:
+# net user add user password -U "DOMAIN\administrator"
+User user added
+Optionally, use the remote procedure call (RPC) shell to enable the account on the AD DC or NT4 PDC. For example:
+# net rpc shell -U DOMAIN\administrator -S DC_or_PDC_name
+Talking to domain DOMAIN (S-1-5-21-1424831554-512457234-5642315751)
+
+net rpc> user edit disabled user: no
+Set user's disabled flag from [yes] to [no]
+
+net rpc> exit
+Deleting a user account from the domain
+On a Samba domain member, you can use the net user delete command to remove a user account from the domain.
+For example, to remove the user account from the domain:
+# net user delete user -U "DOMAIN\administrator"
+User user deleted
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.20.5. Using the rpcclient utility
+The rpcclient utility enables you to manually execute client-side Microsoft Remote Procedure Call (MS-RPC) functions on a local or remote SMB server. However, most of the features are integrated into separate utilities provided by Samba. Use rpcclient only for testing MS-PRC functions.
+Prerequisites
+The samba-client package is installed.
+Examples
+For example, you can use the rpcclient utility to:
+Manage the printer Spool Subsystem (SPOOLSS).
+Example 1.7. Assigning a Driver to a Printer
+# rpcclient server_name -U "DOMAIN\administrator" -c 'setdriver "printer_name" "driver_name"'
+Enter DOMAIN\administrators password:
+Successfully set printer_name to driver driver_name.
+Retrieve information about an SMB server.
+Example 1.8. Listing all File Shares and Shared Printers
+# rpcclient server_name -U "DOMAIN\administrator" -c 'netshareenum'
+Enter DOMAIN\administrators password:
+netname: Example_Share
+	remark:
+	path:   C:\srv\samba\example_share\
+	password:
+netname: Example_Printer
+	remark:
+	path:   C:\var\spool\samba\
+	password:
+Perform actions using the Security Account Manager Remote (SAMR) protocol.
+Example 1.9. Listing Users on an SMB Server
+# rpcclient server_name -U "DOMAIN\administrator" -c 'enumdomusers'
+Enter DOMAIN\administrators password:
+user:[user1] rid:[0x3e8]
+user:[user2] rid:[0x3e9]
+If you run the command against a standalone server or a domain member, it lists the users in the local database. Running the command against an AD DC or NT4 PDC lists the domain users.
+Additional resources
+rpcclient(1) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.20.6. Using the samba-regedit application
+Certain settings, such as printer configurations, are stored in the registry on the Samba server. You can use the ncurses-based samba-regedit application to edit the registry of a Samba server.
+Prerequisites
+The samba-client package is installed.
+Procedure
+To start the application, enter:
+# samba-regedit
+Use the following keys:
+Cursor up and cursor down: Navigate through the registry tree and the values.
+Enter: Opens a key or edits a value.
+Tab: Switches between the Key and Value pane.
+Ctrl+C: Closes the application.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.20.7. Using the smbcontrol utility
+The smbcontrol utility enables you to send command messages to the smbd, nmbd, winbindd, or all of these services. These control messages instruct the service, for example, to reload its configuration.
+Prerequisites
+The samba-common-tools package is installed.
+Procedure
+Reload the configuration of the smbd, nmbd, winbindd services by sending the reload-config message type to the all destination:
+# smbcontrol all reload-config
+Additional resources
+smbcontrol(1) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.20.8. Using the smbpasswd utility
+The smbpasswd utility manages user accounts and passwords in the local Samba database.
+Prerequisites
+The samba-common-tools package is installed.
+Procedure
+If you run the command as a user, smbpasswd changes the Samba password of the user who run the command. For example:
+[user@server ~]$ smbpasswd
+New SMB password: password
+Retype new SMB password: password
+If you run smbpasswd as the root user, you can use the utility, for example, to:
+Create a new user:
+[root@server ~]# smbpasswd -a user_name
+New SMB password: password
+Retype new SMB password: password
+Added user user_name.
+Enable a Samba user:
+[root@server ~]# smbpasswd -e user_name
+Enabled user user_name.
+Disable a Samba user:
+[root@server ~]# smbpasswd -x user_name
+Disabled user user_name
+Delete a user:
+[root@server ~]# smbpasswd -x user_name
+Deleted user user_name.
+Additional resources
+smbpasswd(8) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.20.9. Using the smbstatus utility
+The smbstatus utility reports on:
+Connections per PID of each smbd daemon to the Samba server. This report includes the user name, primary group, SMB protocol version, encryption, and signing information.
+Connections per Samba share. This report includes the PID of the smbd daemon, the IP of the connecting machine, the time stamp when the connection was established, encryption, and signing information.
+A list of locked files. The report entries include further details, such as opportunistic lock (oplock) types
+Prerequisites
+The samba package is installed.
+The smbd service is running.
+Procedure
+# smbstatus
+
+Samba version 4.15.2
+PID  Username              Group                Machine                            Protocol Version  Encryption  Signing
+....-------------------------------------------------------------------------------------------------------------------------
+963  DOMAIN\administrator  DOMAIN\domain users  client-pc  (ipv4:192.0.2.1:57786)  SMB3_02           -           AES-128-CMAC
+
+Service  pid  Machine    Connected at                  Encryption  Signing:
+....---------------------------------------------------------------------------
+example  969  192.0.2.1  Thu Nov  1 10:00:00 2018 CEST  -           AES-128-CMAC
+
+Locked files:
+Pid  Uid    DenyMode   Access    R/W     Oplock      SharePath           Name      Time
+....--------------------------------------------------------------------------------------------------------
+969  10000  DENY_WRITE 0x120089  RDONLY  LEASE(RWH)  /srv/samba/example  file.txt  Thu Nov  1 10:00:00 2018
+Additional resources
+smbstatus(1) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.20.10. Using the smbtar utility
+The smbtar utility backs up the content of an SMB share or a subdirectory of it and stores the content in a tar archive. Alternatively, you can write the content to a tape device.
+Prerequisites
+The samba-client package is installed.
+Procedure
+Use the following command to back up the content of the demo directory on the //server/example/ share and store the content in the /root/example.tar archive:
+# smbtar -s server -x example -u user_name -p password -t /root/example.tar
+Additional resources
+smbtar(1) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.20.11. Using the wbinfo utility
+The wbinfo utility queries and returns information created and used by the winbindd service.
+Prerequisites
+The samba-winbind-clients package is installed.
+Procedure
+You can use wbinfo, for example, to:
+List domain users:
+# wbinfo -u
+AD\administrator
+AD\guest
+...
+List domain groups:
+# wbinfo -g
+AD\domain computers
+AD\domain admins
+AD\domain users
+...
+Display the SID of a user:
+# wbinfo --name-to-sid="AD\administrator"
+S-1-5-21-1762709870-351891212-3141221786-500 SID_USER (1)
+Display information about domains and trusts:
+# wbinfo --trusted-domains --verbose
+Domain Name   DNS Domain            Trust Type  Transitive  In   Out
+BUILTIN                             None        Yes         Yes  Yes
+server                              None        Yes         Yes  Yes
+DOMAIN1       domain1.example.com   None        Yes         Yes  Yes
+DOMAIN2       domain2.example.com   External    No          Yes  Yes
+Additional resources
+wbinfo(1) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.21. Additional resources
+smb.conf(5) man page
+/usr/share/docs/samba-version/ directory contains general documentation, example scripts, and LDAP schema files, provided by the Samba project
+Setting up Samba and the Clustered Trivial Database (CDTB) to share directories stored on an GlusterFS volume
+Mounting an SMB Share on Red Hat Enterprise Linux
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 2. Deploying an NFS server
+By using the Network File System (NFS) protocol, remote users can mount shared directories over a network and use them as they were mounted locally. This enables you to consolidate resources onto centralized servers on the network.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.1. Key features of minor NFSv4 versions
+Each minor NFSv4 version brings enhancements aimed at improving performance and security. Use these improvements to utilize the full potential of NFSv4, ensuring efficient and reliable file sharing across networks.
+Key features of NFSv4.2
+Key features of NFSv4.1
+Key features of NFSv4.0
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.2. The AUTH_SYS authentication method
+The AUTH_SYS method, which is also known as AUTH_UNIX, is a client authentication mechanism. With AUTH_SYS, the client sends the User ID (UID) and Group ID (GID) of the user to the server to verify its identity and permissions when accessing files. It is considered less secure as it relies on the client-provided information, making it susceptible to unauthorized access if misconfigured.
+Mapping mechanisms ensure that NFS clients can access files with the appropriate permissions on the server, even if the UID and GID assignments differ between systems. UIDs and GIDs are mapped between NFS client and server by the following mechanisms:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.3. The AUTH_GSS authentication method
+Kerberos is a network authentication protocol that allows secure authentication for clients and servers over a non-secure network. It uses symmetric key cryptography and requires a trusted Key Distribution Center (KDC) to authenticate users and services.
+Unlike AUTH_SYS, with the RPCSEC_GSS Kerberos mechanism, the server does not depend on the client to correctly represent which user is accessing the file. Instead, cryptography is used to authenticate users to the server, which prevents a malicious client from impersonating a user without having that user’s Kerberos credentials.
+In the /etc/exports file, the sec option defines one or multiple methods of Kerberos security that the share should provide, and clients can mount the share with one of these methods. The sec option supports the following values:
+sys: no cryptographic protection (default)
+krb5: authentication only
+krb5i: authentication and integrity protection
+krb5p: authentication, integrity checking, and traffic encryption
+Note that the more cryptographic functionality a method provides, the lower is the performance.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.4. File permissions on exported file systems
+File permissions on exported file systems determine access rights to files and directories for clients accessing them over NFS.
+Once the NFS file system is mounted by a remote host, the only protection each shared file has is its file system permissions. If two users that share the same User ID (UID) value mount the same NFS file system on different client systems, they can modify each other’s files.
+NFS treats the root user on the client as equivalent to the root user on the server. However, by default, the NFS server maps root to the nobody account when accessing an NFS share. The root_squash option controls this behavior.
+Additional resources
+exports(5) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.5. Services required on an NFS server
+Red Hat Enterprise Linux (RHEL) uses a combination of a kernel module and user-space processes to provide NFS file shares:
+Additional resources
+rpcbind(8), rpc.mountd(8), rpc.nfsd(8), rpc.statd(8), rpc.rquotad(8), rpc.idmapd(8), gssproxy(8), nfsdcld(8), rpc.statd(8) man pages
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.6. The /etc/exports configuration file
+The /etc/exports file controls which directories the server exports. Each line contains an export point, a whitespace-separated list of clients that are allowed to mount the directory, and options for each of the clients:
+<directory> <host_or_network_1>(<options_1>) <host_or_network_n>(<options_n>)...
+The following are the individual parts of an /etc/exports entry:
+Adding a space between a client and options, changes the behavior. For example, the following lines do not have the same meaning:
+/projects	client.example.com(rw)
+/projects	client.example.com (rw)
+In the first line, the server allows only client.example.com to mount the /projects directory in read-write mode, and no other hosts can mount the share. However, due to the space between client.example.com and (rw) in the second line, the server exports the directory to client.example.com in read-only mode (default setting), but all other hosts can mount the share in read-write mode.
+The NFS server uses the following default settings for each exported directory:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.7. Configuring an NFSv4-only server
+If you do not have any NFSv3 clients in your network, you can configure the NFS server to support only NFSv4 or specific minor protocol versions of it. Using only NFSv4 on the server reduces the number of ports that are open to the network.
+Procedure
+Install the nfs-utils package:
+# dnf install nfs-utils
+Edit the /etc/nfs.conf file, and make the following changes:
+Disable the vers3 parameter in the [nfsd] section to disable NFSv3:
+[nfsd]
+vers3=n
+Optional: If you require only specific NFSv4 minor versions, uncomment all vers4.<minor_version> parameters and set them accordingly, for example:
+[nfsd]
+vers3=n
+# vers4=y
+vers4.0=n
+vers4.1=n
+vers4.2=y
+With this configuration, the server provides only NFS version 4.2.
+Disable all NFSv3-related services:
+# systemctl mask --now rpc-statd.service rpcbind.service rpcbind.socket
+Configure the rpc.mountd daemon to not listen for NFSv3 mount requests. Create a /etc/systemd/system/nfs-mountd.service.d/v4only.conf file with the following content:
+[Service]
+ExecStart=
+ExecStart=/usr/sbin/rpc.mountd --no-tcp --no-udp
+Reload the systemd manager configuration and restart the nfs-mountd service:
+# systemctl daemon-reload
+# systemctl restart nfs-mountd
+Optional: Create a directory that you want to share, for example:
+# mkdir -p /nfs/projects/
+If you want to share an existing directory, skip this step.
+Set the permissions you require on the /nfs/projects/ directory:
+# chmod 2770 /nfs/projects/
+# chgrp users /nfs/projects/
+These commands set write permissions for the users group on the /nfs/projects/ directory and ensure that the same group is automatically set on new entries created in this directory.
+Add an export point to the /etc/exports file for each directory that you want to share:
+/nfs/projects/     192.0.2.0/24(rw) 2001:db8::/32(rw)
+This entry shares the /nfs/projects/ directory to be accessible with read and write access to clients in the 192.0.2.0/24 and 2001:db8::/32 subnets.
+Open the relevant ports in firewalld:
+# firewall-cmd --permanent --add-service nfs
+# firewall-cmd --reload
+Enable and start the NFS server:
+# systemctl enable --now nfs-server
+Verification
+On the server, verify that the server provides only the NFS versions that you have configured:
+# cat /proc/fs/nfsd/versions
+-3 +4 -4.0 -4.1 +4.2
+On a client, perform the following steps:
+Install the nfs-utils package:
+# dnf install nfs-utils
+Mount an exported NFS share:
+# mount server.example.com:/nfs/projects/ /mnt/
+As a user which is a member of the users group, create a file in /mnt/:
+# touch /mnt/file
+List the directory to verify that the file was created:
+# ls -l /mnt/
+total 0
+-rw-r--r--. 1 demo users 0 Jan 16 14:18 file
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.8. Configuring an NFSv3 server with optional NFSv4 support
+In a network which still uses NFSv3 clients, configure the server to provide shares by using the NFSv3 protocol. If you also have newer clients in your network, you can, additionally, enable NFSv4. By default, Red Hat Enterprise Linux NFS clients use the latest NFS version that the server provides.
+Procedure
+Install the nfs-utils package:
+# dnf install nfs-utils
+Optional: By default, NFSv3 and NFSv4 are enabled. If you do not require NFSv4 or only specific minor versions, uncomment all vers4.<minor_version> parameters and set them accordingly:
+[nfsd]
+# vers3=y
+# vers4=y
+vers4.0=n
+vers4.1=n
+vers4.2=y
+With this configuration, the server provides only the NFS version 3 and 4.2.
+By default, NFSv3 RPC services use random ports. To enable a firewall configuration, configure fixed port numbers in the /etc/nfs.conf file:
+In the [lockd] section, set a fixed port number for the nlockmgr RPC service, for example:
+[lockd]
+port=5555
+With this setting, the service automatically uses this port number for both the UDP and TCP protocol.
+In the [statd] section, set a fixed port number for the rpc.statd service, for example:
+[statd]
+port=6666
+With this setting, the service automatically uses this port number for both the UDP and TCP protocol.
+Optional: Create a directory that you want to share, for example:
+# mkdir -p /nfs/projects/
+If you want to share an existing directory, skip this step.
+Set the permissions you require on the /nfs/projects/ directory:
+# chmod 2770 /nfs/projects/
+# chgrp users /nfs/projects/
+These commands set write permissions for the users group on the /nfs/projects/ directory and ensure that the same group is automatically set on new entries created in this directory.
+Add an export point to the /etc/exports file for each directory that you want to share:
+/nfs/projects/     192.0.2.0/24(rw) 2001:db8::/32(rw)
+This entry shares the /nfs/projects/ directory to be accessible with read and write access to clients in the 192.0.2.0/24 and 2001:db8::/32 subnets.
+Open the relevant ports in firewalld:
+# firewall-cmd --permanent --add-service={nfs,rpc-bind,mountd}
+# firewall-cmd --permanent --add-port={5555/tcp,5555/udp,6666/tcp,6666/udp}
+# firewall-cmd --reload
+Enable and start the NFS server:
+# systemctl enable --now rpc-statd nfs-server
+Verification
+On the server, verify that the server provides only the NFS versions that you have configured:
+# cat /proc/fs/nfsd/versions
++3 +4 -4.0 -4.1 +4.2
+On a client, perform the following steps:
+Install the nfs-utils package:
+# dnf install nfs-utils
+Mount an exported NFS share:
+# mount -o vers=<version> server.example.com:/nfs/projects/ /mnt/
+Verify that the share was mounted with the specified NFS version:
+# mount | grep "/mnt"
+server.example.com:/nfs/projects/ on /mnt type nfs (rw,relatime,vers=3,...
+As a user which is a member of the users group, create a file in /mnt/:
+# touch /mnt/file
+List the directory to verify that the file was created:
+# ls -l /mnt/
+total 0
+-rw-r--r--. 1 demo users 0 Jan 16 14:18 file
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.9. Enabling quota support on an NFS server
+If you want to restrict the amount of data a user or a group can store, you can configure quotas on the file system. On an NFS server, the rpc-rquotad service ensures that the quota is also applied to users on NFS clients.
+Prerequisites
+The NFS server is running and configured.
+Quotas have been configured on the ext or XFS file system.
+Procedure
+Verify that quotas are enabled on the directories that you export:
+For ext file system, enter:
+# quotaon -p /nfs/projects/
+group quota on /nfs/projects (/dev/sdb1) is on
+user quota on /nfs/projects (/dev/sdb1) is on
+project quota on /nfs/projects (/dev/sdb1) is off
+For an XFS file system, enter:
+# findmnt /nfs/projects
+TARGET    	SOURCE	FSTYPE OPTIONS
+/nfs/projects /dev/sdb1 xfs	rw,relatime,seclabel,attr2,inode64,logbufs=8,logbsize=32k,usrquota,grpquota
+Install the quota-rpc package:
+# dnf install quota-rpc
+Optional. By default, the quota RPC service runs on port 875. If you want to run the service on a different port, append -p <port_number> to the RPCRQUOTADOPTS variable in the /etc/sysconfig/rpc-rquotad file:
+RPCRQUOTADOPTS="-p __<port_number>__"
+Optional: By default, remote hosts can only read quotas. To allow clients to set quotas, append the -S option to the RPCRQUOTADOPTS variable in the /etc/sysconfig/rpc-rquotad file:
+RPCRQUOTADOPTS="-S"
+Open the port in firewalld:
+# firewall-cmd --permanent --add-port=875/udp
+# firewall-cmd --reload
+Enable and start the rpc-rquotad service:
+# systemctl enable --now rpc-rquotad
+Verification
+On the client:
+Mount the exported share:
+# mount server.example.com:/nfs/projects/ /mnt/
+Display the quota. The command depends on the file system of the exported directory. For example:
+To display the quota of a specific user on all mounted ext file systems, enter:
+# quota -u <user_name>
+Disk quotas for user demo (uid 1000):
+     Filesystem     space     quota     limit     grace     files     quota      limit     grace
+server.example.com:/nfs/projects
+             0K       100M      200M                  0         0         0
+To display the user and group quota on an XFS file system, enter:
+# xfs_quota -x -c "report -h" /mnt/
+User quota on /nfs/projects (/dev/vdb1)
+            Blocks
+User ID     Used     Soft     Hard     Warn/Grace
+---------- ---------------------------------
+root        0        0        0        00 [------]
+demo        0        100M     200M     00 [------]
+Additional resources
+quota(1) man page
+xfs_quota(8) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.10. Enabling NFS over RDMA on an NFS server
+Remote Direct Memory Access (RDMA) is a protocol that enables a client system to directly transfer data from the memory of a storage server into its own memory. This enhances storage throughput, decreases latency in data transfer between the server and client, and reduces CPU load on both ends. If both the NFS server and clients are connected over RDMA, clients can use NFSoRDMA to mount an exported directory.
+Prerequisites
+The NFS service is running and configured
+An InfiniBand or RDMA over Converged Ethernet (RoCE) device is installed on the server.
+IP over InfiniBand (IPoIB) is configured on the server, and the InfiniBand device has an IP address assigned.
+Procedure
+Install the rdma-core package:
+# dnf install rdma-core
+If the package was already installed, verify that the xprtrdma and svcrdma modules in the /etc/rdma/modules/rdma.conf file are uncommented:
+# NFS over RDMA client support
+xprtrdma
+# NFS over RDMA server support
+svcrdma
+Optional. By default, NFS over RDMA uses port 20049. If you want to use a different port, set the rdma-port setting in the [nfsd] section of the /etc/nfs.conf file:
+rdma-port=<port>
+Open the NFSoRDMA port in firewalld:
+# firewall-cmd --permanent --add-port={20049/tcp,20049/udp}
+# firewall-cmd --reload
+Adjust the port numbers if you set a different port than 20049.
+Restart the nfs-server service:
+# systemctl restart nfs-server
+Verification
+On a client with InfiniBand hardware, perform the following steps:
+Install the following packages:
+# dnf install nfs-utils rdma-core
+Mount an exported NFS share over RDMA:
+# mount -o rdma server.example.com:/nfs/projects/ /mnt/
+If you set a port number other than the default (20049), pass port=<port_number> to the command:
+# mount -o rdma,port=<port_number> server.example.com:/nfs/projects/ /mnt/
+Verify that the share was mounted with the rdma option:
+# mount | grep "/mnt"
+server.example.com:/nfs/projects/ on /mnt type nfs (...,proto=rdma,...)
+Additional resources
+Configuring InfiniBand and RDMA networks
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.11. Setting up an NFS server with Kerberos in a Red Hat Identity Management domain
+If you use Red Hat Identity Management (IdM), you can join your NFS server to the IdM domain. This enables you to centrally manage users and groups and to use Kerberos for authentication, integrity protection, and traffic encryption.
+Prerequisites
+The NFS server is enrolled in a Red Hat Identity Management (IdM) domain.
+The NFS server is running and configured.
+Procedure
+Obtain a kerberos ticket as an IdM administrator:
+# kinit admin
+Create a nfs/<FQDN> service principal:
+# ipa service-add nfs/nfs_server.idm.example.com
+Retrieve the nfs service principal from IdM, and store it in the /etc/krb5.keytab file:
+# ipa-getkeytab -s idm_server.idm.example.com -p nfs/nfs_server.idm.example.com -k /etc/krb5.keytab
+Optional: Display the principals in the /etc/krb5.keytab file:
+# klist -k /etc/krb5.keytab
+Keytab name: FILE:/etc/krb5.keytab
+KVNO Principal
+---- --------------------------------------------------------------------------
+   1 nfs/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+   1 nfs/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+   1 nfs/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+   1 nfs/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+   7 host/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+   7 host/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+   7 host/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+   7 host/nfs_server.idm.example.com@IDM.EXAMPLE.COM
+By default, the IdM client adds the host principal to the /etc/krb5.keytab file when you join the host to the IdM domain. If the host principal is missing, use the ipa-getkeytab -s idm_server.idm.example.com -p host/nfs_server.idm.example.com -k /etc/krb5.keytab command to add it.
+Use the ipa-client-automount utility to configure mapping of IdM IDs:
+#  ipa-client-automount
+Searching for IPA server...
+IPA server: DNS discovery
+Location: default
+Continue to configure the system with these values? [no]: yes
+Configured /etc/idmapd.conf
+Restarting sssd, waiting for it to become available.
+Started autofs
+Update your /etc/exports file, and add the Kerberos security method to the client options. For example:
+/nfs/projects/      	192.0.2.0/24(rw,sec=krb5i)
+If you want that your clients can select from multiple security methods, specify them separated by colons:
+/nfs/projects/      	192.0.2.0/24(rw,sec=krb5:krb5i:krb5p)
+Reload the exported file systems:
+# exportfs -r

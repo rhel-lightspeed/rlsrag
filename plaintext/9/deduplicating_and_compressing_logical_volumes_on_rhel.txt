@@ -1,0 +1,511 @@
+Abstract
+Use the Virtual Data Optimizer (VDO) feature in Logical Volume Manager(LVM) to manage deduplicated and compressed logical volumes. You can manage VDO as a type of LVM's Logical Volume (LV), similar to LVM thin-provisioned volumes.
+You can deploy VDO on LVM (LVM-VDO) to provide deduplicated storage for block access, file access, local storage, and remote storage. You can also configure a thin-provisioned VDO volume to avoid the physical space of the VDO volume being 100% used.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 1. Introduction to VDO on LVM
+The Virtual Data Optimizer (VDO) feature provides inline block-level deduplication, compression, and thin provisioning for storage. You can manage VDO as a type of Logical Volume Manager (LVM) Logical Volumes (LVs), similar to LVM thin-provisioned volumes.
+VDO volumes on LVM (LVM-VDO) contain the following components:
+If you are already familiar with the structure of an LVM thin-provisioned implementation, you can refer to Table 1.1 to understand how the different aspects of VDO are presented to the system.
+Since the VDO is thin-provisioned, the file system and applications only see the logical space in use and not the actual available physical space. Use scripting to monitor the available physical space and generate an alert if use exceeds a threshold. For information about monitoring the available VDO space see the Monitoring VDO section.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 2. LVM-VDO requirements
+VDO on LVM has certain requirements on its placement and your system resources.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.1. VDO memory requirements
+Each VDO volume has two distinct memory requirements:
+Additional resources
+Examples of VDO requirements by physical size
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.2. VDO storage space requirements
+You can configure a VDO volume to use up to 256 TB of physical storage. Only a certain part of the physical storage is usable to store data. This section provides the calculations to determine the usable size of a VDO-managed volume.
+VDO requires storage for two types of VDO metadata and for the UDS index:
+The first type of VDO metadata uses approximately 1 MB for each 4 GB of physical storage plus an additional 1 MB per slab.
+The second type of VDO metadata consumes approximately 1.25 MB for each 1 GB of logical storage, rounded up to the nearest slab.
+The amount of storage required for the UDS index depends on the type of index and the amount of RAM allocated to the index. For each 1 GB of RAM, a dense UDS index uses 17 GB of storage, and a sparse UDS index will use 170 GB of storage.
+Additional resources
+Examples of VDO requirements by physical size
+Slab size in VDO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.3. Examples of VDO requirements by physical size
+The following tables provide approximate system requirements of VDO based on the physical size of the underlying volume. Each table lists requirements appropriate to the intended deployment, such as primary storage or backup storage.
+The exact numbers depend on your configuration of the VDO volume.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.4. Placement of LVM-VDO in the storage stack
+You must place certain storage layers under a VDO logical volume and others above it.
+You can place thick-provisioned layers on top of VDO, but you cannot rely on the guarantees of thick provisioning in that case. Because the VDO layer is thin-provisioned, the effects of thin provisioning apply to all layers above it. If you do not monitor the VDO volume, you might run out of physical space on thick-provisioned volumes above VDO.
+The supported placement of the following layers is under VDO. Do not place them above VDO:
+DM Multipath
+DM Crypt
+Software RAID (LVM or MD RAID)
+The following configurations are not supported:
+VDO on top of a loopback device
+Encrypted volumes on top of VDO
+Partitions on a VDO volume
+RAID, such as LVM RAID, MD RAID, or any other type, on top of a VDO volume
+Deploying Ceph Storage on LVM-VDO
+Additional resources
+Stacking LVM volumes knowledgebase article
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 3. Creating a deduplicated and compressed logical volume
+You can create an LVM logical volume that uses the VDO feature to deduplicate and compress data.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.1. LVM-VDO deployment scenarios
+You can deploy VDO on LVM (LVM-VDO) in a variety of ways to provide deduplicated storage for:
+block access
+file access
+local storage
+remote storage
+Because LVM-VDO exposes its deduplicated storage as a regular logical volume (LV), you can use it with standard file systems, iSCSI and FC target drivers, or as unified storage.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.2. The physical and logical size of an LVM-VDO volume
+This section describes the physical size, available physical size, and logical size that VDO can utilize.
+Additional resources
+Examples of VDO requirements by physical size
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.3. Slab size in VDO
+The physical storage of the VDO volume is divided into a number of slabs. Each slab is a contiguous region of the physical space. All of the slabs for a given volume have the same size, which can be any power of 2 multiple of 128 MB up to 32 GB.
+The default slab size is 2 GB to facilitate evaluating VDO on smaller test systems. A single VDO volume can have up to 8192 slabs. Therefore, in the default configuration with 2 GB slabs, the maximum allowed physical storage is 16 TB. When using 32 GB slabs, the maximum allowed physical storage is 256 TB. VDO always reserves at least one entire slab for metadata, and therefore, the reserved slab cannot be used for storing user data.
+Slab size has no effect on the performance of the VDO volume.
+You can control the slab size by providing the --config 'allocation/vdo_slab_size_mb=size-in-megabytes' option to the lvcreate command.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.4. Installing VDO
+This procedure installs software necessary to create, mount, and manage VDO volumes.
+Procedure
+Install the VDO software:
+# dnf install lvm2 kmod-kvdo vdo
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.5. Creating an LVM-VDO volume
+This procedure creates an VDO logical volume (LV) on a VDO pool LV.
+Prerequisites
+Install the VDO software. For more information, see Installing VDO.
+An LVM volume group with free storage capacity exists on your system.
+Procedure
+Pick a name for your VDO LV, such as vdo1. You must use a different name and device for each VDO LV on the system.
+In all the following steps, replace vdo-name with the name.
+Create the VDO LV:
+# lvcreate --type vdo \
+           --name vdo-name
+           --size physical-size
+           --virtualsize logical-size \
+           vg-name
+Replace vg-name with the name of an existing LVM volume group where you want to place the VDO LV.
+Replace logical-size with the amount of logical storage that the VDO LV will present.
+If the physical size is larger than 16TiB, add the following option to increase the slab size on the volume to 32GiB:
+--config 'allocation/vdo_slab_size_mb=32768'
+If you use the default slab size of 2GiB on a physical size larger than 16TiB, the lvcreate command fails with the following error:
+ERROR - vdoformat: formatVDO failed on '/dev/device': VDO Status: Exceeds maximum number of slabs supported
+Example 3.1. Creating a VDO LV for container storage
+For example, to create a VDO LV for container storage on a 1TB VDO pool LV, you can use:
+# lvcreate --type vdo \
+           --name vdo1
+           --size 1T
+           --virtualsize 10T \
+           vg-name
+Create a file system on the VDO LV:
+For the XFS file system:
+# mkfs.xfs -K /dev/vg-name/vdo-name
+For the ext4 file system:
+# mkfs.ext4 -E nodiscard /dev/vg-name/vdo-name
+Additional resources
+lvmvdo(7) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.6. Creating VDO volumes in the web console
+Create a VDO volume in the RHEL web console.
+Prerequisites
+You have installed the RHEL 9 web console.
+For instructions, see Installing and enabling the web console.
+The cockpit-storaged package is installed on your system.
+An LVM2 group from which you want to create VDO.
+Procedure
+Log in to the RHEL 9 web console.
+For details, see Logging in to the web console.
+Click Storage.
+Click the menu button, ⋮, next to the LVM2 group in which you want to create a VDO volume.
+Select VDO filesystem volume in the drop-down menu next to the Purpose field.
+In the Name field, enter a name of the VDO volume without spaces.
+In the Logical Size bar, set up the size of the VDO volume. You can extend it more than ten times, but consider for what purpose you are creating the VDO volume:
+For active VMs or container storage, use logical size that is ten times the physical size of the volume.
+For object storage, use logical size that is three times the physical size of the volume.
+For details, see Deploying VDO.
+Select the Compression option. This option can efficiently reduce various file formats.
+For details, see Changing the compression settings on an LVM-VDO volume.
+Select the Deduplication option.
+This option reduces the consumption of storage resources by eliminating multiple copies of duplicate blocks. For details, see Changing the deduplication settings on an LVM-VDO volume.
+Verification
+Check that you can see the new VDO volume in the Storage section. Then, you can format it with a file system.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.7. Formatting VDO volumes in the web console
+VDO volumes act as physical drives. To use them, you must format them with a file system.
+Prerequisites
+You have installed the RHEL 9 web console.
+For instructions, see Installing and enabling the web console.
+The cockpit-storaged package is installed on your system.
+A VDO volume is created.
+Procedure
+Log in to the RHEL 9 web console.
+For details, see Logging in to the web console.
+Click Storage.
+Click the LVM2 volume group containing the VDO volume you want to format.
+Click the menu button, ⋮, at the end of the line with the VDO volume you want to format.
+Click Format.
+In the Name field, enter the logical volume name.
+In the Mount Point field, add the mount path.
+By default, the web console rewrites only the disk header after you finish this dialog. The advantage of this option is the speed of formatting. If you check the Overwrite existing data with zeros option, the web console rewrites the whole disk with zeros. This option is slower because the program has to go through the whole disk. Use this option if the disk includes any sensitive data and you want to rewrite them.
+In the Type drop-down menu, select a file system:
+The default option, the XFS file system, supports large logical volumes, switching physical drives online without outage, and growing.
+XFS does not support shrinking volumes. Therefore, you cannot reduce the size of a volume formatted with XFS.
+The ext4 file system supports logical volumes, switching physical drives online without outage, growing, and shrinking.
+You can also select a version with the LUKS (Linux Unified Key Setup) encryption, which allows you to encrypt the volume with a passphrase.
+In the At boot drop-down menu, select when you want to mount the volume.
+Click Format and mount or Format only.
+Formatting can take several minutes depending on the used formatting options and the volume size.
+Verification
+After a successful finish, you can see the details of the formatted VDO volume on the Storage tab and in the LVM2 volume group tab.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.8. Extending VDO volumes in the web console
+Extend VDO volumes in the RHEL 9 web console.
+Prerequisites
+You have installed the RHEL 9 web console.
+For instructions, see Installing and enabling the web console.
+The cockpit-storaged package is installed on your system.
+The VDO volume is created.
+Procedure
+Log in to the RHEL 9 web console.
+For details, see Logging in to the web console.
+Click Storage.
+Click your VDO volume in the VDO Devices box.
+In the VDO volume details, click the Grow button.
+In the Grow logical size of VDO dialog box, extend the logical size of the VDO volume.
+Click Grow.
+Verification
+Check the VDO volume details for the new size to verify that your changes have been successful.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.9. Mounting an LVM-VDO volume
+This procedure mounts a file system on an LVM-VDO volume, either manually or persistently.
+Prerequisites
+An LVM-VDO volume exists on your system. For more information, see Creating an LVM-VDO volume.
+Procedure
+To mount the file system on the LVM-VDO volume manually, use:
+# mount /dev/vg-name/vdo-name mount-point
+To configure the file system to mount automatically at boot, add a line to the /etc/fstab file:
+For the XFS file system:
+/dev/vg-name/vdo-name mount-point xfs defaults 0 0
+For the ext4 file system:
+/dev/vg-name/vdo-name mount-point ext4 defaults 0 0
+If the LVM-VDO volume is located on a block device that requires network, such as iSCSI, add the _netdev mount option. For iSCSI and other block devices requiring network, see the systemd.mount(5) man page for information about the _netdev mount option.
+Additional resources
+systemd.mount(5) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.10. Changing the compression settings on an LVM-VDO volume
+By default, the compression of a VDO pool logical volume (LV) is enabled. To save CPU usage, you can disable it. Enable or disable compression by using the lvchange command.
+Prerequisites
+An LVM-VDO volume exists on your system.
+Procedure
+Check the compression status for your logical volumes:
+# lvs -o+vdo_compression,vdo_compression_state
+  LV         VG        Attr         LSize   Pool   Origin Data%  Meta%  Move Log Cpy%Sync Convert VDOCompression VDOCompressionState
+  vdo_name vg_name vwi-a-v---   1.00t vpool0        0.00                                           enabled online
+  vpool0   vg_name dwi------- <15.00g                 20.03                                          enabled online
+Disable the compression for VDOPoolLV:
+# lvchange --compression n vg-name/vdopoolname
+If you want to enable the compression, use the y option instead of n.
+Verification
+View the current status of compression:
+# lvs -o+vdo_compression,vdo_compression_state
+  LV         VG        Attr         LSize   Pool   Origin Data%  Meta%  Move Log Cpy%Sync Convert VDOCompression VDOCompressionState
+  vdo_name vg_name vwi-a-v---   1.00t vpool0        0.00                                                     offline
+  vpool0   vg_name dwi------- <15.00g                 20.03                                                    offline
+Additional resources
+lvmvdo(7) man page
+lvcreate(8) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.11. Changing the deduplication settings on an LVM-VDO volume
+By default, the deduplication of a VDO pool logical volume (LV) is enabled. To save memory, you can disable deduplication. Enable or disable deduplication by using the lvchange command.
+Prerequisites
+An LVM-VDO volume exists on your system.
+Procedure
+Check the deduplication status for your logical volumes:
+# lvs -o+vdo_deduplication,vdo_index_state
+  LV         VG        Attr         LSize   Pool   Origin Data%  Meta%  Move Log Cpy%Sync Convert VDODeduplication VDOIndexState
+  vdo_name vg_name vwi-a-v---   1.00t vpool0        0.00                                             enabled  online
+  vpool0   vg_name dwi------- <15.00g                 20.03                                            enabled  online
+Disable the deduplication for VDOPoolLV:
+# lvchange --deduplication n vg-name/vdopoolname
+If you want to enable the deduplication, use the y option instead of n.
+Verification
+View the current status of deduplication:
+# lvs -o+vdo_deduplication,vdo_index_state
+  LV         VG        Attr         LSize   Pool   Origin Data%  Meta%  Move Log Cpy%Sync Convert VDODeduplication VDOIndexState
+  vdo_name vg_name vwi-a-v---   1.00t vpool0        0.00                                                       closed
+  vpool0   vg_name dwi------- <15.00g                 20.03                                                      closed
+Additional resources
+lvmvdo(7) man page
+lvcreate(8) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.12. Managing thin provisioning with Virtual Data Optimizer
+It is possible to configure a thin-provisioned VDO volume to prepare for future expansion of the physical space, in order to address a condition where the physical space usage of the VDO volume is approaching 100%. Instead of using -l 100%FREE in the lvcreate operation, for example, use '95%FREE' to ensure that there is some reserved space for recovery later on if needed. This procedure describes how to resolve the following issues:
+The volume runs out of space
+The file system enters read-only mode
+ENOSPC reported by the volume
+In all of the following steps, replace myvg and myvdo with the volume group and VDO name respectively.
+Prerequisites
+Install the VDO software. For more information, see Installing VDO.
+An LVM volume group with free storage capacity exists on your system.
+A thin-provisioned VDO volume using the lvcreate --type vdo --name myvdo myvg -L logical-size-of-pool --virtualsize virtual-size-of-vdo command. For more information, see Creating an LVM-VDO volume.
+Procedure
+Determine the optimal logical size for a thin-provisioned VDO volume
+# vdostats myvg-vpool0-vpool
+
+Device               1K-blocks Used     Available  Use% Space saving%
+myvg-vpool0-vpool   104856576  29664088 75192488   28%   69%
+To calculate the space savings ratio, use the following formula:
+Savings ratio = 1 / (1 - Space saving%)
+In this example,
+there is approximately a 3.22:1 space savings ratio on a data set of about 80 GB.
+Multiplying the data set size by the ratio would yield a potential logical size of 256 GB if more data with the same space savings were written to the VDO volume.
+Adjusting this number downward to 200 GB yields a logical size with a safe margin of free physical space, given the same space savings ratio.
+Monitor the free physical space in a VDO volume:
+# vdostats myvg-vpool0-vpool
+This command can be executed periodically to provide monitoring of the used and free physical space of the VDO volume.
+Optional: View the warnings on physical space usage on a VDO volume by using the available /usr/share/doc/vdo/examples/monitor/monitor_check_vdostats_physicalSpace.pl script:
+# /usr/share/doc/vdo/examples/monitor/monitor_check_vdostats_physicalSpace.pl myvg-vpool0-vpool
+When creating a VDO volume, the dmeventd monitoring service monitors the usage of physical space in a VDO volume. This is enabled by default when a VDO volume is created or started.
+Use the journalctl command to view the output of dmeventd in the logs while monitoring a VDO volume:
+lvm[8331]: Monitoring VDO pool myvg-vpool0-vpool.
+...
+
+lvm[8331]: WARNING: VDO pool myvg-vpool0-vpool is now 84.63% full.
+lvm[8331]: WARNING: VDO pool myvg-vpool0-vpool is now 91.01% full.
+lvm[8331]: WARNING: VDO pool myvg-vpool0-vpool is now 97.34% full.
+Remediate VDO volumes that are almost out of available physical space. When it is possible to add a physical space to a VDO volume, but the volume space is full before it can be grown, it may be necessary to temporarily stop I/O to the volume.
+To temporarily stop I/O to the volume, execute the following steps, where VDO volume myvdo contains a file system mounted on the /users/homeDir path:
+Freeze the filesystem:
+# xfs_freeze -f /users/homeDir
+
+# vgextend myvg /dev/vdc2
+
+# lvextend -l new_size myvg/vpool0-name
+
+# xfs_freeze -u /users/homeDir
+Unmount the filesystem:
+# umount /users/homeDir
+
+# vgextend myvg /dev/vdc2
+
+# lvextend -l new_size myvg/vpool0-name
+
+# mount -o discard /dev/myvg/myvdo /users/homeDir
+Blocks that are no longer used by a file system can be cleaned up by using the fstrim utility. Executing fstrim against a mounted file system on top of a VDO volume may result in increased free physical space for that volume. The fstrim utility will send discards to the VDO volume, which are then used to remove references to the previously used blocks. If any of those blocks are single-referenced, the physical space will be available to use.
+Check VDO stats to see what the current amount of free space is:
+# vdostats --human-readable myvg-vpool0-vpool
+
+ Device             Size  Used  Available Use%  Space saving%
+myvg-vpool0-vpool  100.0G 95.0G 5.0G      95%   73%
+Discard unused blocks:
+# fstrim /users/homeDir
+View the free physical space of the VDO volume:
+# vdostats --human-readable myvg-vpool0-vpool
+
+
+ Device             Size    Used   Available Use%  Space saving%
+myvg-vpool0-vpool  100.0G   30.0G  70.0G     30%    43%
+In this example, after executing fstrim on the file system, the discards were able to return 65G of physical space to use in the VDO volume.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 4. Trim options on an LVM-VDO volume
+You can mount your file system with the discard option, which informs the VDO volume of the unused space. Another option is to use the fstrim application, which is an on-demand discarding, or mount -o discard command for immediate discarding.
+When using the fstrim application, the admin needs to schedule and monitor an additional process, while using mount -o discard command allows for immediate recovery of space when possible.
+Note that it is currently recommended to use fstrim application to discard unused blocks rather than the discard mount option because the performance impact of this option can be quite severe. For this reason, nodiscard is the default.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.1. Enabling discard mount option on VDO
+This procedure enables the discard option on your VDO volume.
+Prerequisites
+An LVM-VDO volume exists on your system.
+Procedure
+Enable the discard on your volume:
+# mount -o discard /dev/vg-name/vdo-name mount-point
+Additional resources
+xfs(5), mount(8), and lvmvdo(7) man pages
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.2. Setting up periodic TRIM operation
+This procedure enables a scheduled TRIM operation on your system.
+Prerequisites
+An LVM-VDO volume exists on your system.
+Procedure
+Enable and start the timer:
+# systemctl enable --now fstrim.timer
+Verification
+Verify that the timer is enabled:
+# systemctl list-timers fstrim.timer
+Example 4.1. Possible output of the verification procedure
+# systemctl list-timers fstrim.timer
+NEXT                         LEFT         LAST  PASSED  UNIT         ACTIVATES
+Mon 2021-05-10 00:00:00 EDT  5 days left  n/a   n/a     fstrim.timer fstrim.service
+Additional resources
+fstrim(8) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 5. Optimizing VDO performance
+The VDO kernel driver speeds up tasks by using multiple threads. Instead of one thread doing everything for an I/O request, it splits the work into smaller parts assigned to different threads. These threads talk to each other as they handle the request. This way, one thread can handle shared data without constant locking and unlocking.
+When one thread finishes a task, VDO already has another task ready for it. This keeps the threads busy and reduces the time spent switching tasks. VDO also uses separate threads for slower tasks, such as adding I/O operations to the queue or handling messages to the deduplication index.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.1. VDO thread types
+VDO uses various thread types to handle specific operations:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.2. Identifying performance bottlenecks
+Identifying bottlenecks in VDO performance is crucial for optimizing system efficiency. One of the primary steps you can take is to determine whether the bottleneck lies in the CPU, memory, or the speed of the backing storage. After pinpointing the slowest component, you can develop strategies for enhancing performance.
+To ensure that the root cause of the low performance is not a hardware issue, run tests with and without VDO in the storage stack.
+The journalQ thread in VDO is a natural bottleneck, especially when the VDO volume is handling write operations. If you notice that another thread type has higher utilization than the journalQ thread, you can remediate this by adding more threads of that type.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.2.1. Analyzing VDO performance with top
+You can examine the performance of VDO threads by using the top utility.
+Procedure
+Display the individual threads:
+$ top -H
+Press the f key to display the fields manager.
+Use the (↓) key to navigate to the P = Last Used Cpu (SMP) field.
+Press the spacebar to select the P = Last Used Cpu (SMP) field.
+Press the q key to close the fields manager. The top utility now displays the CPU load for individual cores and indicates which CPU each process or thread recently used. You can switch to per-CPU statistics by pressing 1.
+Additional resources
+top(1) man page
+Interpreting top results
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.2.2. Interpreting top results
+While analyzing the performance of VDO threads, use the following table to interpret results of the top utility.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.2.3. Analyzing VDO performance with perf
+You can check the CPU performance of VDO by using the perf utility.
+Prerequisites
+The perf package is installed.
+Procedure
+Display the performance profile:
+# perf top
+Analyze the CPU performance by interpreting perf results:
+Additional resources
+perf-top(1) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.2.4. Analyzing VDO performance with sar
+You can create periodic reports on VDO performance by using the sar utility.
+Prerequisites
+Install the sysstat utility:
+# dnf install sysstat
+Procedure
+Displays the disk I/O statistics at 1-second intervals:
+$ sar -d 1
+Analyze the VDO performance by interpreting sar results:
+Additional resources
+sar(1) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.3. Redistributing VDO threads
+VDO uses various thread pools for different tasks when handling requests. Optimal performance depends on setting the right number of threads in each pool, which varies based on available storage, CPU resources, and the type of workload. You can spread out VDO work across multiple threads to improve VDO performance.
+VDO aims to maximize performance through parallelism. You can improve it by allocating more threads to a bottlenecked task, depending on factors such as available CPU resources and the root cause of the bottleneck. High thread utilization (above 70-80%) can lead to delays. Therefore, increasing thread count can help in such cases. However, excessive threads might hinder performance and incur extra costs.
+For optimal performance, carry out these actions:
+Test VDO with various expected workloads to evaluate and optimize its performance.
+Increase thread count for pools with more than 50% utilization.
+Increase the number of cores available to VDO if the overall utilization is greater than 50%, even if the individual thread utilization is lower.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.3.1. Grouping VDO threads across NUMA nodes
+Accessing memory across NUMA nodes is slower than local memory access. On Intel processors where cores share the last-level cache within a node, cache problems are more significant when data is shared between nodes than when it is shared within a single node. While many VDO kernel threads manage exclusive data structures, they often exchange messages about I/O requests. VDO threads being spread across multiple nodes or the scheduler reassigning threads between nodes might cause contention, that is multiple nodes competing for the same resources.
+You can enhance VDO performance by grouping certain threads on the same NUMA nodes.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.3.2. Configuring the CPU affinity
+You can improve VDO performance on certain storage device drivers if you adjust the CPU affinity of VDO threads.
+When the interrupt (IRQ) handler of the storage device driver does substantial work and the driver does not use a threaded IRQ handler, it could limit the ability of the system scheduler to optimize VDO performance.
+For optimal performance, carry out these actions:
+Dedicate specific cores to IRQ handling and adjust VDO thread affinity if the core is overloaded. The core is overloaded if the %hi value is more than a few percent higher than on other cores.
+Avoid running singleton VDO threads, like the kvdo:journalQ thread, on busy IRQ cores.
+Keep other thread types off cores busy with IRQs only if the individual CPU use is high .
+Procedure
+Set the CPU affinity:
+# taskset -c <cpu-numbers> -p <process-id>
+Replace <cpu-numbers> with a comma-separated list of CPU numbers to which you want to assign the process. Replace <process-id> with the ID of the running process to which you want to set CPU affinity.
+Example 5.1. Setting CPU Affinity for kvdo processes on CPU cores 1 and 2
+# for pid in `ps -eo pid,comm | grep kvdo | awk '{ print $1 }'`
+do
+    taskset -c "1,2" -p $pid
+done
+Verification
+Display the affinity set:
+# taskset -p <cpu-numbers> -p <process-id>
+Replace <cpu-numbers> with a comma-separated list of CPU numbers to which you want to assign the process. Replace <process-id> with the ID of the running process to which you want to set CPU affinity.
+Additional resources
+taskset(1) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.4. Increasing block map cache size to enhance performance
+You can enhance read and write performance by increasing the cache size for your VDO volume.
+If you have extended read and write latencies or a significant volume of data read from storage that does not align with application requirements, you might need to adjust the cache size.
+The following example shows how to change the cache size from 128Mb to 640Mb in your system.
+Procedure
+Check the current cache size of your VDO volume:
+# lvs -o vdo_block_map_cache_size
+  VDOBlockMapCacheSize
+               128.00m
+               128.00m
+Deactivate the VDO volume:
+# lvchange -an vg_name/vdo_volume
+Change the VDO setting:
+# lvchange --vdosettings "block_map_cache_size_mb=640" vg_name/vdo_volume
+Replace 640 with your new cache size in megabytes.
+Activate the VDO volume:
+# lvchange -ay vg_name/vdo_volume
+Verification
+Check the current VDO volume configuration:
+# lvs -o vdo_block_map_cache_size vg_name/vdo_volume
+  VDOBlockMapCacheSize
+               640.00m
+Additional resources
+lvchange(8) man page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.5. Speeding up discard operations
+VDO sets a maximum allowed size of DISCARD (TRIM) sectors for all VDO devices on the system. The default size is 8 sectors, which corresponds to one 4-KiB block. Increasing the DISCARD size can significantly improve the speed of the discard operations. However, there is a tradeoff between improving discard performance and maintaining the speed of other write operations.
+The optimal DISCARD size varies depending on the storage stack. Both very large and very small DISCARD sectors can potentially degrade the performance. Conduct experiments with different values to discover one that delivers satisfactory results.
+For a VDO volume that stores a local file system, it is optimal to use a DISCARD size of 8 sectors, which is the default setting. For a VDO volume that serves as a SCSI target, a moderately large DISCARD size, such as 2048 sectors (corresponds to a 1MB discard), works best. It is recommended that the maximum DISCARD size does not exceed 10240 sectors, which translates to 5MB discard. When choosing the size, make sure it is a multiple of 8, because VDO may not handle discards effectively if they are smaller than 8 sectors.
+Procedure
+Set the new maximum size for the DISCARD sector:
+# echo <number-of-sectors> > /sys/kvdo/max_discard_sectors
+Replace <number-of-sectors> with the number of sectors. This setting persists until reboot.
+Optional: To make the persistent change to the DISCARD sector across reboot, create a custom systemd service:
+Create a new /etc/systemd/system/max_discard_sectors.service file with the following content:
+[Unit]
+Description=Set maximum DISCARD sector
+[Service]
+ExecStart=/usr/bin/echo <number-of-sectors> > /sys/kvdo/max_discard_sectors
+
+[Install]
+WantedBy=multi-user.target
+Replace <number-of-sectors> with the number of sectors.
+Save the file and exit.
+Reload the service file:
+# systemctl daemon-reload
+Enable the new service:
+# systemctl enable max_discard_sectors.service
+Verification
+Optional: If you made the scaling governor change persistent, check if the max_discard_sectors.service is enabled:
+# systemctl is-enabled max_discard_sectors.service
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.6. Optimizing CPU frequency scaling
+By default, RHEL uses CPU frequency scaling to save power and reduce heat when the CPU is not under heavy load. To prioritize performance over power savings, you can configure the CPU to operate at its maximum clock speed. This ensures that the CPU can handle data deduplication and compression processes with maximum efficiency. By running the CPU at its highest frequency, resource-intensive operations can be executed more quickly, potentially improving the overall performance of VDO in terms of data reduction and storage optimization.
+Procedure
+Display available CPU governors:
+$ cpupower frequency-info -g
+Change the scaling governor to prioritize performance:
+# cpupower frequency-set -g performance
+This setting persists until reboot.
+Optional: To make the persistent change in scaling governor across reboot, create a custom systemd service:
+Create a new /etc/systemd/system/cpufreq.service file with the following content:
+[Unit]
+Description=Set CPU scaling governor to performance
+
+[Service]
+ExecStart=/usr/bin/cpupower frequency-set -g performance
+
+[Install]
+WantedBy=multi-user.target
+Save the file and exit.
+Reload the service file:
+# systemctl daemon-reload
+Enable the new service:
+# systemctl enable cpufreq.service
+Verification
+Display the currently used CPU frequency policy:
+$ cpupower frequency-info -p
+Optional: If you made the scaling governor change persistent, check if the cpufreq.service is enabled:
+# systemctl is-enabled cpufreq.service

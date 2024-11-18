@@ -1,0 +1,671 @@
+Abstract
+Red Hat tunes Identity Management (IdM) to perform well in most deployments. However, in specific scenarios, it can be beneficial to tune IdM components, such as replication agreements, the Directory Server, the Kerberos Key Distribution Center (KDC), or the System Security Services Daemon (SSSD).
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 1. Important considerations when tuning IdM
+Identity Management’s component services are tuned to work in an optimal way for most deployments. As a System Administrator, you may want to adjust the performance of IdM services to suit the demands of your specific environment.
+Important considerations
+Each IdM deployment is a unique combination of hardware, software, networking, data, workloads, and many other factors. Adjustments that benefit one environment may be detrimental to another.
+Performance-tuning is an iterative, experimental process. Red Hat recommends making adjustments to only one variable at a time and monitoring its impact in your environment. After achieving the desired result with one variable, adjust the next variable while continuing to monitor the performance of previous adjustments.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 2. Hardware recommendations
+RAM is the most important hardware feature to size properly. Make sure your system has enough RAM available. Typical RAM requirements are:
+For 10,000 users and 100 groups: at least 4 GB of RAM and 4 GB swap space
+For 100,000 users and 50,000 groups: at least 16 GB of RAM and 4 GB of swap space
+For larger deployments, it is more effective to increase the RAM than to increase disk space because much of the data is stored in cache. In general, adding more RAM leads to better performance for larger deployments due to caching.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 3. IdM server performance recommendations
+The following table shows the maximum number of users and clients that you can add or enroll to the IdM environment at the same time that ensure a stable performance of your IdM server.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 4. Failover, load-balancing, and high-availability in IdM
+Identity Management (IdM) has built-in failover mechanisms for IdM clients, and load-balancing and high-availability features for IdM servers.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.1. Client-side failover capability
+By default, the SSSD service on an IdM client is configured to use service (SRV) resource records from DNS to automatically determine the best IdM server to connect to. This behavior is controlled by the _srv_ option in the ipa_server parameter of the /etc/sssd/sssd.conf file:
+[root@client ~]# cat /etc/sssd/sssd.conf
+
+[domain/example.com]
+id_provider = ipa
+ipa_server = _srv_, server.example.com
+...
+If an IdM server goes offline, the SSSD service on the IdM client connects to another IdM server it has automatically discovered.
+If you prefer to bypass DNS lookups for performance reasons, remove the _srv_ entry from the ipa_server parameter and specify which IdM servers the client should connect to, in order of preference:
+[root@client ~]# cat /etc/sssd/sssd.conf
+
+[domain/example.com]
+id_provider = ipa
+ipa_server = server1.example.com, server2.example.com
+...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.2. Server-side load-balancing and service availability
+You can achieve load-balancing and high-availability in IdM by installing multiple IdM replicas:
+If you have a geographically dispersed network, you can shorten the path between IdM clients and the nearest accessible server by configuring multiple IdM replicas per data center.
+Red Hat supports environments with up to 60 replicas.
+The IdM replication mechanism provides active/active service availability: services at all IdM replicas are readily available at the same time.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 5. Optimizing the replica topology
+A robust replica topology distributes workloads and reduces replication delays. Follow these guidelines to optimize the layout of your replica topology.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.1. Guidelines for determining the appropriate number of IdM replicas in a topology
+Plan IdM topology to match your organization’s requirements and ensure optimal performance and service availability.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.2. Guidelines for connecting IdM replicas in a topology
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.3. Replica topology examples
+You can create a reliable replica topology by using one of the following examples.
+Figure 5.1. Replica topology with four data centers, each with four servers that are connected with replication agreements
+Figure 5.2. Replica topology with three data centers, each with a different number of servers that are all interconnected through replication agreements
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.4. Uninstalling the IdM CA service from an IdM server
+If you have more than four Identity Management (IdM) replicas with the CA Role in your topology and you run into performance problems due to redundant certificate replication, Red Hat recommends that you remove redundant CA service instances from IdM replicas. To do this, you must first decommission the affected IdM replicas completely before re-installing IdM on them, this time without the CA service.
+Prerequisites
+You have the IdM CA service installed on more than four IdM servers in your topology.
+Procedure
+Identify the redundant CA service and follow the procedure in Uninstalling an IdM server on the IdM replica that hosts this service.
+On the same host, follow the procedure in Installing an IdM server: With integrated DNS, without a CA.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.5. Additional resources
+Planning the replica topology.
+Managing replication topology.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 6. Adjusting the search size and time limit
+Some queries, such as requesting a list of IdM users, can return a very large number of entries. By tuning these search operations, you can improve the overall server performance when running the ipa *-find commands, such as ipa user-find, and when displaying corresponding lists in the Web UI.
+If you set the values to -1, IdM will not apply any limits when searching.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.1. Adjusting the search size and time limit in the command line
+The following procedure describes adjusting search size and time limits in the command line:
+Globally
+For a specific entry
+Procedure
+To display current search time and size limits in CLI, use the ipa config-show command:
+$ ipa config-show
+
+Search time limit: 2
+Search size limit: 100
+To adjust the limits globally for all queries, use the ipa config-mod command and add the --searchrecordslimit and --searchtimelimit options. For example:
+$ ipa config-mod --searchrecordslimit=500 --searchtimelimit=5
+To temporarily adjust the limits only for a specific query, add the --sizelimit or --timelimit options to the command. For example:
+$ ipa user-find --sizelimit=200 --timelimit=120
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.2. Adjusting the search size and time limit in the Web UI
+The following procedure describes adjusting global search size and time limits in the IdM Web UI.
+Procedure
+Log in to the IdM Web UI.
+Click IPA Server.
+On the IPA Server tab, click Configuration.
+Set the required values in the Search Options area.
+Default values are:
+Search size limit: 100 entries
+Search time limit: 2 seconds
+Click Save at the top of the page.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 7. Adjusting IdM Directory Server performance
+You can tune the performance of Identity Management’s databases by adjusting LDAP attributes controlling the Directory Server’s resources and behavior.
+To adjust how the Directory Server caches data, see the following procedures:
+Adjusting the entry cache size
+Adjusting the database index cache size
+Re-enabling entry and database cache auto-sizing
+Adjusting the DN cache size
+Adjusting the normalized DN cache size
+To adjust the Directory Server’s resource limits, see the following procedures:
+Adjusting the maximum message size
+Adjusting the maximum number of file descriptors
+Adjusting the connection backlog size
+Adjusting the maximum number of database locks
+Disabling the Transparent Huge Pages feature
+To adjust timeouts that have the most influence on performance, see the following procedures:
+Adjusting the input/output block timeout
+Adjusting the idle connection timeout
+Adjusting the replication release timeout
+To install an IdM server or replica with custom Directory Server settings from an LDIF file, see the following procedure:
+Installing an IdM server or replica with custom database-settings from an LDIF file
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.1. Adjusting the entry cache size
+The nsslapd-cachememsize attribute specifies the size, in bytes, for the available memory space for the entry cache. This attribute is one of the most important values for controlling how much physical RAM the directory server uses.
+If the entry cache size is too small, you might see the following error in the Directory Server error logs in the /var/log/dirsrv/slapd-INSTANCE-NAME/errors log file:
+REASON: entry too large (83886080 bytes) for the import buffer size (67108864 bytes).  Try increasing nsslapd-cachememsize.
+Red Hat recommends fitting the entry cache and the database index entry cache in memory.
+Prerequisites
+The LDAP Directory Manager password
+Procedure
+Disable automatic cache tuning.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com backend config set --cache-autosize=0
+Display the database suffixes and their corresponding back ends.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com backend suffix list
+cn=changelog (changelog)
+dc=example,dc=com (userroot)
+o=ipaca (ipaca)
+This command displays the name of the back end database next to each suffix. Use the suffix’s database name in the next step.
+Set the entry cache size for the database. This example sets the entry cache for the userroot database to 2 gigabytes.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com backend suffix set --cache-memsize=2147483648 userroot
+Restart the Directory Server.
+[root@server ~]# systemctl restart dirsrv.target
+Monitor the IdM directory server’s performance. If it does not change in a desirable way, repeat this procedure and adjust cache-memsize to a different value, or re-enable cache auto-sizing.
+Verification
+Display the value of the nsslapd-cachememsize attribute and verify it has been set to your desired value.
+[root@server ~]# ldapsearch -D "cn=directory manager" -w DirectoryManagerPassword -b "cn=userroot,cn=ldbm database,cn=plugins,cn=config" | grep nsslapd-cachememsize
+nsslapd-cachememsize: 2147483648
+Additional resources
+nsslapd-cachememsize in Directory Server 11 documentation
+Re-enabling entry and database cache auto-sizing.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.2. Adjusting the database index cache size
+The nsslapd-dbcachesize attribute controls the amount of memory the database indexes use. This cache size has less of an impact on Directory Server performance than the entry cache size does, but if there is available RAM after the entry cache size is set, Red Hat recommends increasing the amount of memory allocated to the database cache.
+The database cache is limited to 1.5 GB RAM because higher values do not improve performance.
+Prerequisites
+The LDAP Directory Manager password
+Procedure
+Disable automatic cache tuning, and set the database cache size. This example sets the database cache to 256 megabytes.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com backend config set --cache-autosize=0 --dbcachesize=268435456
+Restart the Directory Server.
+[root@server ~]# systemctl restart dirsrv.target
+Monitor the IdM directory server’s performance. If it does not change in a desirable way, repeat this procedure and adjust dbcachesize to a different value, or re-enable cache auto-sizing.
+Verification
+Display the value of the nsslapd-dbcachesize attribute and verify it has been set to your desired value.
+[root@server ~]# ldapsearch -D "cn=directory manager" -w DirectoryManagerPassword -b "cn=config,cn=ldbm database,cn=plugins,cn=config" | grep nsslapd-dbcachesize
+nsslapd-dbcachesize: 2147483648
+Additional resources
+nsslapd-dbcachesize in Directory Server 11 documentation
+Re-enabling entry and database cache auto-sizing.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.3. Re-enabling database and entry cache auto-sizing
+By default, the IdM Directory Server automatically determines the optimal size for the database cache and entry cache. Auto-sizing sets aside a portion of free RAM and optimizes the size of both caches based on the hardware resources of the server when the instance starts.
+Use this procedure to undo custom database cache and entry cache values and restore the cache auto-sizing feature to its default values.
+Prerequisites
+You have previously disabled database and entry cache auto-tuning.
+Procedure
+Stop the Directory Server.
+[root@server ~]# systemctl stop dirsrv.target
+Backup the /etc/dirsrv/slapd-instance_name/dse.ldif file before making any further modifications.
+[root@server ~]# *cp /etc/dirsrv/slapd-instance_name/dse.ldif \
+     /etc/dirsrv/slapd-instance_name/dse.ldif.bak.$(date "+%F_%H-%M-%S")
+Edit the /etc/dirsrv/slapd-instance_name/dse.ldif file:
+Set the percentage of free system RAM to use for the database and entry caches back to the default of 10% of free RAM.
+nsslapd-cache-autosize: 10
+Set the percentage used from the free system RAM for the database cache to the default of 25%:
+nsslapd-cache-autosize-split: 25
+Save your changes to the /etc/dirsrv/slapd-instance_name/dse.ldif file.
+Start the Directory Server.
+[root@server ~]# systemctl start dirsrv.target
+Verification
+Display the values of the nsslapd-cache-autosize and nsslapd-cache-autosize-split attributes and verify they have been set to your desired values.
+[root@server ~]# ldapsearch -D "cn=directory manager" -w DirectoryManagerPassword -b "cn=config,cn=ldbm database,cn=plugins,cn=config" | grep nsslapd-cache-autosize nsslapd-cache-autosize: *10
+nsslapd-cache-autosize-split: 25
+Additional resources
+nsslapd-cache-autosize in Directory Server 11 documentation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.4. Adjusting the DN cache size
+The nsslapd-dncachememsize attribute specifies the size, in bytes, for the available memory space for the Distinguished Names (DN) cache. The DN cache is similar to the entry cache for a database, but its table stores only the entry ID and the entry DN, which allows faster lookups for rename and moddn operations.
+Prerequisites
+The LDAP Directory Manager password
+Procedure
+Optional: Display the database suffixes and their corresponding database names.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com backend suffix list
+dc=example,dc=com (userroot)
+This command displays the name of the back end database next to each suffix. Use the suffix’s database name in the next step.
+Set the DN cache size for the database. This example sets the DN cache to 20 megabytes.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com backend suffix set --dncache-memsize=20971520 userroot
+Restart the Directory Server.
+[root@server ~]# systemctl restart dirsrv.target
+Monitor the IdM directory server’s performance. If it does not change in a desirable way, repeat this procedure and adjust dncache-memsize to a different value, or back to the default of 10 MB.
+Verification
+Display the new value of the nsslapd-dncachememsize attribute and verify it has been set to your desired value.
+[root@server ~]# ldapsearch -D "cn=directory manager" -w DirectoryManagerPassword -b "cn=userroot,cn=ldbm database,cn=plugins,cn=config" | grep nsslapd-dncachememsize
+nsslapd-dncachememsize: 20971520
+Additional resources
+nsslapd-dncachememsize in Directory Server 11 documentation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.5. Adjusting the normalized DN cache size
+The nsslapd-ndn-cache-max-size attribute controls the size, in bytes, of the cache that stores normalized distinguished names (NDNs). Increasing this value will retain more frequently used DNs in memory.
+Prerequisites
+The LDAP Directory Manager password
+Procedure
+Ensure the NDN cache is enabled.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com config get nsslapd-ndn-cache-enabled
+Enter password for cn=Directory Manager on ldap://server.example.com:
+nsslapd-ndn-cache-enabled: on
+If the cache is off, enable it with the following command.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com config replace nsslapd-ndn-cache-enabled=on
+Enter password for cn=Directory Manager on ldap://server.example.com:
+Successfully replaced "nsslapd-ndn-cache-enabled"
+Retrieve the current value of the nsslapd-ndn-cache-max-size parameter and make a note of it before making any adjustments, in case it needs to be restored. Enter the Directory Manager password when prompted.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com config get nsslapd-ndn-cache-max-size
+Enter password for cn=Directory Manager on ldap://server.example.com:
+nsslapd-ndn-cache-max-size: 20971520
+Modify the value of the nsslapd-ndn-cache-max-size attribute. This example increases the value to 41943040 (40 MB).
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com config replace nsslapd-ndn-cache-max-size=41943040
+Monitor the IdM directory server’s performance. If it does not change in a desirable way, repeat this procedure and adjust nsslapd-ndn-cache-max-size to a different value, or re-enable cache auto-sizing.
+Verification
+Display the new value of the nsslapd-ndn-cache-max-size attribute and verify it has been set to your desired value.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com config get nsslapd-ndn-cache-max-size
+Enter password for cn=Directory Manager on ldap://server.example.com:
+nsslapd-ndn-cache-max-size: 41943040
+Additional resources
+nsslapd-ndn-cache-max-size in Directory Server 11 documentation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.6. Adjusting the maximum message size
+The nsslapd-maxbersize attribute sets the maximum size in bytes allowed for an incoming message or LDAP request. Limiting the size of requests prevents some kinds of denial of service attacks.
+If the maximum message size is too small, you might see the following error in the Directory Server error logs at /var/log/dirsrv/slapd-INSTANCE-NAME/errors:
+Incoming BER Element was too long, max allowable is 2097152 bytes. Change the nsslapd-maxbersize attribute in cn=config to increase.
+The limit applies to the total size of the LDAP request. For example, if the request is to add an entry and if the entry in the request is larger than the configured value or the default, then the add request is denied. However, the limit is not applied to replication processes. Be cautious before changing this attribute.
+Prerequisites
+The LDAP Directory Manager password
+Procedure
+Retrieve the current value of the nsslapd-maxbersize parameter and make a note of it before making any adjustments, in case it needs to be restored. Enter the Directory Manager password when prompted.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com config get nsslapd-maxbersize
+Enter password for cn=Directory Manager on ldap://server.example.com:
+nsslapd-maxbersize: 2097152
+Modify the value of the nsslapd-maxbersize attribute. This example increases the value to 4194304, 4 MB.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com config replace nsslapd-maxbersize=4194304
+Authenticate as the Directory Manager to make the configuration change.
+Enter password for cn=Directory Manager on ldap://server.example.com:
+Successfully replaced "nsslapd-maxbersize"
+Monitor the IdM directory server’s performance. If it does not change in a desirable way, repeat this procedure and adjust nsslapd-maxbersize to a different value, or back to the default of 2097152.
+Verification
+Display the value of the nsslapd-maxbersize attribute and verify it has been set to your desired value.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com config get nsslapd-maxbersize
+Enter password for cn=Directory Manager on ldap://server.example.com:
+nsslapd-maxbersize: 4194304
+Additional resources
+nsslapd-maxbersize (Maximum Message Size) in Directory Server 11 documentation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.7. Adjusting the maximum number of file descriptors
+A value can be defined for the DefaultLimitNOFILE parameter in the /etc/systemd/system.conf file. An administrator with root privileges can set the DefaultLimitNOFILE parameter for the ns-slapd process to a lower value by using the setrlimit command. This value then takes precedence over what is in /etc/systemd/system.conf and is accepted by the Identity Management (IdM) Directory Server (DS) as the value for the nsslapd-maxdescriptors attribute.
+The nsslapd-maxdescriptors attribute sets the maximum, platform-dependent number of file descriptors that the IdM LDAP uses. File descriptors are used for client connections, log files, sockets, and other resources.
+If no value is defined in either /etc/systemd/system.conf or by setrlimit, then IdM DS sets the nsslapd-maxdescriptors attribute to 1048576.
+If an IdM DS administrator later decides to set a new value for nsslapd-maxdescriptors manually, then IdM DS compares the new value with what is defined locally, by setrlimit or in /etc/systemd/system.conf, with the following result:
+If the new value for nsslapd-maxdescriptors is higher than what is defined locally, then the server rejects the new value setting and continues to enforce the local limit value as the high watermark value.
+If the new value is lower than what is defined locally, then the new value will be used.
+This procedure describes how to set a new value for nsslapd-maxdescriptors.
+Prerequisites
+The LDAP Directory Manager password
+Procedure
+Retrieve the current value of the nsslapd-maxdescriptors parameter and make a note of it before making any adjustments, in case it needs to be restored. Enter the Directory Manager password when prompted.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com config get nsslapd-maxdescriptors
+Enter password for cn=Directory Manager on ldap://server.example.com:
+nsslapd-maxdescriptors: 4096
+Modify the value of the nsslapd-maxdescriptors attribute. This example increases the value to 8192.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com config replace nsslapd-maxdescriptors=8192
+Authenticate as the Directory Manager to make the configuration change.
+Enter password for cn=Directory Manager on ldap://server.example.com:
+Successfully replaced "nsslapd-maxdescriptors"
+Monitor the IdM directory server’s performance. If it does not change in a desirable way, repeat this procedure and adjust nsslapd-maxdescriptors to a different value, or back to the default of 4096.
+Verification
+Display the value of the nsslapd-maxdescriptors attribute and verify it has been set to your desired value.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com config get nsslapd-maxdescriptors
+Enter password for cn=Directory Manager on ldap://server.example.com:
+nsslapd-maxdescriptors: 8192
+Additional resources
+nsslapd-maxdescriptors (Maximum File Descriptors) in Directory Server 12 documentation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.8. Adjusting the connection backlog size
+The listen service sets the number of sockets available to receive incoming connections. The nsslapd-listen-backlog-size value sets the maximum length of the queue for the sockfd socket before refusing connections.
+If your IdM environment handles a large amount of connections, consider increasing the value of nsslapd-listen-backlog-size.
+Prerequisites
+The LDAP Directory Manager password
+Procedure
+Retrieve the current value of the nsslapd-listen-backlog-size parameter and make a note of it before making any adjustments, in case it needs to be restored. Enter the Directory Manager password when prompted.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com config get nsslapd-listen-backlog-size
+Enter password for cn=Directory Manager on ldap://server.example.com:
+nsslapd-listen-backlog-size: 128
+Modify the value of the nsslapd-listen-backlog-size attribute. This example increases the value to 192.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com config replace nsslapd-listen-backlog-size=192
+Authenticate as the Directory Manager to make the configuration change.
+Enter password for cn=Directory Manager on ldap://server.example.com:
+Successfully replaced "nsslapd-listen-backlog-size"
+Verification
+Display the value of the nsslapd-listen-backlog-size attribute and verify it has been set to your desired value.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com config get nsslapd-listen-backlog-size
+Enter password for cn=Directory Manager on ldap://server.example.com:
+nsslapd-listen-backlog-size: 192
+Additional resources
+nsslapd-listen-backlog-size) in Directory Server 11 documentation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.9. Adjusting the maximum number of database locks
+Lock mechanisms control how many copies of Directory Server processes can run at the same time, and the nsslapd-db-locks parameter sets the maximum number of locks.
+Increase the maximum number of locks if if you see the following error messages in the /var/log/dirsrv/slapd-instance_name/errors log file:
+libdb: Lock table is out of available locks
+Prerequisites
+The LDAP Directory Manager password
+Procedure
+Retrieve the current value of the nsslapd-db-locks parameter and make a note of it before making any adjustments, in case it needs to be restored.
+[root@server ~]# ldapsearch -D "cn=directory manager" -w DirectoryManagerPassword -b "cn=bdb,cn=config,cn=ldbm database,cn=plugins,cn=config" | grep nsslapd-db-locks
+nsslapd-db-locks: 50000
+Modify the value of the locks attribute. This example doubles the value to 100000 locks.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com backend config set --locks=100000
+Authenticate as the Directory Manager to make the configuration change.
+Enter password for cn=Directory Manager on ldap://server.example.com:
+Successfully updated database configuration
+Restart the Directory Server.
+[root@server ~]# systemctl restart dirsrv.target
+Verification
+Display the value of the nsslapd-db-locks attribute and verify it has been set to your desired value.
+[root@server ~]# ldapsearch -D "cn=directory manager" -w DirectoryManagerPassword -b "cn=bdb,cn=config,cn=ldbm database,cn=plugins,cn=config" | grep nsslapd-db-locks
+nsslapd-db-locks: 100000
+Additional resources
+nsslapd-db-locks in Directory Server 11 documentation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.10. Disabling the Transparent Huge Pages feature
+Transparent Huge Pages (THP) Linux memory management feature is enabled by default on RHEL. The THP feature can decrease the IdM Directory Server (DS) performance because DS has sparse memory access patterns.
+How to disable the feature, see Disabling the Transparent Huge Pages feature in Red Hat Directory Server documentation.
+Additional resources
+The negative effects of Transparent Huge Pages (THP) on RHDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.11. Adjusting the input/output block timeout
+The nsslapd-ioblocktimeout attribute sets the amount of time in milliseconds after which the connection to a stalled LDAP client is closed. An LDAP client is considered to be stalled when it has not made any I/O progress for read or write operations.
+Lower the value of the nsslapd-ioblocktimeout attribute to free up connections sooner.
+Prerequisites
+The LDAP Directory Manager password
+Procedure
+Retrieve the current value of the nsslapd-ioblocktimeout parameter and make a note of it before making any adjustments, in case it needs to be restored. Enter the Directory Manager password when prompted.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com config get nsslapd-ioblocktimeout
+Enter password for cn=Directory Manager on ldap://server.example.com:
+nsslapd-ioblocktimeout: 10000
+Modify the value of the nsslapd-ioblocktimeout attribute. This example lowers the value to 8000.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com config replace nsslapd-ioblocktimeout=8000
+Authenticate as the Directory Manager to make the configuration change.
+Enter password for cn=Directory Manager on ldap://server.example.com:
+Successfully replaced "nsslapd-ioblocktimeout"
+Monitor the IdM directory server’s performance. If it does not change in a desirable way, repeat this procedure and adjust nsslapd-ioblocktimeout to a different value, or back to the default of 10000.
+Verification
+Display the value of the nsslapd-ioblocktimeout attribute and verify it has been set to your desired value.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com config get nsslapd-ioblocktimeout
+Enter password for cn=Directory Manager on ldap://server.example.com:
+nsslapd-idletimeout: 8000
+Additional resources
+nsslapd-ioblocktimeout (IO Block Time Out) in Directory Server 11 documentation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.12. Adjusting the idle connection timeout
+The nsslapd-idletimeout attribute sets the amount of time in seconds after which an idle LDAP client connection is closed by the IdM server. A value of 0 means that the server never closes idle connections.
+Red Hat recommends adjusting this value so stale connections are closed, but active connections are not closed prematurely.
+Prerequisites
+The LDAP Directory Manager password
+Procedure
+Retrieve the current value of the nsslapd-idletimeout parameter and make a note of it before making any adjustments, in case it needs to be restored. Enter the Directory Manager password when prompted.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com config get nsslapd-idletimeout
+Enter password for cn=Directory Manager on ldap://server.example.com:
+nsslapd-idletimeout: 3600
+Modify the value of the nsslapd-idletimeout attribute. This example lowers the value to 1800 (30 minutes).
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com config replace nsslapd-idletimeout=1800
+Authenticate as the Directory Manager to make the configuration change.
+Enter password for cn=Directory Manager on ldap://server.example.com:
+Successfully replaced "nsslapd-idletimeout"
+Monitor the IdM directory server’s performance. If it does not change in a desirable way, repeat this procedure and adjust nsslapd-idletimeout to a different value, or back to the default of 3600.
+Verification
+Display the value of the nsslapd-idletimeout attribute and verify it has been set to your desired value.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com config get nsslapd-idletimeout
+Enter password for cn=Directory Manager on ldap://server.example.com:
+nsslapd-idletimeout: 3600
+Additional resources
+nsslapd-idletimeout (Default Idle Timeout) in Directory Server 11 documentation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.13. Adjusting the replication release timeout
+An IdM replica is exclusively locked during a replication session with another replica. In some environments, a replica is locked for a long time due to large updates or network congestion, which increases replication latency.
+You can release a replica after a fixed amount of time by adjusting the repl-release-timeout parameter. Red Hat recommends setting this value between 30 and 120:
+If the value is set too low, replicas are constantly reacquiring one another and replicas are not able to send larger updates.
+A longer timeout can improve high-traffic situations where it is best if a server exclusively accesses a replica for longer amounts of time, but a value higher than 120 seconds slows down replication.
+Prerequisites
+The LDAP Directory Manager password
+Procedure
+Display the database suffixes and their corresponding back ends.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com backend suffix list
+cn=changelog (changelog)
+dc=example,dc=com (userroot)
+o=ipaca (ipaca)
+This command displays the names of the back end databases next to their suffix. Use the suffix name in the next step.
+Modify the value of the repl-release-timeout attribute for the main userroot database. This example increases the value to 90 seconds.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com replication set --suffix="dc=example,dc=com" --repl-release-timeout=90
+Authenticate as the Directory Manager to make the configuration change.
+Enter password for cn=Directory Manager on ldap://server.example.com:
+Successfully replaced "repl-release-timeout"
+Optional: If your IdM environment uses the IdM Certificate Authority (CA), you can modify the value of the repl-release-timeout attribute for the CA database. This example increases the value to 90 seconds.
+[root@server ~]# dsconf -D "cn=Directory Manager" ldap://server.example.com replication set --suffix="o=ipaca" --repl-release-timeout=90
+Enter password for cn=Directory Manager on ldap://server.example.com:
+Successfully replaced "repl-release-timeout"
+Restart the Directory Server.
+[root@server ~]# systemctl restart dirsrv.target
+Monitor the IdM directory server’s performance. If it does not change in a desirable way, repeat this procedure and adjust repl-release-timeout to a different value, or back to the default of 60 seconds.
+Verification
+Display the value of the nsds5ReplicaReleaseTimeout attribute and verify it has been set to your desired value.
+[root@server ~]# ldapsearch -D "cn=directory manager" -w DirectoryManagerPassword -b "cn=replica,cn=dc\3Dexample\2Cdc\3Dcom,cn=mapping tree,cn=config" | grep nsds5ReplicaReleaseTimeout
+nsds5ReplicaReleaseTimeout: 90
+Additional resources
+nsDS5ReplicaReleaseTimeout in Directory Server 11 documentation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.14. Installing an IdM server or replica with custom database settings from an LDIF file
+You can install an IdM server and IdM replicas with custom settings for the Directory Server database. The following procedure shows you how to create an LDAP Data Interchange Format (LDIF) file with database settings, and how to pass those settings to the IdM server and replica installation commands.
+Prerequisites
+You have determined custom Directory Server settings that improve the performance of your IdM environment. See Adjusting IdM Directory Server performance.
+Procedure
+Create a text file in LDIF format with your custom database settings. Separate LDAP attribute modifications with a dash (-). This example sets non-default values for the idle timeout and maximum file descriptors.
+dn: cn=config
+changetype: modify
+replace: nsslapd-idletimeout
+nsslapd-idletimeout=1800
+-
+replace: nsslapd-maxdescriptors
+nsslapd-maxdescriptors=8192
+Use the --dirsrv-config-file parameter to pass the LDIF file to the installation script.
+To install an IdM server:
+# ipa-server-install --dirsrv-config-file filename.ldif
+To install an IdM replica:
+# ipa-replica-install --dirsrv-config-file filename.ldif
+Additional resources
+Options for the ipa-server-install and ipa-replica-install commands
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.15. Additional resources
+Directory Server 11 Performance Tuning Guide
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 8. Adjusting the performance of the KDC
+The following sections describe how to adjust the performance of the Kerberos Key Distribution Center (KDC), which is responsible for authenticating users, hosts, and services.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.1. Adjusting the length of the KDC listen queue
+You can adjust the size of the listen queue length for the KDC daemon by setting the kdc_tcp_listen_backlog option in the [kdcdefaults] section of the /var/kerberos/krb5kdc/kdc.conf file. The default value of 5 may be too low for some IdM deployments that experience high amounts of Kerberos traffic, but setting this value too high degrades performance.
+Procedure
+Open the /var/kerberos/krb5kdc/kdc.conf file in a text editor.
+Set the TCP listen backlog to your desired value, such as 7.
+[kdcdefaults]
+ ...
+ kdc_tcp_listen_backlog = 7
+Save and close the /var/kerberos/krb5kdc/kdc.conf file.
+Restart the KDC to load the new settings.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.2. Options controlling KDC behavior per realm
+To track locking and unlocking user accounts for each Kerberos realm, the KDC writes to its database after each successful and failed authentication. By adjusting the following options in the [dbmodules] section of the /etc/krb5.conf file, you may be able to improve performance by minimizing how often the KDC writes information.
+Additional resources
+Adjusting KDC settings per realm
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.3. Adjusting KDC settings per realm
+This procedure adjusts KDC behavior per Kerberos realm.
+Procedure
+Open the /etc/krb5.conf file in a text editor.
+Specify any options and their desired values within the [dbmodules] section, and in the respective Kerberos realm. In this example, you are setting the disable_last_success variable for the EXAMPLE.COM Kerberos realm.
+[dbmodules]
+    EXAMPLE.COM = {
+        disable_last_success = true
+    }
+Save and close the /etc/krb5.conf file.
+Restart the KDC to load the new settings.
+Additional resources
+Options controlling KDC behavior per realm
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.4. Adjusting the number of krb5kdc processes
+Follow this procedure to manually adjust the number of processes that the Key Distribution Center (KDC) starts to handle incoming connections.
+By default, the IdM installer detects the number of CPU cores and enters the value in the /etc/sysconfig/krb5kdc file. For example, the file might contain the following entry:
+KRB5KDC_ARGS='-w 2'
+[...]
+In this example, with the KRB5KDC_ARGS parameter set to -w 2, the KDC starts two separate processes to handle incoming connections from the main process. You might want to adjust this value, especially in virtual environments where you can easily add or remove the number of virtual CPUs based on your requirements. To prevent performance issues or even IdM servers becoming unresponsive due to an ever-increasing TCP/IP queue on port 88, simulate a higher number of processes by manually setting the KRB5KDC_ARGS parameter to a higher value.
+Procedure
+Open the /etc/sysconfig/krb5kdc file in a text editor.
+Specify the value of the KRB5KDC_ARGS parameter. In this example, you are setting the number of processes to 10:
+KRB5KDC_ARGS='-w 10'
+[...]
+Save and close the /etc/sysconfig/krb5kdc file.
+Reload the systemd configuration:
+# systemctl daemon-reload
+Restart the krb5kdc service:
+# systemctl restart krb5kdc.service
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.5. Additional resources
+MIT Kerberos Documentation - kdc.conf.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 9. Tuning SSSD performance for large IdM-AD trust deployments
+Retrieving user and group information is a very data-intensive operation for the System Security Services Daemon (SSSD), especially in an IdM deployment with a trust to a large Active Directory (AD) domain. You can improve this performance by adjusting which information SSSD retrieves from identity providers and for how long.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.1. Tuning SSSD in IdM servers for large IdM-AD trust deployments
+This procedure applies tuning options to the configuration of the SSSD service in an IdM server to improve its response time when retrieving information from a large AD environment.
+Prerequisites
+You need root permissions to edit the /etc/sssd/sssd.conf configuration file.
+Procedure
+Open the /etc/sssd/sssd.conf configuration file in a text editor.
+Add the following options to the [domain] section for your Identity Management (IdM) domain:
+[domain/idm.example.com]
+ignore_group_members = true
+subdomain_inherit = ignore_group_members
+...
+Save and close the /etc/sssd/sssd.conf file on the server.
+Restart the SSSD service to load the configuration changes.
+[root@client ~]# systemctl restart sssd
+Additional resources
+Options for tuning SSSD in IdM servers and clients for large IdM-AD trust deployments
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.2. Tuning the config timeout for the ipa-extdom plugin on IdM servers
+IdM clients cannot receive information about users and groups from Active Directory (AD) directly, so IdM servers use the ipa-extdom plugin to receive information about AD users and groups, and that information is forwarded to the requesting client.
+The ipa-extdom plug-in sends a request to SSSD for the data about AD users. If the information is not in the SSSD cache, SSSD requests the data from an AD domain controller (DC). You can adjust the config timeout value, which defines how long the ipa-extdom plug-in waits for a reply from SSSD before the plug-in cancels the connection and returns a timeout error to the caller. The default value is 10000 milliseconds (10 seconds).
+The following example adjusts the config timeout to 20 seconds (20000 milliseconds).
+Prerequisites
+The LDAP Directory Manager password
+Procedure
+Use the following command to adjust the config timeout to 20000 milliseconds:
+# ldapmodify -D "cn=directory manager" -W
+dn: cn=ipa_extdom_extop,cn=plugins,cn=config
+changetype: modify
+replace: ipaExtdomMaxNssTimeout
+ipaExtdomMaxNssTimeout: 20000
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.3. Tuning the maximum buffer size for the ipa-extdom plugin on IdM servers
+IdM clients cannot receive information about users and groups from Active Directory (AD) directly, so IdM servers use the ipa-extdom plugin to receive information about AD users and groups, and that information is forwarded to the requesting client.
+You can tune the maximum buffer size for the ipa-extdom plugin, which adjusts the size of the buffer where SSSD can store the data it receives. If the buffer is too small, SSSD returns an ERANGE error and the plug-in retries the request with a larger buffer. The default buffer size is 134217728 bytes (128 MB).
+The following example adjusts the maximum buffer size to 256 MB (268435456 bytes).
+Prerequisites
+The LDAP Directory Manager password
+Procedure
+Use the following command to set the maximum buffer size to 268435456 bytes:
+# ldapmodify -D "cn=directory manager" -W
+dn: cn=ipa_extdom_extop,cn=plugins,cn=config
+changetype: modify
+replace: ipaExtdomMaxNssBufSize
+ipaExtdomMaxNssBufSize: 268435456
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.4. Tuning the maximum number of instances for the ipa-extdom plugin on IdM servers
+As IdM clients cannot receive information about users and groups from Active Directory (AD) directly, IdM servers use the ipa-extdom plugin to receive information about AD users and groups and then forward this information to the requesting client.
+By default, the ipa-extdom plugin is configured to use up to 80% of the LDAP worker threads to handle requests from IdM clients. If the SSSD service on an IdM client has requested a large amount of information about AD trust users and groups, this operation can halt the LDAP service if it uses most of the LDAP threads. If you experience these issues, you might see similar errors in the SSSD log file for your AD domain, /var/log/sssd/sssd__your-ad-domain-name.com_.log:
+(2022-05-22  5:00:13): [be[ad.example.com]] [ipa_s2n_get_user_done] (0x0040): s2n exop request failed.
+(2022-05-22  5:00:13): [be[ad.example.com]] [ipa_s2n_get_user_done] (0x0040): s2n exop request failed.
+(2022-05-22  5:00:13): [be[ad.example.com]] [ipa_s2n_exop_done] (0x0040): ldap_extended_operation result: Server is busy(51), Too many extdom instances running.
+You can adjust the maximum number of ipa-extdom instances by setting the value for the ipaExtdomMaxInstances option, which must be an integer larger than 0 and less than the total number of worker threads.
+Prerequisites
+The LDAP Directory Manager password
+Procedure
+Retrieve the total number of worker threads:
+# ldapsearch -xLLLD cn=directory\ manager -W -b cn=config -s base nsslapd-threadnumber
+Enter LDAP Password:
+dn: cn=config
+nsslapd-threadnumber: 16
+This means that the current value for ipaExtdomMaxInstances is 13.
+Adjust the maximum number of instances. This example changes the value to 14:
+# ldapmodify -D "cn=directory manager" -W
+dn: cn=ipa_extdom_extop,cn=plugins,cn=config
+changetype: modify
+replace: ipaExtdomMaxInstances
+ipaExtdomMaxInstances: 14
+Retrieve the current value of ipaExtdomMaxInstances:
+# ldapsearch -xLLLD "cn=directory manager" -W -b "cn=ipa_extdom_extop,cn=plugins,cn=config" |grep ipaextdommaxinstances
+
+Enter LDAP Password:
+
+ipaextdommaxinstances: 14
+Monitor the IdM directory server’s performance and if it does not improve, repeat this procedure and adjust the value of the ipaExtdomMaxInstances variable.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.5. Tuning SSSD in IdM clients for large IdM-AD trust deployments
+This procedure applies tuning options to SSSD service configuration in an IdM client to improve its response time when retrieving information from a large AD environment.
+Prerequisites
+You need root permissions to edit the /etc/sssd/sssd.conf configuration file.
+Procedure
+Determine the number of seconds a single un-cached login takes.
+Clear the SSSD cache on the IdM client client.example.com.
+[root@client ~]# sss_cache -E
+Measure how long it takes to log in as an AD user with the time command. In this example, from the IdM client client.example.com, log into the same host as the user ad-user from the ad.example.com AD domain.
+[root@client ~]# time ssh ad-user@ad.example.com@client.example.com
+Type in the password as soon as possible.
+Password:
+Last login: Sat Jan 23 06:29:54 2021 from 10.0.2.15
+[ad-user@ad.example.com@client ~]$
+Log out as soon as possible to display elapsed time. In this example, a single un-cached login takes about 9 seconds.
+[ad-user@ad.example.com@client /]$ exit
+logout
+Connection to client.example.com closed.
+
+real 0m8.755s
+user    0m0.017s
+sys     0m0.013s
+Open the /etc/sssd/sssd.conf configuration file in a text editor.
+Add the following options to the [domain] section for your Active Directory domain. Set the pam_id_timeout and krb5_auth_timeout options to the number of seconds an un-cached login takes. If you do not already have a domain section for your AD domain, create one.
+[domain/example.com/ad.example.com]
+krb5_auth_timeout = 9
+ldap_deref_threshold = 0
+...
+Add the following option to the [pam] section:
+[pam]
+pam_id_timeout = 9
+Save and close the /etc/sssd/sssd.conf file on the server.
+Restart the SSSD service to load the configuration changes.
+[root@client ~]# systemctl restart sssd
+Additional resources
+Options for tuning SSSD in IdM servers and clients for large IdM-AD trust deployments
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.6. Mounting the SSSD cache in tmpfs
+The System Security Services Daemon (SSSD) constantly writes LDAP objects to its cache. These internal SSSD transactions write data to disk, which is much slower than reading and writing from Random-Access Memory (RAM).
+To improve this performance, mount the SSSD cache in RAM.
+Considerations
+Cached information does not persist after a reboot if the SSSD cache is in RAM.
+It is safe to perform this change on IdM servers, as the SSSD instance on an IdM server cannot lose connectivity with the Directory Server on the same host.
+If you perform this adjustment on an IdM client and it loses connectivity to IdM servers, users will not be able to authenticate after a reboot until you reestablish connectivity.
+Prerequisites
+You need root permissions to edit the /etc/fstab configuration file.
+Procedure
+Create a tmpfs temporary filesystem:
+Confirm that the SSSD user owns the config.ldb file:
+# ls -al /var/lib/sss/db/config.ldb
+-rw-------. 1 sssd sssd 1286144 Jun  8 16:41 /var/lib/sss/db/config.ldb
+Add the following entry to the /etc/fstab file as a single line:
+tmpfs /var/lib/sss/db/ tmpfs size=300M,mode=0700,uid=sssd,gid=sssd,rootcontext=system_u:object_r:sssd_var_lib_t:s0 0 0
+This example creates a 300MB cache. Tune the size parameter according to your IdM and AD directory size, estimating 100 MBs per 10,000 LDAP entries.
+Mount the new SSSD cache directory.
+[root@host ~]# mount /var/lib/sss/db/
+Restart SSSD to reflect this configuration change.
+[root@host ~]# systemctl restart sssd
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.7. Options in sssd.conf for tuning IdM servers and clients for large IdM-AD trust deployments
+You can use the following options in the /etc/sssd/sssd.conf configuration file to tune the performance of SSSD in IdM servers and clients when you have a large IdM-AD trust deployment.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.7.1. Tuning options for IdM servers
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.7.2. Tuning options for IdM clients
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.8. Additional resources
+Performance tuning SSSD for large IdM-AD trust deployments
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 10. Tuning the WSGI processes
+If you are seeing request failures due to long-running API processes, those API processes can benefit from tuning.
+By default, IPA allocates 4 Web Server Gateway Interface (WSGI) processes for the API service on 64-bit systems. This default limitation to 4 processes is implemented for memory conservation purposes. Increasing the number of the WSGI processes allows more requests to be accepted at the expense of higher CPU use and memory consumption. By default, IPA uses approximately 100 to 110MB of resident memory for the API per WSGI process. With tuning this to 16 processes, which is the recommended limit, the amount is approximately 1.3GB.
+Procedure
+Modify the processes value in the /etc/httpd/conf.d/ipa.conf file:
+WSGIDaemonProcess ipa processes=<4> threads=1 maximum-requests=500 \
+Any of the longer-running API endpoints can benefit from tuning. This tuning decision is for the user to make.
+For example, an OpenStack installation consists of several controllers containing multiple services. Each service requests a certificate so that all internal communication occurs over Transport Layer Security (TLS). When installing or refreshing a controller or compute node, these certificates can be requested or refreshed. In scenarios involving multiple controllers or compute nodes, the volume of certificate requests can become considerable. These requests are automated, so they happen at or nearly at the same time. Increasing the number of the WSGI threads allows the installation to complete.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10.1. Optimizing CPU usage for improved IPA server performance
+When encountering performance limitations during high-volume certificate issuance tasks, tuning the CPU and Web Server Gateway Interface (WSGI) process counts can significantly enhance an IPA server’s capability to handle simultaneous requests.
+With a server configured with 4 CPUs and 70 clients requesting 7 certificates each (490 certificates in total), server timeouts occured as the request volume exceeded the server’s processing capacity.
+Increasing the CPU count to 8 and matching the WSGI process count to 8 raised the certificate handling capacity to 630 certificates, a 28% increase over the 4 CPU configuration, despite a 100% increase in CPU count. Further increasing the CPU count to 16 showed no additional performance gains with only 8 WSGI processes. However, by increasing the WSGI process count to 16, the server processed 770 certificates with 110 clients, reflecting a 22% improvement over the 8 CPU setup.
+On average, doubling the number of CPUs resulted in a 25% increase in certificate issuance capacity, as long as the WSGI processes were tuned accordingly. This emphasizes the need to scale both CPU and WSGI processes together to prevent bottlenecks and optimize server performance.

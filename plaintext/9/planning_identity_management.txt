@@ -1,0 +1,1079 @@
+Abstract
+Identity Management (IdM) provides a centralized and unified way to manage identity stores, authentication, and authorization policies.
+For a successful integration of IdM in your environment, learn about the components of IdM and plan the installation. For example, plan a replication topology for failover and load-balancing, the integration into Active Directory (AD), the structure of DNS zones and Certificate Authority (CA), as well as backup and recovery scenarios.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 1. Overview of IdM and access control in RHEL
+Learn how you can use Identity Management (IdM) to centralize identity management, enforce security controls, and comply with best practices and security policies. Explore common customer scenarios and solutions for IdM implementation in both Linux and Windows environments.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.1. Introduction to IdM
+Identity Management (IdM) provides a centralized and unified way to manage identity stores, authentication, policies, and authorization policies in a Linux-based domain.
+The goal of IdM in Red Hat Enterprise Linux
+IdM significantly reduces the administrative overhead of managing different services individually and using different tools on different machines.
+IdM is one of the few centralized identity, policy, and authorization software solutions that support:
+Advanced features of Linux operating system environments
+Unifying large groups of Linux machines
+Native integration with Active Directory
+IdM creates a Linux-based and Linux-controlled domain:
+IdM builds on existing, native Linux tools and protocols. It has its own processes and configuration, but its underlying technologies are well-established on Linux systems and trusted by Linux administrators.
+IdM servers and clients are Red Hat Enterprise Linux machines. IdM clients can also be other Linux and UNIX distributions if they support standard protocols. A Windows client cannot be a member of the IdM domain but users logged into Windows systems managed by Active Directory (AD) can connect to Linux clients or access services managed by IdM. This is accomplished by establishing cross forest trust between AD and IdM domains.
+Managing identities and policies on multiple Linux servers
+Without IdM: Each server is administered separately. All passwords are saved on the local machines. The IT administrator manages users on every machine, sets authentication and authorization policies separately, and maintains local passwords. However, more often the users rely on other centralized solution, for example direct integration with AD. Systems can be directly integrated with AD using several different solutions:
+Legacy Linux tools (not recommended to use)
+Solution based on Samba winbind (recommended for specific use cases)
+Solution based on a third-party software (usually require a license from another vendor)
+Solution based on SSSD (native Linux and recommended for the majority of use cases)
+With IdM: The IT administrator can:
+Maintain the identities in one central place: the IdM server
+Apply policies uniformly to multiples of machines at the same time
+Set different access levels for users by using host-based access control, delegation, and other rules
+Centrally manage privilege escalation rules
+Define how home directories are mounted
+Enterprise SSO
+In case of IdM Enterprise, single sign-on (SSO) is implemented leveraging the Kerberos protocol. This protocol is popular in the infrastructure level and enables SSO with services such as SSH, LDAP, NFS, CUPS, or DNS. Web services using different web stacks (Apache, EAP, Django, and others) can also be enabled to use Kerberos for SSO. However, practice shows that using OpenID Connect or SAML based on SSO is more convenient for web applications. To bridge the two layers, it is recommended to deploy an Identity Provider (IdP) solution that would be able to convert Kerberos authentication into a OpenID Connect ticket or SAML assertion. Red Hat SSO technology based on the Keycloak open source project is an example of such an IdP.
+Without IdM: Users log in to the system and are prompted for a password every single time they access a service or application. These passwords might be different, and the users have to remember which credential to use for which application.
+With IdM: After users log in to the system, they can access multiple services and applications without being repeatedly asked for their credentials. This helps to:
+Improve usability
+Reduce the security risk of passwords being written down or stored insecurely
+Boost user productivity
+Managing a mixed Linux and Windows environment
+Without IdM: Windows systems are managed in an AD forest, but development, production, and other teams have many Linux systems. The Linux systems are excluded from the AD environment.
+With IdM: The IT administrator can:
+Manage the Linux systems using native Linux tools
+Integrate the Linux systems into the environments centrally managed by Active Directory, therefore preserving a centralized user store.
+Easily deploy new Linux systems at scale or as needed.
+Quickly react to business needs and make decisions related to management of the Linux infrastructure without dependency on other teams avoiding delays.
+Contrasting IdM with a standard LDAP directory
+A standard LDAP directory, such as Red Hat Directory Server, is a general-purpose directory: it can be customized to fit a broad range of use cases.
+Schema: a flexible schema that can be customized for a vast array of entries, such as users, machines, network entities, physical equipment, or buildings.
+Typically used as: a back-end directory to store data for other applications, such as business applications that provide services on the Internet.
+IdM has a specific purpose: managing internal, inside-the-enterprise identities as well as authentication and authorization policies that relate to these identities.
+Schema: a specific schema that defines a particular set of entries relevant to its purpose, such as entries for user or machine identities.
+Typically used as: the identity and authentication server to manage identities within the boundaries of an enterprise or a project.
+The underlying directory server technology is the same for both Red Hat Directory Server and IdM. However, IdM is optimized to manage identities inside the enterprise. This limits its general extensibility, but also brings certain benefits: simpler configuration, better automation of resource management, and increased efficiency in managing enterprise identities.
+Additional resources
+Identity Management or Red Hat Directory Server – Which One Should I Use? on the Red Hat Enterprise Linux Blog
+Knowledge Base article about Standard protocols
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.2. Common IdM customer scenarios and their solutions
+Explore examples of common identity management and access control use cases both in Linux and Windows environments, and their solutions.
+Scenario 1
+Scenario 2
+Scenario 3
+Scenario 4
+Scenario 5
+Additional resources
+Use Ansible to automate your IdM tasks to reduce client configuration time and complexity and to reduce mistakes.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.3. Introduction to IdM servers and clients
+The Identity Management (IdM) domain includes the following types of systems:
+To provide services for large numbers of clients, as well as for redundancy and availability, IdM allows deployment on multiple IdM servers in a single domain. It is possible to deploy up to 60 servers. This is the maximum number of IdM servers, also called replicas, that is currently supported in the IdM domain.
+When creating a replica, IdM clones the configuration of the existing server. A replica shares with the initial server its core configuration, including internal information about users, systems, certificates, and configured policies.
+However, different IdM servers can provide different services for the client, if so configured. Core components like Kerberos and LDAP are available on every server. Other services like CA, DNS, Trust Controller or Vault are optional. This means that different IdM servers can have distinct roles in the deployment.
+If your IdM topology contains an integrated CA, one server has the role of the Certificate revocation list (CRL) publisher server and one server has the role of the CA renewal server.
+By default, the first CA server installed fulfills these two roles, but you can assign these roles to separate servers.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.4. Supported versions of RHEL for installing IdM clients
+An Identity Management deployment in which IdM servers are running on the latest minor version of Red Hat Enterprise Linux 9 supports clients that are running on the latest minor versions of:
+RHEL 7
+RHEL 8
+RHEL 9
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.5. IdM and access control in RHEL: Central vs. local
+In Red Hat Enterprise Linux, you can manage identities and access control policies using centralized tools for a whole domain of systems, or using local tools for a single system.
+Managing identities and policies on multiple Red Hat Enterprise Linux servers
+With Identity Management IdM, the IT administrator can:
+Maintain the identities and grouping mechanisms in one central place: the IdM server
+Centrally manage different types of credentials such as passwords, PKI certificates, OTP tokens, or SSH keys
+Apply policies uniformly to multiples of machines at the same time
+Manage POSIX and other attributes for external Active Directory users
+Set different access levels for users by using host-based access control, delegation, and other rules
+Centrally manage privilege escalation rules (sudo) and mandatory access control (SELinux user mapping)
+Maintain central PKI infrastructure and secrets store
+Define how home directories are mounted
+Without IdM:
+Each server is administered separately
+All passwords are saved on the local machines
+The IT administrator manages users on every machine, sets authentication and authorization policies separately, and maintains local passwords
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1.6. IdM terminology
+Additional Glossaries
+If you are unable to find an Identity Management term in this glossary, see the Directory Server and Certificate System glossaries:
+Directory Server 11 Glossary
+Certificate System 9 Glossary
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 2. Failover, load-balancing, and high-availability in IdM
+Identity Management (IdM) has built-in failover mechanisms for IdM clients, and load-balancing and high-availability features for IdM servers.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.1. Client-side failover capability
+By default, the SSSD service on an IdM client is configured to use service (SRV) resource records from DNS to automatically determine the best IdM server to connect to. This behavior is controlled by the _srv_ option in the ipa_server parameter of the /etc/sssd/sssd.conf file:
+[root@client ~]# cat /etc/sssd/sssd.conf
+
+[domain/example.com]
+id_provider = ipa
+ipa_server = _srv_, server.example.com
+...
+If an IdM server goes offline, the SSSD service on the IdM client connects to another IdM server it has automatically discovered.
+If you prefer to bypass DNS lookups for performance reasons, remove the _srv_ entry from the ipa_server parameter and specify which IdM servers the client should connect to, in order of preference:
+[root@client ~]# cat /etc/sssd/sssd.conf
+
+[domain/example.com]
+id_provider = ipa
+ipa_server = server1.example.com, server2.example.com
+...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2.2. Server-side load-balancing and service availability
+You can achieve load-balancing and high-availability in IdM by installing multiple IdM replicas:
+If you have a geographically dispersed network, you can shorten the path between IdM clients and the nearest accessible server by configuring multiple IdM replicas per data center.
+Red Hat supports environments with up to 60 replicas.
+The IdM replication mechanism provides active/active service availability: services at all IdM replicas are readily available at the same time.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 3. Planning the replica topology
+Review guidance on determining the appropriate replica topology for your use case.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.1. Multiple replica servers as a solution for high performance and disaster recovery
+You can achieve continuous functionality and high-availability of Identity Management (IdM) services by creating replicas of the existing IdM servers.
+When you create an appropriate number of IdM replicas, you can use load balancing to distribute client requests across multiple servers to optimize performance of IdM services. With IdM, you can place additional servers in geographically dispersed data centers to reflect your enterprise organizational structure. In this way, the path between IdM clients and the nearest accessible server is shortened. In addition, having multiple servers allows spreading the load and scaling for more clients.
+Replicating IdM servers is also a common backup mechanism to mitigate or prevent server loss. For example, if one server fails, the remaining servers continue providing services to the domain. You can also recover the lost server by creating a new replica based on one of the remaining servers.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.2. Introduction to IdM servers and clients
+The Identity Management (IdM) domain includes the following types of systems:
+To provide services for large numbers of clients, as well as for redundancy and availability, IdM allows deployment on multiple IdM servers in a single domain. It is possible to deploy up to 60 servers. This is the maximum number of IdM servers, also called replicas, that is currently supported in the IdM domain.
+When creating a replica, IdM clones the configuration of the existing server. A replica shares with the initial server its core configuration, including internal information about users, systems, certificates, and configured policies.
+However, different IdM servers can provide different services for the client, if so configured. Core components like Kerberos and LDAP are available on every server. Other services like CA, DNS, Trust Controller or Vault are optional. This means that different IdM servers can have distinct roles in the deployment.
+If your IdM topology contains an integrated CA, one server has the role of the Certificate revocation list (CRL) publisher server and one server has the role of the CA renewal server.
+By default, the first CA server installed fulfills these two roles, but you can assign these roles to separate servers.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.3. Replication agreements between IdM replicas
+When an administrator creates a replica based on an existing server, Identity Management (IdM) creates a replication agreement between the initial server and the replica. The replication agreement ensures that the data and configuration is continuously replicated between the two servers.
+IdM uses multiple read/write replica replication. In this configuration, all replicas joined in a replication agreement receive and provide updates, and are therefore considered suppliers and consumers. Replication agreements are always bilateral.
+Figure 3.1. Server and replica agreements
+IdM uses two types of replication agreements:
+Domain replication agreements replicate the identity information.
+Certificate replication agreements replicate the certificate information.
+Both replication channels are independent. Two servers can have one or both types of replication agreements configured between them. For example, when server A and server B have only domain replication agreement configured, only identity information is replicated between them, not the certificate information.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.4. Guidelines for determining the appropriate number of IdM replicas in a topology
+Plan IdM topology to match your organization’s requirements and ensure optimal performance and service availability.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.5. Guidelines for connecting IdM replicas in a topology
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.6. Replica topology examples
+You can create a reliable replica topology by using one of the following examples.
+Figure 3.2. Replica topology with four data centers, each with four servers that are connected with replication agreements
+Figure 3.3. Replica topology with three data centers, each with a different number of servers that are all interconnected through replication agreements
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3.7. The hidden replica mode
+A hidden replica is an IdM server that has all services running and available. However, a hidden replica has no SRV records in DNS, and LDAP server roles are not enabled. Therefore, clients cannot use service discovery to detect hidden replicas.
+By default, when you set up a replica, the installation program automatically creates service (SRV) resource records for it in DNS. These records enable clients to auto-discover the replica and its services. When installing a replica as hidden, add the --hidden-replica parameter to the ipa-replica-install command.
+Hidden replicas are primarily designed for dedicated services that might disrupt clients. For example, a full backup of IdM requires shutting down all IdM services on the server. As no clients use a hidden replica, administrators can temporarily shut down the services on this host without affecting any clients.
+Other use cases include high-load operations on the IdM API or the LDAP server, such as a mass import or extensive queries.
+Before backing up a hidden replica, you must install all required server roles used in a cluster, especially the Certificate Authority role if the integrated CA is used. Therefore, restoring a backup from a hidden replica on a new host always results in a regular replica.
+Additional resources
+Installing an Identity Management replica
+Backing up and restoring IdM
+Demoting or promoting hidden replicas.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 4. Planning your DNS services and host names
+Identity Management (IdM) provides different types of DNS configurations in the IdM server. The following sections describe them and provide advice on how to determine which is the best for your use case.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.1. DNS services available in an IdM server
+You can install an Identity Management (IdM) server with or without integrated DNS.
+Even if an Identity Management server is used as a primary DNS server, other external DNS servers can still be used as secondary servers. For example, if your environment is already using another DNS server, such as a DNS server integrated with Active Directory (AD), you can delegate only the IdM primary domain to the DNS integrated with IdM. It is not necessary to migrate DNS zones to the IdM DNS.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4.2. Guidelines for planning the DNS domain name and Kerberos realm name
+When installing the first Identity Management (IdM) server, the installation prompts for a primary DNS name of the IdM domain and Kerberos realm name. These guidelines can help you set the names correctly.
+Additional notes on planning the DNS domain name and Kerberos realm name
+One IdM deployment always represents one Kerberos realm.
+You can join IdM clients from multiple distinct DNS domains (example.com, example.net, example.org) to a single Kerberos realm (EXAMPLE.COM).
+IdM clients do not need to be in the primary DNS domain. For example, if the IdM domain is idm.example.com, the clients can be in the clients.example.com domain, but clear mapping must be configured between the DNS domain and the Kerberos realm.
+Planning DNS forwarding
+If you want to use only one forwarder for your entire IdM deployment, configure a global forwarder.
+If your company is spread over multiple sites in geographically distant regions, global forwarders might be impractical. Configure per-server forwarders.
+If your company has an internal DNS network that is not resolvable from the public internet, configure a forward zone and zone forwarders so that the hosts in the IdM domain can resolve hosts from this other internal DNS network.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 5. Planning your CA services
+Identity Management (IdM) in Red Hat Enterprise Linux provides different types of certificate authority (CA) configurations. The following sections describe different scenarios and provide advice to help you determine which configuration is best for your use case.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.1. CA Services available in an IdM server
+You can install an Identity Management (IdM) server with an integrated IdM certificate authority (CA) or without a CA.
+Additional resources
+Understanding the certificates used internally by IdM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.2. Guidelines for distribution of CA services
+The following steps provide guidelines for the distribution of your certificate authority (CA) services.
+Procedure
+Install the CA services on more than one server in the topology.
+Replicas configured without a CA forward all certificate operation requests to the CA servers in your topology.
+Maintain a sufficient number of CA servers to handle the CA requests in your deployment.
+See the following table for further recommendations on appropriate number of CA servers:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5.3. Random serial numbers in IdM
+As of RHEL 9.1, Identity Management (IdM) includes dogtagpki 11.2.0, which allows you to use Random Serial Numbers version 3 (RSNv3). The ansible-freeipa ipaserver role includes the ipaserver_random_serial_numbers variable with the RHEL 9.3 update.
+With RSNv3 enabled, IdM generates fully random serial numbers for certificates and requests in PKI without range management. RSNv3 also prevents collisions in case you reinstall IdM. The size of each certificate serial number is up to 40-digit decimal values as RSNv3 uses a 128-bit random value for the serial number. This makes the number effectively random.
+RSNv3 is supported only for new IdM CA installations. By default, you install the first IdM CA when you install the primary IdM server by using the ipa-server-install command. However, if you originally installed your IdM environment without a CA, you can add the CA service later by using the ipa-ca-install command. To enable RSNv3, use the ipa-server-install or ipa-ca-install command with the --random-serial-numbers option.
+If enabled, it is required to use RSNv3 on all public-key infrastructure (PKI) services in the deployment, including the CA and Key Recovery Authority (KRA). A check is performed when KRA is installed to automatically enable RSNv3 if it is enabled on the underlying CA.
+Additional resources
+Random Serial Numbers v3 (RSNv3)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 6. Planning integration with AD
+The following sections introduce the options for integrating Red Hat Enterprise Linux with Active Directory (AD).
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.1. Direct integration of Linux systems into Active Directory
+In direct integration, Linux systems are connected directly to Active Directory (AD). The following types of integration are possible:
+Recommendations
+SSSD satisfies most of the use cases for AD integration and provides a robust solution as a generic gateway between a client system and different types of identity and authentication providers - AD, IdM, Kerberos, and LDAP.
+Winbind is recommended for deployment on those AD domain member servers on which you plan to deploy Samba FS.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.2. Indirect integration of Linux systems into Active Directory by using Identity Management
+In indirect integration, Linux systems are first connected to a central server which is then connected to Active Directory (AD). Indirect integration enables the administrator to manage Linux systems and policies centrally, while users from AD can transparently access Linux systems and services.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6.3. Guidelines for deciding between direct and indirect integration
+These guidelines can help you decide which type of integration fits your use case.
+Number of systems to be connected to Active Directory
+Frequency of deploying new systems and their type
+Active Directory is the required authentication provider
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 7. Planning a cross-forest trust between IdM and AD
+Active Directory (AD) and Identity Management (IdM) are two alternative environments managing a variety of core services, such as Kerberos, LDAP, DNS, and certificate services. A cross-forest trust relationship transparently integrates these two diverse environments by enabling all core services to interact seamlessly. The following sections provide advice on how to plan and design a cross-forest trust deployment.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.1. Cross-forest and external trusts between IdM and AD
+A cross-forest trust between IdM and AD
+In a pure Active Directory (AD) environment, a cross-forest trust connects two separate AD forest root domains. When you create a cross-forest trust between AD and IdM, the IdM domain presents itself to AD as a separate forest with a single domain. A trust relationship is then established between the AD forest root domain and the IdM domain. As a result, users from the AD forest can access the resources in the IdM domain.
+IdM can establish a trust with one AD forest or multiple unrelated forests.
+An external trust to an AD domain
+An external trust is a trust relationship between IdM and an Active Directory domain. While a forest trust always requires establishing a trust between IdM and the root domain of an Active Directory forest, an external trust can be established from IdM to any domain within a forest.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.2. Trust controllers and trust agents
+Identity Management (IdM) provides the following types of IdM servers that support trust to Active Directory (AD):
+In addition to trust agents and controllers, the IdM domain can also include standard IdM servers. However, these servers do not communicate with AD. Therefore, clients that communicate with these standard servers cannot resolve AD users and groups or authenticate and authorize AD users.
+When planning the deployment of trust controllers and trust agents, consider these guidelines:
+Configure at least two trust controllers per IdM deployment.
+Configure at least two trust controllers in each data center.
+If you ever want to create additional trust controllers or if an existing trust controller fails, create a new trust controller by promoting a trust agent or a standard server. To do this, use the ipa-adtrust-install utility on the IdM server.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.3. One-way trusts and two-way trusts
+In one way trusts, Identity Management (IdM) trusts Active Directory (AD) but AD does not trust IdM. AD users can access resources in the IdM domain but users from IdM cannot access resources within the AD domain. The IdM server connects to AD using a special account, and reads identity information that is then delivered to IdM clients over LDAP.
+In two way trusts, IdM users can authenticate to AD, and AD users can authenticate to IdM. AD users can authenticate to and access resources in the IdM domain as in the one way trust case. IdM users can authenticate but cannot access most of the resources in AD. They can only access those Kerberized services in AD forests that do not require any access control check.
+To be able to grant access to the AD resources, IdM needs to implement the Global Catalog service. This service does not yet exist in the current version of the IdM server. Because of that, a two-way trust between IdM and AD is nearly functionally equivalent to a one-way trust between IdM and AD.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.4. Ensuring support for common encryption types in AD and RHEL
+By default, Identity Management establishes a cross-realm trust with support for RC4, AES-128, and AES-256 Kerberos encryption types. Additionally, by default SSSD and Samba Winbind support RC4, AES-128, and AES-256 Kerberos encryption types.
+RC4 encryption has been deprecated and disabled by default, as it is considered less secure than the newer AES-128 and AES-256 encryption types. In contrast, Active Directory (AD) user credentials and trusts between AD domains support RC4 encryption and they might not support all AES encryption types.
+Without any common encryption types, communication between RHEL hosts and AD domains might not work, or some AD accounts might not be able to authenticate. To address this situation, perform one of the configurations outlined in the following sections.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.4.1. Enabling AES encryption in AD (recommended)
+To ensure trusts between Active Directory (AD) domains in an AD forest support strong AES encryption types, see the following Microsoft article: AD DS: Security: Kerberos "Unsupported etype" error when accessing a resource in a trusted domain
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.4.2. Enabling the AES encryption type in Active Directory using a GPO
+This section describes how to enable the AES encryption type in Active Directory (AD) using a group policy object (GPO). Certain features on RHEL, such as running a Samba server on an IdM client, require this encryption type.
+Note that RHEL no longer supports the weak DES and RC4 encryption types.
+Prerequisites
+You are logged into AD as a user who can edit group policies.
+The Group Policy Management Console is installed on the computer.
+Procedure
+Open the Group Policy Management Console.
+Right-click Default Domain Policy, and select Edit. The Group Policy Management Editor opens.
+Navigate to Computer Configuration → Policies → Windows Settings → Security Settings → Local Policies → Security Options.
+Double-click the Network security: Configure encryption types allowed for Kerberos policy.
+Select AES256_HMAC_SHA1 and, optionally, Future encryption types.
+Click OK.
+Close the Group Policy Management Editor.
+Repeat the steps for the Default Domain Controller Policy.
+Wait until the Windows domain controllers (DC) applied the group policy automatically. Alternatively, to apply the GPO manually on a DC, enter the following command using an account that has administrator permissions:
+C:\> gpupdate /force /target:computer
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.4.3. Enabling RC4 support in RHEL
+On every RHEL host where authentication against AD Domain Controllers takes place, complete the steps outlined below.
+Procedure
+Use the update-crypto-policies command to enable the AD-SUPPORT-LEGACY cryptographic subpolicy in addition to the DEFAULT cryptographic policy.
+[root@host ~]# update-crypto-policies --set LEGACY:AD-SUPPORT-LEGACY
+Setting system policy to LEGACY:AD-SUPPORT-LEGACY
+Note: System-wide crypto policies are applied on application start-up.
+It is recommended to restart the system for the change of policies
+to fully take place.
+Restart the host.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.4.4. Additional resources
+See Using system-wide cryptographic policies.
+See Trust controllers and trust agents.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.5. Kerberos FAST for trusted domains
+Kerberos Flexible Authentication Secure Tunneling (FAST) is also called Kerberos armoring in an Active Directory (AD) environment. Kerberos FAST provides an additional security layer for the Kerberos communication between the clients and the Key Distribution Center (KDC). In IdM, the KDCs are running on the IdM servers and FAST is enabled by default. The Two-Factor Authentication (2FA) in IdM also requires enabling FAST.
+In AD, Kerberos armoring is disabled by default on the AD Domain Controllers (DC). You can enable it on the Domain Controller on the Tools>Group Policy Management>Default Domain Controller Policy:
+Right-click Default Domain Controller Policy and select edit. Navigate to Computer Configuration>Policies>Administrative Templates>System>KDC and double-click KDC support for claims, compound authentication, and Kerberos armoring.
+Once you enable KDC support for claims, the policy setting allows the following options:
+"Not supported"
+"Supported"
+"Always provide claims"
+"Fail unarmored authentication requests"
+Kerberos FAST is implemented in the Kerberos client libraries on IdM clients. You can configure IdM clients either to use FAST for all trusted domains which advertise FAST or to not use Kerberos FAST at all. If you enable Kerberos armoring in the trusted AD forest the IdM client uses Kerberos FAST by default. FAST establishes a secure tunneling with the help of a cryptographic key. To protect the connection to the domain controllers of a trusted domain, Kerberos FAST must get a cross-realm Ticket Granting Ticket (TGT) from the trusted domain because those keys are valid only inside the Kerberos realm. Kerberos FAST uses the Kerberos hosts keys of the IdM client to request the cross-realm TGT with the help of the IdM servers. That only works when the AD forest trusts the IdM domain which means a two-way trust is required.
+If AD policies require the enforcing of Kerberos FAST use, you need to establish a two-way trust between IdM domain and AD forest. You must plan this before the connection is established because both IdM and AD must have records about direction and the type of trust.
+If you already established a one-way trust, run the ipa trust-add …​ --two-way=true command to remove the existing trust agreement and create a two-way trust. This requires use of administrative credentials. As IdM attempts to remove the existing trust agreement from the AD side, it requires administrator permissions for AD access. If you establish the original trust by using a shared secret rather than an AD administrative account, it recreates the trust as a two-way and changes trusted domain objects on the IdM side only. Windows administrators must repeat the same procedure by using Windows UI to choose a bi-directional trust and use the same shared secret to recreate the trust.
+If using a two-way trust is not possible, you must disable Kerberos FAST on all IdM clients. The users from the trusted AD forest can authenticate with a password or direct smart card. To disable Kerberos FAST, add the following setting to the sssd.conf file in the [domain] section:
+krb5_use_fast = never
+Note, you do not need to use this option when the authentication is based on ssh-keys, GSSAPI authentication or SSH with smart cards from remote Windows clients. These methods do not use Kerberos FAST because the IdM client does not have to communicate with a DC. Additionally, after disabling FAST on the IdM client, the two-factor authentication IdM feature is also unavailable.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.6. POSIX and ID mapping ID range types for AD users
+Identity Management (IdM) enforces access control rules based on the POSIX User ID (UID) and Group ID (GID) of a user. Active Directory (AD) users, however, are identified by Security Identifiers (SIDs). AD administrators can configure AD to store POSIX attributes for your AD users and groups, such as uidNumber, gidNumber, unixHomeDirectory, or loginShell.
+You can configure a cross-forest trust to reference this information by establishing a trust with the ipa-ad-trust-posix ID range:
+[server ~]# ipa trust-add --type=ad ad.example.com --admin administrator --password  --range-type=ipa-ad-trust-posix
+If you do not store POSIX attributes in AD, the System Security Services Daemon (SSSD) can consistently map a unique UID based on a user’s SID in a process called ID mapping. You can explicitly choose this behavior by creating a trust with the ipa-ad-trust ID range:
+[server ~]# ipa trust-add --type=ad ad.example.com --admin administrator --password  --range-type=ipa-ad-trust
+Additional resources
+Options for automatically mapping private groups for AD users
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.7. Options for automatically mapping private groups for AD users: POSIX trusts
+Each user in a Linux environment has a primary user group. Red Hat Enterprise Linux (RHEL) uses a user private group (UPG) scheme: a UPG has the same name as the user for which it was created and that user is the only member of the UPG.
+If you have allocated UIDs for your AD users, but GIDs were not added, you can configure SSSD to automatically map private groups for users based on their UID by adjusting the auto_private_groups setting for that ID range.
+By default, the auto_private_groups option is set to false for ipa-ad-trust-posix ID ranges used in a POSIX trust. With this configuration, SSSD retrieves the uidNumber and gidNumber from each AD user entry.
+If an AD user does not have a primary group configured in AD, or its gidNumber does not correspond to an existing group, the IdM server is unable to resolve that user correctly because it cannot look up all the groups the user belongs to. To work around this issue, you can enable automatic private group mapping in SSSD by setting the auto_private_groups option to true or hybrid:
+Additional resources
+POSIX and ID mapping ID range types for AD users
+Enabling automatic private group mapping for a POSIX ID range on the CLI
+Enabling automatic private group mapping for a POSIX ID range in the IdM WebUI
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.8. Options for automatically mapping private groups for AD users: ID mapping trusts
+Each user in a Linux environment has a primary user group. Red Hat Enterprise Linux (RHEL) uses a user private group (UPG) scheme: a UPG has the same name as the user for which it was created and that user is the only member of the UPG.
+If you have allocated UIDs for your AD users, but GIDs were not added, you can configure SSSD to automatically map private groups for users based on their UID by adjusting the auto_private_groups setting for that ID range.
+By default, the auto_private_groups option is set to true for ipa-ad-trust ID ranges used in an ID mapping trust. With this configuration, SSSD computes the UID and GID for an AD user based on its Security Identifier (SID). SSSD ignores any POSIX attributes in AD, such as uidNumber, gidNumber, and also ignores the primaryGroupID.
+Additional resources
+POSIX and ID mapping ID range types for AD users
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.9. Enabling automatic private group mapping for a POSIX ID range on the CLI
+By default, SSSD does not map private groups for Active Directory (AD) users if you have established a POSIX trust that relies on POSIX data stored in AD. If any AD users do not have primary groups configured, IdM is not be able to resolve them.
+This procedure explains how to enable automatic private group mapping for an ID range by setting the hybrid option for the auto_private_groups SSSD parameter on the command line. As a result, IdM is able to resolve AD users that do not have primary groups configured in AD.
+Prerequisites
+You have successfully established a POSIX cross-forest trust between your IdM and AD environments.
+Procedure
+Display all ID ranges and make note of the AD ID range you want to modify.
+[root@server ~]# ipa idrange-find
+----------------
+2 ranges matched
+----------------
+  Range name: IDM.EXAMPLE.COM_id_range
+  First Posix ID of the range: 882200000
+  Number of IDs in the range: 200000
+  Range type: local domain range
+
+  Range name: AD.EXAMPLE.COM_id_range
+  First Posix ID of the range: 1337000000
+  Number of IDs in the range: 200000
+  Domain SID of the trusted domain: S-1-5-21-4123312420-990666102-3578675309
+  Range type: Active Directory trust range with POSIX attributes
+----------------------------
+Number of entries returned 2
+----------------------------
+Adjust the automatic private group behavior for the AD ID range with the ipa idrange-mod command.
+[root@server ~]# ipa idrange-mod --auto-private-groups=hybrid AD.EXAMPLE.COM_id_range
+Reset the SSSD cache to enable the new setting.
+[root@server ~]# sss_cache -E
+Additional resources
+Options for automatically mapping private groups for AD users
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.10. Enabling automatic private group mapping for a POSIX ID range in the IdM WebUI
+By default, SSSD does not map private groups for Active Directory (AD) users if you have established a POSIX trust that relies on POSIX data stored in AD. If any AD users do not have primary groups configured, IdM is not be able to resolve them.
+This procedure explains how to enable automatic private group mapping for an ID range by setting the hybrid option for the auto_private_groups SSSD parameter in the Identity Management (IdM) WebUI. As a result, IdM is able to resolve AD users that do not have primary groups configured in AD.
+Prerequisites
+You have successfully established a POSIX cross-forest trust between your IdM and AD environments.
+Procedure
+Log into the IdM Web UI with your user name and password.
+Open the IPA Server → ID Ranges tab.
+Select the ID range you want to modify, such as AD.EXAMPLE.COM_id_range.
+From the Auto private groups drop down menu, select the hybrid option.
+Click the Save button to save your changes.
+Additional resources
+Options for automatically mapping private groups for AD users
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.11. Non-POSIX external groups and SID mapping
+Identity Management (IdM) uses LDAP for managing groups. Active Directory (AD) entries are not synchronized or copied over to IdM, which means that AD users and groups have no LDAP objects in the LDAP server, so they cannot be directly used to express group membership in the IdM LDAP. For this reason, administrators in IdM need to create non-POSIX external groups, referenced as normal IdM LDAP objects to signify group membership for AD users and groups in IdM.
+Security IDs (SIDs) for non-POSIX external groups are processed by SSSD, which maps the SIDs of groups in Active Directory to POSIX groups in IdM. In Active Directory, SIDs are associated with user names. When an AD user name is used to access IdM resources, SSSD uses the user’s SID to build up a full group membership information for the user in the IdM domain.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.12. Guidelines for setting up DNS for an IdM-AD trust
+These guidelines can help you achieve the right DNS configuration for establishing a cross-forest trust between Identity Management (IdM) and Active Directory (AD).
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.13. Guidelines for configuring NetBIOS names
+The NetBIOS name is usually the far-left component of the domain name. For example:
+In the domain name linux.example.com, the NetBIOS name is linux.
+In the domain name example.com, the NetBIOS name is example.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.14. Supported versions of Windows Server
+You can establish a trust relationship with Active Directory (AD) forests that use the following forest and domain functional levels:
+Forest functional level range: Windows Server 2012 — Windows Server 2016
+Domain functional level range: Windows Server 2012 — Windows Server 2016
+Identity Management (IdM) supports establishing a trust with Active Directory domain controllers running the following operating systems:
+Windows Server 2022 (RHEL 9.1 and later)
+Windows Server 2019
+Windows Server 2016
+Windows Server 2012 R2
+Windows Server 2012
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.15. AD server discovery and affinity
+Server discovery and affinity configuration affects which Active Directory (AD) servers an Identity Management (IdM) client communicates with in a cross-forest trust between IdM and AD.
+Configuring clients to prefer servers in the same geographical location helps prevent time lags and other problems that occur when clients contact servers from another, remote data center. To verify clients communicate with local servers, you must ensure that:
+Clients communicate with local IdM servers over LDAP and over Kerberos
+Clients communicate with local AD servers over Kerberos
+Embedded clients on IdM servers communicate with local AD servers over LDAP and over Kerberos
+Options for configuring LDAP and Kerberos on the IdM client for communication with local IdM servers
+Options for configuring Kerberos on the IdM client for communication with local AD servers
+IdM clients are unable to automatically discover which AD servers to communicate with. To specify the AD servers manually, modify the krb5.conf file:
+Add the AD realm information
+Explicitly list the AD servers to communicate with
+For example:
+[realms]
+AD.EXAMPLE.COM = {
+kdc = server1.ad.example.com
+kdc = server2.ad.example.com
+}
+Options for configuring embedded clients on IdM servers for communication with local AD servers over Kerberos and LDAP
+The embedded client on an IdM server works also as a client of the AD server. It can automatically discover and use the appropriate AD site.
+When the embedded client performs the discovery, it might first discover an AD server in a remote location. If the attempt to contact the remote server takes too long, the client might stop the operation without establishing the connection. Use the dns_resolver_timeout option in the sssd.conf file on the client to increase the amount of time for which the client waits for a reply from the DNS resolver. See the sssd.conf(5) man page for details.
+Once the embedded client has been configured to communicate with the local AD servers, the SSSD remembers the AD site the embedded client belongs to. Thanks to this, SSSD normally sends an LDAP ping directly to a local domain controller to refresh its site information. If the site no longer exists or the client has meanwhile been assigned to a different site, SSSD starts querying for SRV records in the forest and goes through a whole process of autodiscovery.
+Using trusted domain sections in sssd.conf, you can also explicitly override some of the information that is discovered automatically by default.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7.16. Operations performed during indirect integration of IdM to AD
+The following operations and requests are performed during indirect integration of IdM to AD.
+Read the table to learn about operations and requests performed during the creation of an Identity Management (IdM) to Active Directory (AD) trust from the IdM trust controller towards AD domain controllers.
+Read the table to learn about operations and requests performed during the creation of an IdM to AD trust from the AD domain controller towards IdM trust controllers.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 8. Backing up and restoring IdM
+Identity Management lets you manually back up and restore the IdM system after a data loss event.
+During a backup, the system creates a directory that stores information about your IdM setup. You can use this backup directory to restore your original IdM setup.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.1. IdM backup types
+With the ipa-backup utility, you can create two types of backups:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.2. Naming conventions for IdM backup files
+By default, IdM stores backups as .tar archives in subdirectories of the /var/lib/ipa/backup/ directory.
+The archives and subdirectories follow these naming conventions:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.3. Considerations when creating a backup
+The important behaviors and limitations of the ipa-backup command include the following:
+By default, the ipa-backup utility runs in offline mode, which stops all IdM services. The utility automatically restarts IdM services after the backup is finished.
+A full-server backup must always run with IdM services offline, but a data-only backup can be performed with services online.
+By default, the ipa-backup utility creates backups on the file system containing the /var/lib/ipa/backup/ directory. Red Hat recommends creating backups regularly on a file system separate from the production filesystem used by IdM, and archiving the backups to a fixed medium, such as tape or optical storage.
+Consider performing backups on hidden replicas. IdM services can be shut down on hidden replicas without affecting IdM clients.
+The ipa-backup utility checks if all of the services used in your IdM cluster, such as a Certificate Authority (CA), Domain Name System (DNS), and Key Recovery Agent (KRA), are installed on the server where you are running the backup. If the server does not have all these services installed, the ipa-backup utility exits with a warning, because backups taken on that host would not be sufficient for a full cluster restoration.
+For example, if your IdM deployment uses an integrated Certificate Authority (CA), a backup run on a non-CA replica will not capture CA data. Red Hat recommends verifying that the replica where you perform an ipa-backup has all of the IdM services used in the cluster installed.
+You can bypass the IdM server role check with the ipa-backup --disable-role-check command, but the resulting backup will not contain all the data necessary to restore IdM fully.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.4. Creating an IdM backup
+Create a full-server and data-only backup in offline and online modes using the ipa-backup command.
+Prerequisites
+You must have root privileges to run the ipa-backup utility.
+Procedure
+To create a full-server backup in offline mode, use the ipa-backup utility without additional options.
+[root@server ~]# ipa-backup
+Preparing backup on server.example.com
+Stopping IPA services
+Backing up ipaca in EXAMPLE-COM to LDIF
+Backing up userRoot in EXAMPLE-COM to LDIF
+Backing up EXAMPLE-COM
+Backing up files
+Starting IPA service
+Backed up to /var/lib/ipa/backup/ipa-full-2020-01-14-11-26-06
+The ipa-backup command was successful
+To create an offline data-only backup, specify the --data option.
+[root@server ~]# ipa-backup --data
+To create a full-server backup that includes IdM log files, use the --logs option.
+[root@server ~]# ipa-backup --logs
+To create a data-only backup while IdM services are running, specify both --data and --online options.
+[root@server ~]# ipa-backup --data --online
+Verification
+Ensure the backup directory contains an archive with the backup.
+[root@server ~]# ls /var/lib/ipa/backup/ipa-full-2020-01-14-11-26-06
+header  ipa-full.tar
+Additional resources
+ipa-backup command fails to finish (Red Hat Knowledgebase)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.5. Creating a GPG2-encrypted IdM backup
+You can create encrypted backups using GNU Privacy Guard (GPG) encryption. The following procedure creates an IdM backup and encrypts it using a GPG2 key.
+Prerequisites
+You have created a GPG2 key. See Creating a GPG2 key.
+Procedure
+Create a GPG-encrypted backup by specifying the --gpg option.
+[root@server ~]# ipa-backup --gpg
+Preparing backup on server.example.com
+Stopping IPA services
+Backing up ipaca in EXAMPLE-COM to LDIF
+Backing up userRoot in EXAMPLE-COM to LDIF
+Backing up EXAMPLE-COM
+Backing up files
+Starting IPA service
+Encrypting /var/lib/ipa/backup/ipa-full-2020-01-13-14-38-00/ipa-full.tar
+Backed up to /var/lib/ipa/backup/ipa-full-2020-01-13-14-38-00
+The ipa-backup command was successful
+Verification
+Ensure that the backup directory contains an encrypted archive with a .gpg file extension.
+[root@server ~]# ls /var/lib/ipa/backup/ipa-full-2020-01-13-14-38-00
+header  ipa-full.tar.gpg
+Additional resources
+Creating a backup.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.6. Creating a GPG2 key
+The following procedure describes how to generate a GPG2 key to use with encryption utilities.
+Prerequisites
+You need root privileges.
+Procedure
+Install and configure the pinentry utility.
+[root@server ~]# dnf install pinentry
+[root@server ~]# mkdir ~/.gnupg -m 700
+[root@server ~]# echo "pinentry-program /usr/bin/pinentry-curses" >> ~/.gnupg/gpg-agent.conf
+Create a key-input file used for generating a GPG keypair with your preferred details. For example:
+[root@server ~]# cat >key-input <<EOF
+%echo Generating a standard key
+Key-Type: RSA
+Key-Length: 2048
+Name-Real: GPG User
+Name-Comment: first key
+Name-Email: root@example.com
+Expire-Date: 0
+%commit
+%echo Finished creating standard key
+EOF
+Optional: By default, GPG2 stores its keyring in the ~/.gnupg file. To use a custom keyring location, set the GNUPGHOME environment variable to a directory that is only accessible by root.
+[root@server ~]# export GNUPGHOME=/root/backup
+
+[root@server ~]# mkdir -p $GNUPGHOME -m 700
+Generate a new GPG2 key based on the contents of the key-input file.
+[root@server ~]# gpg2 --batch --gen-key key-input
+Enter a passphrase to protect the GPG2 key. You use this passphrase to access the private key for decryption.
+┌──────────────────────────────────────────────────────┐
+│ Please enter the passphrase to                       │
+│ protect your new key                                 │
+│                                                      │
+│ Passphrase: <passphrase>                             │
+│                                                      │
+│	 <OK>                             <Cancel>         │
+└──────────────────────────────────────────────────────┘
+Confirm the correct passphrase by entering it again.
+┌──────────────────────────────────────────────────────┐
+│ Please re-enter this passphrase                      │
+│                                                      │
+│ Passphrase: <passphrase>                             │
+│                                                      │
+│	 <OK>                             <Cancel>         │
+└──────────────────────────────────────────────────────┘
+Verify that the new GPG2 key was created successfully.
+gpg: keybox '/root/backup/pubring.kbx' created
+gpg: Generating a standard key
+gpg: /root/backup/trustdb.gpg: trustdb created
+gpg: key BF28FFA302EF4557 marked as ultimately trusted
+gpg: directory '/root/backup/openpgp-revocs.d' created
+gpg: revocation certificate stored as '/root/backup/openpgp-revocs.d/8F6FCF10C80359D5A05AED67BF28FFA302EF4557.rev'
+gpg: Finished creating standard key
+Verification
+List the GPG keys on the server.
+[root@server ~]# gpg2 --list-secret-keys
+gpg: checking the trustdb
+gpg: marginals needed: 3  completes needed: 1  trust model: pgp
+gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u
+/root/backup/pubring.kbx
+------------------------
+sec   rsa2048 2020-01-13 [SCEA]
+      8F6FCF10C80359D5A05AED67BF28FFA302EF4557
+uid           [ultimate] GPG User (first key) <root@example.com>
+Additional resources
+GNU Privacy Guard
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.7. When to restore from an IdM backup
+You can respond to several disaster scenarios by restoring from an IdM backup:
+Undesirable changes were made to the LDAP content: Entries were modified or deleted, replication carried out those changes throughout the deployment, and you want to revert those changes. Restoring a data-only backup returns the LDAP entries to the previous state without affecting the IdM configuration itself.
+Total Infrastructure Loss, or loss of all CA instances: If a disaster damages all Certificate Authority replicas, the deployment has lost the ability to rebuild itself by deploying additional servers. In this situation, restore a backup of a CA Replica and build new replicas from it.
+An upgrade on an isolated server failed: The operating system remains functional, but the IdM data is corrupted, which is why you want to restore the IdM system to a known good state. Red Hat recommends working with Technical Support to diagnose and troubleshoot the issue. If those efforts fail, restore from a full-server backup.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.8. Considerations when restoring from an IdM backup
+If you have a backup created with the ipa-backup utility, you can restore your IdM server or the LDAP content to the state they were in when the backup was performed.
+The following are the key considerations while restoring from an IdM backup:
+You can only restore a backup on a server that matches the configuration of the server where the backup was originally created. The server must have:
+The same hostname
+The same IP address
+The same version of IdM software
+If one IdM server among many is restored, the restored server becomes the only source of information for IdM. All other servers must be re-initialized from the restored server.
+Since any data created after the last backup will be lost, do not use the backup and restore solution for normal system maintenance.
+If a server is lost, Red Hat recommends rebuilding the server by reinstalling it as a replica, instead of restoring from a backup. Creating a new replica preserves data from the current working environment. For more information, see Preparing for server loss with replication.
+The backup and restore features can only be managed from the command line and are not available in the IdM web UI.
+You cannot restore from backup files located in the /tmp or /var/tmp directories. The IdM Directory Server uses a PrivateTmp directory and cannot access the /tmp or /var/tmp directories commonly available to the operating system.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.9. Restoring an IdM server from a backup
+Restore an IdM server, or its LDAP data, from an IdM backup.
+Figure 8.1. Replication topology used in this example
+Prerequisites
+You have generated a full-server or data-only backup of the IdM server with the ipa-backup utility. See Creating a backup.
+Your backup files are not in the /tmp or /var/tmp directories.
+Before performing a full-server restore from a full-server backup, uninstall IdM from the server and reinstall IdM using the same server configuration as before.
+Procedure
+Use the ipa-restore utility to restore a full-server or data-only backup.
+If the backup directory is in the default /var/lib/ipa/backup/ location, enter only the name of the directory:
+[root@server1 ~]# ipa-restore ipa-full-2020-01-14-12-02-32
+If the backup directory is not in the default location, enter its full path:
+[root@server1 ~]# ipa-restore /mybackups/ipa-data-2020-02-01-05-30-00
+Enter the Directory Manager password.
+Directory Manager (existing master) password:
+Enter yes to confirm overwriting current data with the backup.
+Preparing restore from /var/lib/ipa/backup/ipa-full-2020-01-14-12-02-32 on server1.example.com
+Performing FULL restore from FULL backup
+Temporary setting umask to 022
+Restoring data will overwrite existing live data. Continue to restore? [no]: yes
+The ipa-restore utility disables replication on all servers that are available:
+Each master will individually need to be re-initialized or
+re-created from this one. The replication agreements on
+masters running IPA 3.1 or earlier will need to be manually
+re-enabled. See the man page for details.
+Disabling all replication.
+Disabling replication agreement on server1.example.com to caReplica2.example.com
+Disabling CA replication agreement on server1.example.com to caReplica2.example.com
+Disabling replication agreement on caReplica2.example.com to server1.example.com
+Disabling replication agreement on caReplica2.example.com to replica3.example.com
+Disabling CA replication agreement on caReplica2.example.com to server1.example.com
+Disabling replication agreement on replica3.example.com to caReplica2.example.com
+The utility then stops IdM services, restores the backup, and restarts the services:
+Stopping IPA services
+Systemwide CA database updated.
+Restoring files
+Systemwide CA database updated.
+Restoring from userRoot in EXAMPLE-COM
+Restoring from ipaca in EXAMPLE-COM
+Restarting GSS-proxy
+Starting IPA services
+Restarting SSSD
+Restarting oddjobd
+Restoring umask to 18
+The ipa-restore command was successful
+Re-initialize all replicas connected to the restored server:
+List all replication topology segments for the domain suffix, taking note of topology segments involving the restored server.
+[root@server1 ~]# ipa topologysegment-find domain
+------------------
+2 segments matched
+------------------
+  Segment name: server1.example.com-to-caReplica2.example.com
+  Left node: server1.example.com
+  Right node: caReplica2.example.com
+  Connectivity: both
+
+  Segment name: caReplica2.example.com-to-replica3.example.com
+  Left node: caReplica2.example.com
+  Right node: replica3.example.com
+  Connectivity: both
+----------------------------
+Number of entries returned 2
+----------------------------
+Re-initialize the domain suffix for all topology segments with the restored server.
+In this example, perform a re-initialization of caReplica2 with data from server1.
+[root@caReplica2 ~]# ipa-replica-manage re-initialize --from=server1.example.com
+Update in progress, 2 seconds elapsed
+Update succeeded
+Moving on to Certificate Authority data, list all replication topology segments for the ca suffix.
+[root@server1 ~]# ipa topologysegment-find ca
+-----------------
+1 segment matched
+-----------------
+  Segment name: server1.example.com-to-caReplica2.example.com
+  Left node: server1.example.com
+  Right node: caReplica2.example.com
+  Connectivity: both
+----------------------------
+Number of entries returned 1
+----------------------------
+Re-initialize all CA replicas connected to the restored server.
+In this example, perform a csreplica re-initialization of caReplica2 with data from server1.
+[root@caReplica2 ~]# ipa-csreplica-manage re-initialize --from=server1.example.com
+Directory Manager password:
+
+Update in progress, 3 seconds elapsed
+Update succeeded
+Continue moving outward through the replication topology, re-initializing successive replicas, until all servers have been updated with the data from restored server server1.example.com.
+In this example, we only have to re-initialize the domain suffix on replica3 with the data from caReplica2:
+[root@replica3 ~]# ipa-replica-manage re-initialize --from=caReplica2.example.com
+Directory Manager password:
+
+Update in progress, 3 seconds elapsed
+Update succeeded
+Clear SSSD’s cache on every server to avoid authentication problems due to invalid data:
+Stop the SSSD service:
+[root@server ~]# systemctl stop sssd
+Remove all cached content from SSSD:
+[root@server ~]# sss_cache -E
+Start the SSSD service:
+[root@server ~]# systemctl start sssd
+Reboot the server.
+Additional resources
+The ipa-restore (1) man page also covers in detail how to handle complex replication scenarios during restoration.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8.10. Restoring from an encrypted backup
+This procedure restores an IdM server from an encrypted IdM backup. The ipa-restore utility automatically detects if an IdM backup is encrypted and restores it using the GPG2 root keyring.
+Prerequisites
+A GPG-encrypted IdM backup. See Creating encrypted IdM backups.
+The LDAP Directory Manager password
+The passphrase used when creating the GPG key
+Procedure
+If you used a custom keyring location when creating the GPG2 keys, verify that the $GNUPGHOME environment variable is set to that directory. See Creating a GPG2 key.
+[root@server ~]# echo $GNUPGHOME
+/root/backup
+Provide the ipa-restore utility with the backup directory location.
+[root@server ~]# ipa-restore ipa-full-2020-01-13-18-30-54
+Enter the Directory Manager password.
+Directory Manager (existing master) password:
+Enter the passphrase you used when creating the GPG key.
+┌────────────────────────────────────────────────────────────────┐
+│ Please enter the passphrase to unlock the OpenPGP secret key:  │
+│ "GPG User (first key) <root@example.com>"                      │
+│ 2048-bit RSA key, ID BF28FFA302EF4557,                         │
+│ created 2020-01-13.                                            │
+│                                                                │
+│                                                                │
+│ Passphrase: <passphrase>                                       │
+│                                                                │
+│         <OK>                                    <Cancel>       │
+└────────────────────────────────────────────────────────────────┘
+Re-initialize all replicas connected to the restored server. See Restoring an IdM server from backup.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 9. Backing up and restoring IdM servers using Ansible playbooks
+Using the ipabackup Ansible role, you can automate backing up an IdM server, transferring backup files between servers and your Ansible controller, and restoring an IdM server from a backup.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.1. Using Ansible to create a backup of an IdM server
+You can use the ipabackup role in an Ansible playbook to create a backup of an IdM server and store it on the IdM server.
+Prerequisites
+You have configured your Ansible control node to meet the following requirements:
+You are using Ansible version 2.15 or later.
+You have installed the ansible-freeipa package on the Ansible controller.
+The example assumes that in the ~/MyPlaybooks/ directory, you have created an Ansible inventory file with the fully-qualified domain name (FQDN) of the IdM server.
+The example assumes that the secret.yml Ansible vault stores your ipaadmin_password.
+The target node, that is the node on which the ansible-freeipa module is executed, is part of the IdM domain as an IdM client, server or replica.
+Procedure
+Navigate to the ~/MyPlaybooks/ directory:
+$ cd ~/MyPlaybooks/
+Make a copy of the backup-server.yml file located in the /usr/share/doc/ansible-freeipa/playbooks directory:
+$ cp /usr/share/doc/ansible-freeipa/playbooks/backup-server.yml backup-my-server.yml
+Open the backup-my-server.yml Ansible playbook file for editing.
+Adapt the file by setting the hosts variable to a host group from your inventory file. In this example, set it to the ipaserver host group:
+---
+- name: Playbook to backup IPA server
+  hosts: ipaserver
+  become: true
+
+  roles:
+  - role: ipabackup
+    state: present
+Save the file.
+Run the Ansible playbook, specifying the inventory file and the playbook file:
+$ ansible-playbook --vault-password-file=password_file -v -i ~/MyPlaybooks/inventory backup-my-server.yml
+Verification
+Log into the IdM server that you have backed up.
+Verify that the backup is in the /var/lib/ipa/backup directory.
+[root@server ~]# ls /var/lib/ipa/backup/
+ipa-full-2021-04-30-13-12-00
+Additional resources
+For more sample Ansible playbooks that use the ipabackup role, see:
+The README.md file in the /usr/share/doc/ansible-freeipa/roles/ipabackup directory.
+The /usr/share/doc/ansible-freeipa/playbooks/ directory.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.2. Using Ansible to create a backup of an IdM server on your Ansible controller
+You can use the ipabackup role in an Ansible playbook to create a backup of an IdM server and automatically transfer it on your Ansible controller. Your backup file name begins with the host name of the IdM server.
+Prerequisites
+You have configured your Ansible control node to meet the following requirements:
+You are using Ansible version 2.15 or later.
+You have installed the ansible-freeipa package on the Ansible controller.
+The example assumes that in the ~/MyPlaybooks/ directory, you have created an Ansible inventory file with the fully-qualified domain name (FQDN) of the IdM server.
+The example assumes that the secret.yml Ansible vault stores your ipaadmin_password.
+The target node, that is the node on which the ansible-freeipa module is executed, is part of the IdM domain as an IdM client, server or replica.
+Procedure
+To store the backups, create a subdirectory in your home directory on the Ansible controller.
+$ mkdir ~/ipabackups
+Navigate to the ~/MyPlaybooks/ directory:
+$ cd ~/MyPlaybooks/
+Make a copy of the backup-server-to-controller.yml file located in the /usr/share/doc/ansible-freeipa/playbooks directory:
+$ cp /usr/share/doc/ansible-freeipa/playbooks/backup-server-to-controller.yml backup-my-server-to-my-controller.yml
+Open the backup-my-server-to-my-controller.yml file for editing.
+Adapt the file by setting the following variables:
+Set the hosts variable to a host group from your inventory file. In this example, set it to the ipaserver host group.
+Optional: To maintain a copy of the backup on the IdM server, uncomment the following line:
+ # ipabackup_keep_on_server: true
+By default, backups are stored in the present working directory of the Ansible controller. To specify the backup directory you created in Step 1, add the ipabackup_controller_path variable and set it to the /home/user/ipabackups directory.
+---
+- name: Playbook to backup IPA server to controller
+  hosts: ipaserver
+  become: true
+  vars:
+    ipabackup_to_controller: true
+    # ipabackup_keep_on_server: true
+    ipabackup_controller_path: /home/user/ipabackups
+
+  roles:
+  - role: ipabackup
+    state: present
+Save the file.
+Run the Ansible playbook, specifying the inventory file and the playbook file:
+$ ansible-playbook --vault-password-file=password_file -v -i ~/MyPlaybooks/inventory backup-my-server-to-my-controller.yml
+Verification
+Verify that the backup is in the /home/user/ipabackups directory of your Ansible controller:
+[user@controller ~]$ ls /home/user/ipabackups
+server.idm.example.com_ipa-full-2021-04-30-13-12-00
+Additional resources
+For more sample Ansible playbooks that use the ipabackup role, see:
+The README.md file in the /usr/share/doc/ansible-freeipa/roles/ipabackup directory.
+The /usr/share/doc/ansible-freeipa/playbooks/ directory.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.3. Using Ansible to copy a backup of an IdM server to your Ansible controller
+You can use an Ansible playbook to copy a backup of an IdM server from the IdM server to your Ansible controller.
+Prerequisites
+You have configured your Ansible control node to meet the following requirements:
+You are using Ansible version 2.15 or later.
+You have installed the ansible-freeipa package on the Ansible controller.
+The example assumes that in the ~/MyPlaybooks/ directory, you have created an Ansible inventory file with the fully-qualified domain name (FQDN) of the IdM server.
+The example assumes that the secret.yml Ansible vault stores your ipaadmin_password.
+The target node, that is the node on which the ansible-freeipa module is executed, is part of the IdM domain as an IdM client, server or replica.
+Procedure
+To store the backups, create a subdirectory in your home directory on the Ansible controller.
+$ mkdir ~/ipabackups
+Navigate to the ~/MyPlaybooks/ directory:
+$ cd ~/MyPlaybooks/
+Make a copy of the copy-backup-from-server.yml file located in the /usr/share/doc/ansible-freeipa/playbooks directory:
+$ cp /usr/share/doc/ansible-freeipa/playbooks/copy-backup-from-server.yml copy-backup-from-my-server-to-my-controller.yml
+Open the copy-my-backup-from-my-server-to-my-controller.yml file for editing.
+Adapt the file by setting the following variables:
+Set the hosts variable to a host group from your inventory file. In this example, set it to the ipaserver host group.
+Set the ipabackup_name variable to the name of the ipabackup on your IdM server to copy to your Ansible controller.
+By default, backups are stored in the present working directory of the Ansible controller. To specify the directory you created in Step 1, add the ipabackup_controller_path variable and set it to the /home/user/ipabackups directory.
+---
+- name: Playbook to copy backup from IPA server
+  hosts: ipaserver
+  become: true
+  vars:
+    ipabackup_name: ipa-full-2021-04-30-13-12-00
+    ipabackup_to_controller: true
+    ipabackup_controller_path: /home/user/ipabackups
+
+  roles:
+  - role: ipabackup
+    state: present
+Save the file.
+Run the Ansible playbook, specifying the inventory file and the playbook file:
+$ ansible-playbook --vault-password-file=password_file -v -i ~/MyPlaybooks/inventory copy-backup-from-my-server-to-my-controller.yml
+Verification
+Verify your backup is in the /home/user/ipabackups directory on your Ansible controller:
+[user@controller ~]$ ls /home/user/ipabackups
+server.idm.example.com_ipa-full-2021-04-30-13-12-00
+Additional resources
+The README.md file in the /usr/share/doc/ansible-freeipa/roles/ipabackup directory.
+The /usr/share/doc/ansible-freeipa/playbooks/ directory.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.4. Using Ansible to copy a backup of an IdM server from your Ansible controller to the IdM server
+You can use an Ansible playbook to copy a backup of an IdM server from your Ansible controller to the IdM server.
+Prerequisites
+You have configured your Ansible control node to meet the following requirements:
+You are using Ansible version 2.15 or later.
+You have installed the ansible-freeipa package on the Ansible controller.
+The example assumes that in the ~/MyPlaybooks/ directory, you have created an Ansible inventory file with the fully-qualified domain name (FQDN) of the IdM server.
+The example assumes that the secret.yml Ansible vault stores your ipaadmin_password.
+The target node, that is the node on which the ansible-freeipa module is executed, is part of the IdM domain as an IdM client, server or replica.
+Procedure
+Navigate to the ~/MyPlaybooks/ directory:
+$ cd ~/MyPlaybooks/
+Make a copy of the copy-backup-from-controller.yml file located in the /usr/share/doc/ansible-freeipa/playbooks directory:
+$ cp /usr/share/doc/ansible-freeipa/playbooks/copy-backup-from-controller.yml copy-backup-from-my-controller-to-my-server.yml
+Open the copy-my-backup-from-my-controller-to-my-server.yml file for editing.
+Adapt the file by setting the following variables:
+Set the hosts variable to a host group from your inventory file. In this example, set it to the ipaserver host group.
+Set the ipabackup_name variable to the name of the ipabackup on your Ansible controller to copy to the IdM server.
+---
+- name: Playbook to copy a backup from controller to the IPA server
+  hosts: ipaserver
+  become: true
+
+  vars:
+    ipabackup_name: server.idm.example.com_ipa-full-2021-04-30-13-12-00
+    ipabackup_from_controller: true
+
+  roles:
+  - role: ipabackup
+    state: copied
+Save the file.
+Run the Ansible playbook, specifying the inventory file and the playbook file:
+$ ansible-playbook --vault-password-file=password_file -v -i ~/MyPlaybooks/inventory copy-backup-from-my-controller-to-my-server.yml
+Additional resources
+The README.md file in the /usr/share/doc/ansible-freeipa/roles/ipabackup directory.
+The /usr/share/doc/ansible-freeipa/playbooks/ directory.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.5. Using Ansible to remove a backup from an IdM server
+You can use an Ansible playbook to remove a backup from an IdM server.
+Prerequisites
+You have configured your Ansible control node to meet the following requirements:
+You are using Ansible version 2.15 or later.
+You have installed the ansible-freeipa package on the Ansible controller.
+The example assumes that in the ~/MyPlaybooks/ directory, you have created an Ansible inventory file with the fully-qualified domain name (FQDN) of the IdM server.
+The example assumes that the secret.yml Ansible vault stores your ipaadmin_password.
+The target node, that is the node on which the ansible-freeipa module is executed, is part of the IdM domain as an IdM client, server or replica.
+Procedure
+Navigate to the ~/MyPlaybooks/ directory:
+$ cd ~/MyPlaybooks/
+Make a copy of the remove-backup-from-server.yml file located in the /usr/share/doc/ansible-freeipa/playbooks directory:
+$ cp /usr/share/doc/ansible-freeipa/playbooks/remove-backup-from-server.yml remove-backup-from-my-server.yml
+Open the remove-backup-from-my-server.yml file for editing.
+Adapt the file by setting the following variables:
+Set the hosts variable to a host group from your inventory file. In this example, set it to the ipaserver host group.
+Set the ipabackup_name variable to the name of the ipabackup to remove from your IdM server.
+---
+- name: Playbook to remove backup from IPA server
+  hosts: ipaserver
+  become: true
+
+  vars:
+    ipabackup_name: ipa-full-2021-04-30-13-12-00
+
+  roles:
+  - role: ipabackup
+    state: absent
+Save the file.
+Run the Ansible playbook, specifying the inventory file and the playbook file:
+$ ansible-playbook --vault-password-file=password_file -v -i ~/MyPlaybooks/inventory remove-backup-from-my-server.yml
+Additional resources
+The README.md file in the /usr/share/doc/ansible-freeipa/roles/ipabackup directory.
+The /usr/share/doc/ansible-freeipa/playbooks/ directory.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.6. Using Ansible to restore an IdM server from a backup stored on the server
+You can use an Ansible playbook to restore an IdM server from a backup stored on that host.
+Prerequisites
+You have configured your Ansible control node to meet the following requirements:
+You are using Ansible version 2.15 or later.
+You have installed the ansible-freeipa package on the Ansible controller.
+The example assumes that in the ~/MyPlaybooks/ directory, you have created an Ansible inventory file with the fully-qualified domain name (FQDN) of the IdM server.
+The example assumes that the secret.yml Ansible vault stores your ipaadmin_password.
+The target node, that is the node on which the ansible-freeipa module is executed, is part of the IdM domain as an IdM client, server or replica.
+You know the LDAP Directory Manager password.
+Procedure
+Navigate to the ~/MyPlaybooks/ directory:
+$ cd ~/MyPlaybooks/
+Make a copy of the restore-server.yml file located in the /usr/share/doc/ansible-freeipa/playbooks directory:
+$ cp /usr/share/doc/ansible-freeipa/playbooks/restore-server.yml restore-my-server.yml
+Open the restore-my-server.yml Ansible playbook file for editing.
+Adapt the file by setting the following variables:
+Set the hosts variable to a host group from your inventory file. In this example, set it to the ipaserver host group.
+Set the ipabackup_name variable to the name of the ipabackup to restore.
+Set the ipabackup_password variable to the LDAP Directory Manager password.
+---
+- name: Playbook to restore an IPA server
+  hosts: ipaserver
+  become: true
+
+  vars:
+    ipabackup_name: ipa-full-2021-04-30-13-12-00
+    ipabackup_password: <your_LDAP_DM_password>
+
+  roles:
+  - role: ipabackup
+    state: restored
+Save the file.
+Run the Ansible playbook specifying the inventory file and the playbook file:
+$ ansible-playbook --vault-password-file=password_file -v -i ~/MyPlaybooks/inventory restore-my-server.yml
+Additional resources
+The README.md file in the /usr/share/doc/ansible-freeipa/roles/ipabackup directory.
+The /usr/share/doc/ansible-freeipa/playbooks/ directory.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9.7. Using Ansible to restore an IdM server from a backup stored on your Ansible controller
+You can use an Ansible playbook to restore an IdM server from a backup stored on your Ansible controller.
+Prerequisites
+You have configured your Ansible control node to meet the following requirements:
+You are using Ansible version 2.15 or later.
+You have installed the ansible-freeipa package on the Ansible controller.
+The example assumes that in the ~/MyPlaybooks/ directory, you have created an Ansible inventory file with the fully-qualified domain name (FQDN) of the IdM server.
+The example assumes that the secret.yml Ansible vault stores your ipaadmin_password.
+The target node, that is the node on which the ansible-freeipa module is executed, is part of the IdM domain as an IdM client, server or replica.
+You know the LDAP Directory Manager password.
+Procedure
+Navigate to the ~/MyPlaybooks/ directory:
+$ cd ~/MyPlaybooks/
+Make a copy of the restore-server-from-controller.yml file located in the /usr/share/doc/ansible-freeipa/playbooks directory:
+$ cp /usr/share/doc/ansible-freeipa/playbooks/restore-server-from-controller.yml restore-my-server-from-my-controller.yml
+Open the restore-my-server-from-my-controller.yml file for editing.
+Adapt the file by setting the following variables:
+Set the hosts variable to a host group from your inventory file. In this example, set it to the ipaserver host group.
+Set the ipabackup_name variable to the name of the ipabackup to restore.
+Set the ipabackup_password variable to the LDAP Directory Manager password.
+---
+- name: Playbook to restore IPA server from controller
+  hosts: ipaserver
+  become: true
+
+  vars:
+    ipabackup_name: server.idm.example.com_ipa-full-2021-04-30-13-12-00
+    ipabackup_password: <your_LDAP_DM_password>
+    ipabackup_from_controller: true
+
+  roles:
+  - role: ipabackup
+    state: restored
+Save the file.
+Run the Ansible playbook, specifying the inventory file and the playbook file:
+$ ansible-playbook --vault-password-file=password_file -v -i ~/MyPlaybooks/inventory restore-my-server-from-my-controller.yml
+Additional resources
+The README.md file in the /usr/share/doc/ansible-freeipa/roles/ipabackup directory.
+The /usr/share/doc/ansible-freeipa/playbooks/ directory.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 10. IdM integration with Red Hat products
+Find documentation for other Red Hat products that integrate with IdM. You can configure these products to allow your IdM users to access their services.
+Ansible Automation Platform
+OpenShift Container Platform
+Red Hat OpenStack Platform
+Red Hat Satellite
+Red Hat Single Sign-On
+Red Hat Virtualization
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 11. Configuring Single Sign-On for the RHEL 9 web console in the IdM domain
+You can use Single Sign-on (SSO) authentication provided by Identity Management (IdM) in the RHEL 9 web console to leverage the following advantages:
+IdM domain administrators can use the RHEL 9 web console to manage local machines.
+Users with a Kerberos ticket in the IdM domain do not need to provide login credentials to access the web console.
+All hosts known to the IdM domain are accessible via SSH from the local instance of the RHEL 9 web console.
+Certificate configuration is not necessary. The console’s web server automatically switches to a certificate issued by the IdM certificate authority and accepted by browsers.
+Configuring SSO for logging into the RHEL web console requires to:
+Add machines to the IdM domain using the RHEL 9 web console.
+If you want to use Kerberos for authentication, you must obtain a Kerberos ticket on your machine.
+Allow administrators on the IdM server to run any command on any host.
+Prerequisites
+The RHEL web console installed on RHEL 9 systems.
+For details, see Installing the web console.
+IdM client installed on systems with the RHEL web console.
+For details, see IdM client installation.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11.1. Joining a RHEL 9 system to an IdM domain using the web console
+You can use the web console to join the Red Hat Enterprise Linux 9 system to the Identity Management (IdM) domain.
+Prerequisites
+The IdM domain is running and reachable from the client you want to join.
+You have the IdM domain administrator credentials.
+You have installed the RHEL 9 web console.
+For instructions, see Installing and enabling the web console.
+Procedure
+Log in to the RHEL 9 web console.
+For details, see Logging in to the web console.
+In the Configuration field of the Overview tab click Join Domain.
+In the Join a Domain dialog box, enter the host name of the IdM server in the Domain Address field.
+In the Domain administrator name field, enter the user name of the IdM administration account.
+In the Domain administrator password, add a password.
+Click Join.
+Verification
+If the RHEL 9 web console did not display an error, the system has been joined to the IdM domain and you can see the domain name in the System screen.
+To verify that the user is a member of the domain, click the Terminal page and type the id command:
+$ id
+euid=548800004(example_user) gid=548800004(example_user) groups=548800004(example_user) context=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
+Additional resources
+Planning Identity Management
+Installing Identity Management
+Managing IdM users, groups, hosts, and access control rules
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11.2. Logging in to the web console using Kerberos authentication
+Configure the RHEL 9 system to use Kerberos authentication.
+Prerequisites
+IdM domain running and reachable in your company environment.
+For details, see Joining a RHEL 9 system to an IdM domain using the web console.
+You have installed the RHEL 9 web console.
+For instructions, see Installing and enabling the web console.
+If the system does not use a Kerberos ticket managed by the SSSD client, request the ticket with the kinit utility manually.
+Procedure
+Log in to the RHEL web console by entering the following URL in your web browser:
+ https://<dns_name>:9090
+At this point, you are successfully connected to the RHEL web console and you can start with configuration.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chapter 12. IdM Directory Server RFC support
+The Directory Server component in Identity Management (IdM) supports many LDAP-related Requests for Comments (RFCs).
+Additional resources
+Directory Server RFC support
+Planning and designing Directory Server
