@@ -37,6 +37,7 @@ check_untyped_defs = "True"
 warn_return_any = "True"
 warn_unused_ignores = "True"
 show_error_codes = "True"
+disable_error_code = "import-untyped"
 
 [tool.ruff]
 target-version = "py37"
