@@ -177,14 +177,14 @@ def parse_image_name(image_name: str) -> dict[str, str]:
     return {}
 
 
-def render_chunk(image_name: str) -> str:
-    """Render a chunk of RHEL image data.
+def render_image_chunks(image_name: str) -> list:
+    """Render chunks of RHEL image data.
 
     Args:
-        chunk (dict): Chunk of RHEL image data
+        image_name: Name of the image
 
     Returns:
-        str: Rendered chunk of RHEL image data
+        list: Chunks of RHEL image data
     """
     # Get the image information from the main dataframe.
     i = get_image_data_for_image(image_name)
@@ -201,16 +201,20 @@ def render_chunk(image_name: str) -> str:
         "HA": "with High Availability (HA) ",
     }
 
-    chunk = (
-        "Deploy RHEL Red Hat Enterprise Linux "
+    chunks = []
+    base_chunk = (
+        "RHEL "
         f"{d['version']}{' Beta' if d['beta'] == 'BETA' else ''} "
         f"{intprod_names[d['intprod']]}"
-        f"{i['Architecture']} AWS regions AMI ID ImageID\n"
+        f"{i['Architecture']} "
     )
-    region_data = "\n".join(
-        [f"- {region['Region']}: {region['ImageId']}" for region in regions]
-    )
-    return chunk + region_data
+
+    for region in regions:
+        chunks.append(
+            base_chunk + f"AWS {region['Region']} AMI {region['ImageId']}"
+        )
+
+    return chunks
 
 
 if __name__ == "__main__":
@@ -222,7 +226,7 @@ if __name__ == "__main__":
 
     chunks = []
     for image_name in image_names:
-        chunks.append(render_chunk(image_name))
+        chunks.extend(render_image_chunks(image_name))
 
     with open("plaintext/clouds/aws.txt", "w") as fileh:
         fileh.write(f"\n{'━'*120}\n".join(chunks))

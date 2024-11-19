@@ -9,7 +9,7 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.tokenize.treebank import TreebankWordDetokenizer
 
-from rlsrag.infrastructure import get_chat_llm, get_retriever
+from rlsrag.infrastructure import get_chat_llm, get_retriever_with_reranker
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +107,7 @@ def query_llm(query: str) -> dict:
     Returns:
         str: Response from the LLM.
     """
-    retriever = get_retriever()
+    retriever = get_retriever_with_reranker()
     llm = get_chat_llm()
     prompt = generate_chat_prompt()
 

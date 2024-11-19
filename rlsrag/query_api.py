@@ -41,7 +41,7 @@ class RagQuery(BaseModel):
 
     query: str
     top_k: int = 20
-    score_threshold: float = 0.85
+    score_threshold: float = 0.80
 
 
 @app.get("/")
