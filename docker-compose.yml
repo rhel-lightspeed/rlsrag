@@ -12,10 +12,8 @@ services:
       POSTGRES_HOST: db
       PLAINTEXT_DIR: /plaintext
       GENERATE_RAG_DB: 1
-      WATSONX_PROJECT_ID: ABC123
-      WATSONX_APIKEY: ABC123
-    volumes:
-      - ./plaintext:/plaintext:ro,Z
+      WATSONX_PROJECT_ID: ${WATSONX_PROJECT_ID:?}
+      WATSONX_APIKEY: ${WATSONX_APIKEY:?}
     restart: always
 
   db:
