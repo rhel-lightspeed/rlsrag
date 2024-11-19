@@ -12,7 +12,7 @@ EMBED_MODEL = "ibm/slate-125m-english-rtrvr-v2"
 EMBED_COLLECTION_NAME = "rlsrag"
 
 # LLM model.
-LLM_MODEL = "ibm/granite-3-2b-instruct"
+LLM_MODEL = "meta-llama/llama-3-8b-instruct"
 
 # IBM WatsonX details.
 WATSONX_PROJECT_ID = os.environ.get("WATSONX_PROJECT_ID", None)
