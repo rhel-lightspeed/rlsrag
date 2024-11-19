@@ -6,6 +6,7 @@ from ibm_watsonx_ai.metanames import EmbedTextParamsMetaNames
 from langchain.retrievers.contextual_compression import (
     ContextualCompressionRetriever,
 )
+from langchain_core.vectorstores.base import VectorStoreRetriever
 from langchain_ibm import (
     ChatWatsonx,
     WatsonxEmbeddings,
@@ -39,11 +40,18 @@ def get_embedding_model() -> WatsonxEmbeddings:
     )
 
 
-def get_retriever() -> ContextualCompressionRetriever:
+def get_retriever(
+    top_k: int = 20, score_threshold: float = 0.85
+) -> VectorStoreRetriever:
     """Get a vector store for retrieval.
 
     This vector store instantiation is for querying the vector store. If you need to add
     embeddings to the vector store, use the get_vector_store() function.
+
+    Args:
+        top_k (int, optional): Number of documents to return. Defaults to 20.
+        score_threshold (float, optional): Threshold for document relevance. Defaults to
+            0.90.
 
     Returns:
         PGVector: Returns a vector store object.
@@ -55,12 +63,23 @@ def get_retriever() -> ContextualCompressionRetriever:
         logger=logger,
         use_jsonb=True,
     )
-    retriever = vector_store.as_retriever(
-        search_type="similarity",
-        search_kwargs={"k": 20, "score_threshold": 0.95},
+    return vector_store.as_retriever(
+        search_type="similarity_score_threshold",
+        search_kwargs={"k": top_k, "score_threshold": score_threshold},
     )
+
+
+def get_retriever_with_reranker() -> ContextualCompressionRetriever:
+    """Get a retriever with a reranker attached.
+
+    This function gives you a retriever with a reranker attached that will rerank
+    documents based on their vectors and the vectors from the user query.
+
+    Returns:
+        ContextualCompressionRetriever: Retriever with reranker attached.
+    """
     return ContextualCompressionRetriever(
-        base_compressor=get_reranker(), base_retriever=retriever
+        base_compressor=get_reranker(), base_retriever=get_retriever()
     )
 
 
@@ -83,21 +102,24 @@ def get_vector_store() -> PGVector:
     )
 
 
-def get_reranker() -> WatsonxRerank:
+def get_reranker(top_n: int = 2) -> WatsonxRerank:
     """Get a reranker for use with the vector store.
 
     The reranker takes a list of documents coming out of the vector store and reranks
     them based on their vectors and the vectors from the user query.
+
+    Args:
+        top_n (int, optional): Number of documents to return. Defaults to 2.
 
     Returns:
         WatsonxRerank: WatsonX reranker object.
     """
     reranker_params = {
         "truncate_input_tokens": 512,
-        "return_options": {"top_n": 2, "inputs": True, "query": True},
+        "return_options": {"top_n": top_n, "inputs": True, "query": True},
     }
     return WatsonxRerank(
-        model_id="ibm/slate-125m-english-rtrvr-v2",
+        model_id=config.EMBED_MODEL,
         url=config.WATSONX_URL,
         project_id=config.WATSONX_PROJECT_ID,
         params=reranker_params,
