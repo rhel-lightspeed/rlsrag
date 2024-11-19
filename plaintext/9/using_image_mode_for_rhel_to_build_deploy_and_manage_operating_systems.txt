@@ -19,7 +19,7 @@ Virtual Machine Image (VMI)
 Virtual Machine Disk (VMDK)
 Containers help streamline the lifecycle of a RHEL system by offering the following possibilities:
 RHEL has two deployment modes. Both provide the same stability, reliability, and performance during deployment. See their differences:
-Package mode: the operating system uses RPM packages and is updated by using the dnf package manager. The root filesystem is mutable. However, the operating system cannot be managed as a containerized application.
+Package mode: You can build package-based images and OSTree images by using RHEL image builder, and you can manage the package mode images by using composer-cli or web console. The operating system uses RPM packages and is updated by using the dnf package manager. The root filesystem is mutable. However, the operating system cannot be managed as a containerized application. See Composing a customized RHEL system image product documentation.
 Image mode: a container-native approach to build, deploy, and manage RHEL. The same RPM packages are delivered as a base image and updates are deployed as a container image. The root filesystem is immutable by default, except for /etc and /var, with most content coming from the container image.
 You can choose to use either the Image mode or the Package mode deployment to build, test, and share your operating system. Image mode additionally enables you to manage your operating system in the same way as any other containerized application.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -747,13 +747,16 @@ By using the bootc-image-builder tool: you must enable the FIPS crypto policy in
 When performing an Anaconda installation: apart from enabling the FIPS crypto policy into the Containerfile, you must add the fips=1 kernel argument during the boot time.
 FIPS dracut module is built-in to the base image. It defaults to a boot=UUID= karg in bootc install-to-filesystem.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-7.1. Enabling the FIPS mode by using bootc-image-builder tool
-To create a disk image and enable the FIPS mode with the bootc-image-builder or the bootc install to-disk tool, pass the custom Containerfile as an argument when building the image.
+7.1. Enabling the FIPS mode by using bootc-image-builder
+Create a disk image by using bootc-image-builder or bootc install to-disk, and enable the FIPS mode by passing the custom Containerfile as an argument when building the image.
 Prerequisites
 You have Podman installed on your host machine.
 You have virt-install installed on your host machine.
 You have root access to run the bootc-image-builder tool, and run the containers in --privileged mode, to build the images.
 Procedure
+Create a 01-fips.toml to configure FIPS enablement, for example:
+# Enable FIPS
+kargs = ["fips=1"]
 Create a Containerfile with the following instructions to enable the fips=1 kernel argument:
 FROM registry.redhat.io/rhel9/rhel-bootc:latest
 # Enable fips=1 kernel argument: https://containers.github.io/bootc/building/kernel-arguments.html
@@ -761,7 +764,14 @@ COPY 01-fips.toml /usr/lib/bootc/kargs.d/
 # Enable the FIPS crypto policy
 # crypto-policies-scripts is not installed by default in RHEL-10
 RUN dnf install -y crypto-policies-scripts && update-crypto-policies --no-reload --set FIPS
-Create your bootc compatible base disk images with bootc-image-builder.
+Create your bootc <image> compatible base disk image by using Containerfile in the current directory:
+$ podman build -t quay.io/<namespace>/<image>:<tag> .
+Verification
+After login in to the system, check that FIPS mode is enabled:
+$ *fips-mode-setup --check*
+FIPS mode is enabled.
+Additional resources
+Installing the system with FIPS mode enabled
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 7.2. Enabling the FIPS mode to perform an Anaconda installation
 To create a disk image and enable the FIPS mode when performing an Anaconda installation, follow the steps:
@@ -770,21 +780,38 @@ You have Podman installed on your host machine.
 You have virt-install installed on your host machine.
 You have root access to run the bootc-image-builder tool, and run the containers in --privileged mode, to build the images.
 Procedure
+Create a 01-fips.toml to configure FIPS enablement, for example:
+# Enable FIPS
+kargs = ["fips=1"]
 Create a Containerfile with the following instructions to enable the fips=1 kernel argument:
 FROM registry.redhat.io/rhel9/rhel-bootc:latest
 # Enable fips=1 kernel argument: https://containers.github.io/bootc/building/kernel-arguments.html
 COPY 01-fips.toml /usr/lib/bootc/kargs.d/
 # Install and enable the FIPS crypto policy
 RUN dnf install -y crypto-policies-scripts && update-crypto-policies --no-reload --set FIPS
-Create your bootc compatible base disk images with bootc-image-builder, passing the custom container as an argument.
-Follow the Installing the system with FIPS mode enabled documentation to enable FIPS mode during the system installation.
+Create your bootc <image> compatible base disk image by using Containerfile in the current directory:
+$ sudo podman run \
+    --rm \
+    -it \
+    --privileged \
+    --pull=newer \
+    --security-opt label=type:unconfined_t \
+    -v $(pwd)/config.toml:/config.toml:ro \
+    -v $(pwd)/output:/output \
+    -v /var/lib/containers/storage:/var/lib/containers/storage \
+    registry.redhat.io/rhel9/bootc-image-builder:latest \
+    --local
+    --type qcow2 \
+    quay.io/<namespace>/<image>:<tag>
+Enable FIPS mode during the system installation:
 When booting the RHEL Anaconda installer, on the installation screen, press the TAB key and add the fips=1 kernel argument.
+After the installation, the system starts in FIPS mode automatically.
 Verification
 After login in to the system, check that FIPS mode is enabled:
-$ cat /proc/sys/crypto/fips_enabled
-1
-$ update-crypto-policies --show
-FIPS
+$ *fips-mode-setup --check*
+FIPS mode is enabled.
+Additional resources
+Installing the system with FIPS mode enabled
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Chapter 8. Managing RHEL bootc images
 After installing and deploying RHEL bootc images, you can perform management operations on your container images, such as changing or updating the systems. The system supports in-place transactional updates with rollback after deployment.
@@ -969,6 +996,8 @@ Stop the toolbox container:
 Optional: Remove the toolbox container:
 ⬢ [user@toolbox ~]$ toolbox rm <mytoolbox>
 Alternatively, you can also use the podman rm command to remove the bootc container.
+Additional resources
+Debugging image mode hosts article
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Chapter 9. Managing kernel arguments in bootc systems
 You can use bootc to configure kernel arguments. By default, bootc uses the boot loader configuration files that are stored in /boot/loader/entries. This directory defines arguments provided to the Linux kernel. The set of kernel arguments is machine-specific state, but you can also manage the kernel arguments by using container updates. The boot loader menu entries are shared between multiple operating systems and boot loaders are installed on one device.

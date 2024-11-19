@@ -3931,7 +3931,6 @@ Podman is a daemonless tool for maintaining and modifying OCI images, such as pu
 Some of the Podman and Buildah commands have the same names but they differ in some aspects:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 19.3. Installing Buildah
-Additional resources
 Install the Buildah tool using the dnf command.
 Procedure
 Install the Buildah tool:

@@ -23,9 +23,8 @@ Red Hat does not support installation to USB drives or SD memory cards. For info
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 1.2. Disk and memory requirements
 If several operating systems are installed, it is important that you verify that the allocated disk space is separate from the disk space required by Red Hat Enterprise Linux. In some cases, it is important to dedicate specific partitions to Red Hat Enterprise Linux, for example, for AMD64, Intel 64, and 64-bit ARM, at least two partitions (/ and swap) must be dedicated to RHEL and for IBM Power Systems servers, at least three partitions (/, swap, and a PReP boot partition) must be dedicated to RHEL.
-Additionally, you must have a minimum of 10 GiB of available disk space. To install Red Hat Enterprise Linux, you must have a minimum of 10 GiB of space in either unpartitioned disk space or in partitions that can be deleted.
-For more information, see Partitioning reference for more information.
-It is possible to complete the installation with less memory than the minimum requirements. The exact requirements depend on your environment and installation path. Test various configurations to determine the minimum required RAM for your environment. Installing Red Hat Enterprise Linux using a Kickstart file has the same minimum RAM requirements as a standard installation. However, additional RAM may be required if your Kickstart file includes commands that require additional memory, or write data to the RAM disk. For more information, see the Automatically installing RHEL document.
+Additionally, you must have a minimum of 10 GiB of available disk space. To install Red Hat Enterprise Linux, you must have a minimum of 10 GiB of space in either unpartitioned disk space or in partitions that can be deleted. For more information, see Partitioning reference.
+It is possible to complete the installation with less memory than the minimum requirements. The exact requirements depend on your environment and installation path. Test various configurations to determine the minimum required RAM for your environment. Installing Red Hat Enterprise Linux using a Kickstart file has the same minimum RAM requirements as a standard installation. However, additional RAM may be required if your Kickstart file includes commands that require additional memory, or write data to the RAM disk. For more information, see Automatically installing RHEL.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 1.3. Graphics display resolution requirements
 Your system must have the following minimum resolution to ensure a smooth and error-free installation of Red Hat Enterprise Linux.
@@ -750,7 +749,7 @@ ramdisk_size=size
 Modifies the memory size reserved for the RAM disk to ensure that the Red Hat Enterprise Linux installation program fits within it. For example: ramdisk_size=40000.
 The generic.prm file also contains the additional parameter cio_ignore=all,!condev. This setting speeds up boot and device detection on systems with many devices. The installation program transparently handles the activation of ignored devices.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-11.5.2. 64-bit IBM Z/VM configuration file
+11.5.2. 64-bit IBM z/VM configuration file
 Under z/VM, you can use a configuration file on a CMS-formatted disk. The purpose of the CMS configuration file is to save space in the parameter file by moving the parameters that configure the initial network setup, the DASD, and the FCP specification out of the parameter file.
 Each line of the CMS configuration file contains a single variable and its associated value, in the following shell-style syntax: variable=value.
 You must also add the CMSDASD and CMSCONFFILE parameters to the parameter file. These parameters point the installation program to the configuration file:
@@ -762,14 +761,11 @@ FCP_1="0.0.fc00 0x50050763050b073d 0x4020400100000000"
 FCP_2="0.0.4000"
 Each of the values used in the FCP parameters (for example FCP_1 or FCP_2) are site-specific and are normally supplied by the FCP storage administrator.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-11.5.4. Parameters for kickstart installations on 64-bit IBM Z
-The following parameters can be defined in a parameter file but do not work in a CMS configuration file.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-11.5.5. Miscellaneous parameters on 64-bit IBM Z
+11.5.4. Miscellaneous parameters on 64-bit IBM Z
 The following parameters can be defined in a parameter file but do not work in a CMS configuration file.
 The boot parameters described here are the most useful for installations and trouble shooting on 64-bit IBM Z, but only a subset of those that influence the installation program.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-11.5.6. Sample parameter file and CMS configuration file on 64-bit IBM Z
+11.5.5. Sample parameter file and CMS configuration file on 64-bit IBM Z
 To change the parameter file, begin by extending the shipped generic.prm file.
 Example of generic.prm file:
 ro ramdisk_size=40000 cio_ignore=all,!condev
@@ -791,7 +787,7 @@ DNS="192.168.17.1"
 SEARCHDNS="systemz.example.com:example.com"
 DASD="200-203"
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-11.5.7. Using parameter and configuration files on 64-bit IBM Z
+11.5.6. Using parameter and configuration files on 64-bit IBM Z
 The 64-bit IBM Z architecture can use a customized parameter file to pass boot parameters to the kernel and the installation program.
 You need to change the parameter file if you want to:
 Install unattended with Kickstart.
@@ -889,7 +885,7 @@ Boot options for RHEL installer
 13.3.1. Booting the RHEL installation from an SFTP, FTPS, or FTP server to install in an IBM Z LPAR
 You can install RHEL into an LPAR by using an SFTP, FTPS, or FTP server.
 Procedure
-Log in on the IBM Z Hardware Management Console (HMC) or the Support Element (SE) as a user with sufficient privileges to install a new operating system to an LPAR. The SYSPROG user is recommended.
+Log in on the IBM Z Hardware Management Console (HMC) or the Support Element (SE) as a user with sufficient privileges to install a new operating system to an LPAR.
 On the Systems tab, select the mainframe you want to work with, then on the Partitions tab select the LPAR to which you wish to install.
 At the bottom of the screen, under Daily, find Operating System Messages. Double-click Operating System Messages to show the text console on which Linux boot messages will appear.
 Double-click Load from Removable Media or Server.
@@ -910,13 +906,12 @@ At the bottom of the screen, under Daily, find Operating System Messages. Double
 Double-click Load.
 In the dialog box that follows, select Normal as the Load type.
 As Load address, fill in the device number of the DASD.
-As Load parameter, fill in the number corresponding to the zipl boot menu entry that you prepared for booting the Red Hat Enterprise Linux installation program.
 Click the OK button.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 13.3.3. Booting the RHEL installation from an FCP-attached SCSI disk to install in an IBM Z LPAR
 Use this procedure when installing Red Hat Enterprise Linux into an LPAR using an already prepared FCP attached SCSI disk.
 Procedure
-Log in on the IBM Z Hardware Management Console (HMC) or the Support Element (SE) as a user with sufficient privileges to install a new operating system to an LPAR. The SYSPROG user is recommended.
+Log in on the IBM Z Hardware Management Console (HMC) or the Support Element (SE) as a user with sufficient privileges to install a new operating system to an LPAR.
 On the Systems tab, select the mainframe you want to work with, then on the Partitions tab select the LPAR to which you wish to install.
 At the bottom of the screen, under Daily, find Operating System Messages. Double-click Operating System Messages to show the text console on which Linux boot messages will appear.
 Double-click Load.
@@ -924,7 +919,6 @@ In the dialog box that follows, select SCSI as the Load type.
 As Load address, fill in the device number of the FCP channel connected with the SCSI disk.
 As World wide port name, fill in the WWPN of the storage system containing the disk as a 16-digit hexadecimal number.
 As Logical unit number, fill in the LUN of the disk as a 16-digit hexadecimal number.
-As Boot program selector, fill in the number corresponding to the zipl boot menu entry that you prepared for booting the Red Hat Enterprise Linux installation program.
 Leave the Boot record logical block address as 0 and the Operating system specific load parameters empty.
 Click the OK button.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -962,7 +956,7 @@ INITRD	IMG		B1	F	80	118545	2316	4/15/10	9:30:25
 KERNEL	IMG		B1	F	80	74541	912	4/15/10	9:30:17
 Press PF3 to quit filelist and return to the CMS prompt.
 Customize boot parameters in generic.prm as necessary. For details, see Customizing boot parameters.
-Another way to configure storage and network devices is by using a CMS configuration file. In such a case, add the CMSDASD= and CMSCONFFILE= parameters to generic.prm. See IBM Z/VM configuration file for more details.
+Another way to configure storage and network devices is by using a CMS configuration file. In such a case, add the CMSDASD= and CMSCONFFILE= parameters to generic.prm. See IBM z/VM configuration file for more details.
 Finally, execute the REXX script redhat.exec to boot the installation program:
 redhat
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1150,43 +1144,6 @@ Replace HOST with the IP address of the remote system that is running the listen
 Press Enter to start the installation. The system initializes the installation program and starts the necessary services. When the initialization process is finished, the installation program attempts to connect to the IP address and port provided.
 When the connection is successful, a new window opens with the VNC connection established, displaying the RHEL installation menu. From this window, you can install RHEL on the target system using the graphical user interface.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-15.3. Performing a remote RHEL installation by using VNC on IBM Z
-After the Initial Program Load (IPL) of the Anaconda installation program is complete, connect to the 64-bit IBM Z system from a local machine, as an install user, using an ssh connection.
-You need to connect to the installation system to continue the installation process. Use a VNC mode to run a GUI-based installation or use the established connection to run a text mode installation.
-Prerequisite
-You booted the installation media as described in Booting the installation on IBM Z to install RHEL in an LPAR.
-The initial program boot is complete on the 64-bit IBM Z system, and the command prompt displays:
-Starting installer, one moment...
-        Please ssh install@my-z-system (system ip address) to begin the install.
-If you want to restrict VNC access to the installation system, then ensure inst.vncpassword=PASSWORD boot parameter is configured.
-Procedure
-From a local machine, run the steps below to set up a remote connection with the 64-bit IBM Z system.
-On the command prompt, run the following command:
-$ssh install@_my-z-system-domain-name_
-or
-$ssh install@_my-z-system-IP-address_
-Depending on whether or not have you configured the inst.vnc parameter, the ssh session displays the following output:
-When inst.vnc parameter is configured:
-Starting installer, one moment...
-Please manually connect your vnc client to my-z-system:1 (_system-ip-address:1_) to begin the install.
-When inst.vnc parameter is not configured:
-Starting installer, one moment...
-Graphical installation is not available. Starting text mode.
-=============
-Text mode provides a limited set of installation options.
-It does not offer custom partitioning for full control
-over the disk layout. Would you like to use VNC mode instead?
-1) Start VNC
-2) Use text mode
-Please make your choice from above ['q' to quit | 'c' to continue | 'r' to refresh]:
-If you have configured the inst.vnc parameter, proceed to step 5.
-Enter 1 to start VNC.
-Enter a password, if you have not set the inst.vncpassword= boot option, but want to secure the server connection.
-From a new command prompt, connect to the VNC server.
-$vncviewer _my-z-system-ip-address:display_number_
-If you have secured the connection, use the password that you have entered in the previous step or the one that you had set for inst.vncpassword= boot option.
-The RHEL installer is launched in the VNC client.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Chapter 16. Consoles and logging during installation
 The Red Hat Enterprise Linux installer uses the tmux terminal multiplexer to display and control several windows in addition to the main interface. Each of these windows serve a different purpose; they display several different logs, which can be used to troubleshoot issues during the installation process. One of the windows provides an interactive shell prompt with root privileges, unless this prompt was specifically disabled using a boot option or a Kickstart command.
 The terminal multiplexer is running in virtual console 1. To switch from the actual installation environment to tmux, press Ctrl+Alt+F1. To go back to the main installation interface which runs in virtual console 6, press Ctrl+Alt+F6. During the text mode installation, start in virtual console 1 (tmux), and switching to console 6 will open a shell prompt instead of a graphical interface.
@@ -1231,7 +1188,7 @@ Optional: Click the Refresh link in the lower right-hand side of the window if y
 Click Rescan Disks and wait until the scanning process completes.
 All storage changes that you make during the installation are lost when you click Rescan Disks.
 Click OK to return to the Installation Destination window. All detected disks including any new ones are displayed under the Local Standard Disks section.
-Optional: Click Add a disk…​ to add a specialized storage device.
+Optional: Click Add a disk to add a specialized storage device.
 The Storage Device Selection window opens and lists all storage devices that the installation program has access to.
 Optional: Under Storage Configuration, select the Automatic radio button for automatic partitioning.
 You can also configure custom partitioning. For more details, see Configuring manual partitioning.
@@ -1281,7 +1238,7 @@ Prerequisite
 The Installation Summary window is open.
 Procedure
 From the Installation Summary window, click Installation Destination. The Installation Destination window opens, listing all available drives.
-Under the Specialized & Network Disks section, click Add a disk…. The storage devices selection window opens.
+Under the Specialized & Network Disks section, click Add a disk. The storage devices selection window opens.
 Click the Search by tab to search by port, target, LUN, or WWID.
 Searching by WWID or LUN requires additional values in the corresponding input text fields.
 Select the option that you require from the Search drop-down menu.
@@ -1302,8 +1259,8 @@ Prerequisites
 The Installation Summary window is open.
 Procedure
 From the Installation Summary window, click Installation Destination. The Installation Destination window opens, listing all available drives.
-Under the Specialized & Network Disks section, click Add a disk…​. The storage devices selection window opens.
-Click Add iSCSI target…​. The Add iSCSI Storage Target window opens.
+Under the Specialized & Network Disks section, click Add a disk. The storage devices selection window opens.
+Click Add iSCSI target. The Add iSCSI Storage Target window opens.
 Enter the IP address of the iSCSI target in the Target IP Address field.
 Type a name in the iSCSI Initiator Name field for the iSCSI initiator in iSCSI qualified name (IQN) format. A valid IQN entry contains the following information:
 The string iqn. (note the period).
@@ -1333,8 +1290,8 @@ Prerequisite
 The Installation Summary window is open.
 Procedure
 From the Installation Summary window, click Installation Destination. The Installation Destination window opens, listing all available drives.
-Under the Specialized & Network Disks section, click Add a disk…. The storage devices selection window opens.
-Click Add FCoE SAN…​. A dialog box opens for you to configure network interfaces for discovering FCoE storage devices.
+Under the Specialized & Network Disks section, click Add a disk. The storage devices selection window opens.
+Click Add FCoE SAN. A dialog box opens for you to configure network interfaces for discovering FCoE storage devices.
 Select a network interface that is connected to an FCoE switch in the NIC drop-down menu.
 Click Add FCoE disk(s) to scan the network for SAN devices.
 Select the required check boxes:
@@ -1348,7 +1305,7 @@ Prerequisite
 The Installation Summary window is open.
 Procedure
 From the Installation Summary window, click Installation Destination. The Installation Destination window opens, listing all available drives.
-Under the Specialized & Network Disks section, click Add a disk…. The storage devices selection window opens.
+Under the Specialized & Network Disks section, click Add a disk. The storage devices selection window opens.
 Click Add DASD ECKD. The Add DASD Storage Target dialog box opens and prompts you to specify a device number, such as 0.0.0204, and attach additional DASDs that were not detected when the installation started.
 Type the device number of the DASD that you want to attach in the Device number field.
 Click Start Discovery.
@@ -1362,7 +1319,7 @@ The Installation Summary window is open.
 For an FCP-only installation, you have removed the DASD= option from the CMS configuration file or the rd.dasd= option from the parameter file to indicate that no DASD is present.
 Procedure
 From the Installation Summary window, click Installation Destination. The Installation Destination window opens, listing all available drives.
-Under the Specialized & Network Disks section, click Add a disk…. The storage devices selection window opens.
+Under the Specialized & Network Disks section, click Add a disk. The storage devices selection window opens.
 Click Add ZFCP LUN. The Add zFCP Storage Target dialog box opens allowing you to add a FCP (Fibre Channel Protocol) storage device.
 64-bit IBM Z requires that you enter any FCP device manually so that the installation program can activate FCP LUNs. You can enter FCP devices either in the graphical installation, or as a unique parameter entry in the parameter or CMS configuration file. The values that you enter must be unique to each site that you configure.
 Type the 4 digit hexadecimal device number in the Device number field.
@@ -1398,11 +1355,11 @@ A NVDIMM device is present on the system and satisfies all the other conditions 
 The installation has booted and the Installation Summary window is open.
 Procedure
 From the Installation Summary window, click Installation Destination. The Installation Destination window opens, listing all available drives.
-Under the Specialized & Network Disks section, click Add a disk…​. The storage devices selection window opens.
+Under the Specialized & Network Disks section, click Add a disk. The storage devices selection window opens.
 Click the NVDIMM Devices tab.
 To reconfigure a device, select it from the list.
 If a device is not listed, it is not in sector mode.
-Click Reconfigure NVDIMM…​. A reconfiguration dialog opens.
+Click Reconfigure NVDIMM. A reconfiguration dialog opens.
 Enter the sector size that you require and click Start Reconfiguration.
 The supported sector sizes are 512 and 4096 bytes.
 When reconfiguration completes click OK.
@@ -1541,7 +1498,7 @@ Click Add mount point to create the partition and return to the Manual Partition
 You can set the partitioning scheme for each mount point that was created manually. The available options are Standard Partition, LVM, and LVM Thin Provisioning. Btfrs support has been removed in Red Hat Enterprise Linux 9.
 Procedure
 To change the devices that a single non-LVM mount point should be located on, select the required mount point from the left-hand pane.
-Under the Device(s) heading, click Modify…​. The Configure Mount Point dialog opens.
+Under the Device(s) heading, click Modify. The Configure Mount Point dialog opens.
 Select one or more devices and click Select to confirm your selection and return to the Manual Partitioning window.
 Click Update Settings to apply the changes.
 In the lower left-hand side of the Manual Partitioning window, click the storage device selected link to open the Selected Disks dialog and review disk information.
@@ -1832,7 +1789,7 @@ Select the On the network drop-down menu to specify the protocol for downloading
 Type the server address (without the protocol) into the address field. If you choose NFS, a second input field opens where you can specify custom NFS mount options. This field accepts options listed in the nfs(5) man page on your system.
 When selecting an NFS installation source, specify the address with a colon (:) character separating the host name from the path. For example, server.example.com:/path/to/directory.
 The following steps are optional and are only required if you use a proxy for network access.
-Click Proxy setup…​ to configure a proxy for an HTTP or HTTPS source.
+Click Proxy setup to configure a proxy for an HTTP or HTTPS source.
 Select the Enable HTTP proxy check box and type the URL into the Proxy Host field.
 Select the Use Authentication check box if the proxy server requires authentication.
 Type in your user name and password.

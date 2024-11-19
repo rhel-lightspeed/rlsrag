@@ -44,7 +44,7 @@ def get_rhel_images() -> pd.DataFrame:
     Returns:
         list: RHEL image data for AWS
     """
-    with open("get_data/raw_data/aws.json") as fileh:
+    with open("get_data/raw_data/clouds/aws.json") as fileh:
         data = json.load(fileh)
 
     df = pd.json_normalize(data)

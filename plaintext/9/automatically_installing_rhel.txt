@@ -23,9 +23,8 @@ Red Hat does not support installation to USB drives or SD memory cards. For info
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 1.2. Disk and memory requirements
 If several operating systems are installed, it is important that you verify that the allocated disk space is separate from the disk space required by Red Hat Enterprise Linux. In some cases, it is important to dedicate specific partitions to Red Hat Enterprise Linux, for example, for AMD64, Intel 64, and 64-bit ARM, at least two partitions (/ and swap) must be dedicated to RHEL and for IBM Power Systems servers, at least three partitions (/, swap, and a PReP boot partition) must be dedicated to RHEL.
-Additionally, you must have a minimum of 10 GiB of available disk space. To install Red Hat Enterprise Linux, you must have a minimum of 10 GiB of space in either unpartitioned disk space or in partitions that can be deleted.
-For more information, see Partitioning reference for more information.
-It is possible to complete the installation with less memory than the minimum requirements. The exact requirements depend on your environment and installation path. Test various configurations to determine the minimum required RAM for your environment. Installing Red Hat Enterprise Linux using a Kickstart file has the same minimum RAM requirements as a standard installation. However, additional RAM may be required if your Kickstart file includes commands that require additional memory, or write data to the RAM disk. For more information, see the Automatically installing RHEL document.
+Additionally, you must have a minimum of 10 GiB of available disk space. To install Red Hat Enterprise Linux, you must have a minimum of 10 GiB of space in either unpartitioned disk space or in partitions that can be deleted. For more information, see Partitioning reference.
+It is possible to complete the installation with less memory than the minimum requirements. The exact requirements depend on your environment and installation path. Test various configurations to determine the minimum required RAM for your environment. Installing Red Hat Enterprise Linux using a Kickstart file has the same minimum RAM requirements as a standard installation. However, additional RAM may be required if your Kickstart file includes commands that require additional memory, or write data to the RAM disk.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 1.3. Graphics display resolution requirements
 Your system must have the following minimum resolution to ensure a smooth and error-free installation of Red Hat Enterprise Linux.
@@ -790,7 +789,7 @@ ramdisk_size=size
 Modifies the memory size reserved for the RAM disk to ensure that the Red Hat Enterprise Linux installation program fits within it. For example: ramdisk_size=40000.
 The generic.prm file also contains the additional parameter cio_ignore=all,!condev. This setting speeds up boot and device detection on systems with many devices. The installation program transparently handles the activation of ignored devices.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-9.5.2. 64-bit IBM Z/VM configuration file
+9.5.2. 64-bit IBM z/VM configuration file
 Under z/VM, you can use a configuration file on a CMS-formatted disk. The purpose of the CMS configuration file is to save space in the parameter file by moving the parameters that configure the initial network setup, the DASD, and the FCP specification out of the parameter file.
 Each line of the CMS configuration file contains a single variable and its associated value, in the following shell-style syntax: variable=value.
 You must also add the CMSDASD and CMSCONFFILE parameters to the parameter file. These parameters point the installation program to the configuration file:
@@ -1107,7 +1106,7 @@ The installation begins now, and the Kickstart file is automatically detected an
 14.3.1. Booting the RHEL installation from an SFTP, FTPS, or FTP server to install in an IBM Z LPAR
 You can install RHEL into an LPAR by using an SFTP, FTPS, or FTP server.
 Procedure
-Log in on the IBM Z Hardware Management Console (HMC) or the Support Element (SE) as a user with sufficient privileges to install a new operating system to an LPAR. The SYSPROG user is recommended.
+Log in on the IBM Z Hardware Management Console (HMC) or the Support Element (SE) as a user with sufficient privileges to install a new operating system to an LPAR.
 On the Systems tab, select the mainframe you want to work with, then on the Partitions tab select the LPAR to which you wish to install.
 At the bottom of the screen, under Daily, find Operating System Messages. Double-click Operating System Messages to show the text console on which Linux boot messages will appear.
 Double-click Load from Removable Media or Server.
@@ -1128,13 +1127,12 @@ At the bottom of the screen, under Daily, find Operating System Messages. Double
 Double-click Load.
 In the dialog box that follows, select Normal as the Load type.
 As Load address, fill in the device number of the DASD.
-As Load parameter, fill in the number corresponding to the zipl boot menu entry that you prepared for booting the Red Hat Enterprise Linux installation program.
 Click the OK button.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 14.3.3. Booting the RHEL installation from an FCP-attached SCSI disk to install in an IBM Z LPAR
 Use this procedure when installing Red Hat Enterprise Linux into an LPAR using an already prepared FCP attached SCSI disk.
 Procedure
-Log in on the IBM Z Hardware Management Console (HMC) or the Support Element (SE) as a user with sufficient privileges to install a new operating system to an LPAR. The SYSPROG user is recommended.
+Log in on the IBM Z Hardware Management Console (HMC) or the Support Element (SE) as a user with sufficient privileges to install a new operating system to an LPAR.
 On the Systems tab, select the mainframe you want to work with, then on the Partitions tab select the LPAR to which you wish to install.
 At the bottom of the screen, under Daily, find Operating System Messages. Double-click Operating System Messages to show the text console on which Linux boot messages will appear.
 Double-click Load.
@@ -1142,7 +1140,6 @@ In the dialog box that follows, select SCSI as the Load type.
 As Load address, fill in the device number of the FCP channel connected with the SCSI disk.
 As World wide port name, fill in the WWPN of the storage system containing the disk as a 16-digit hexadecimal number.
 As Logical unit number, fill in the LUN of the disk as a 16-digit hexadecimal number.
-As Boot program selector, fill in the number corresponding to the zipl boot menu entry that you prepared for booting the Red Hat Enterprise Linux installation program.
 Leave the Boot record logical block address as 0 and the Operating system specific load parameters empty.
 Click the OK button.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1180,7 +1177,7 @@ INITRD	IMG		B1	F	80	118545	2316	4/15/10	9:30:25
 KERNEL	IMG		B1	F	80	74541	912	4/15/10	9:30:17
 Press PF3 to quit filelist and return to the CMS prompt.
 Customize boot parameters in generic.prm as necessary. For details, see Customizing boot parameters.
-Another way to configure storage and network devices is by using a CMS configuration file. In such a case, add the CMSDASD= and CMSCONFFILE= parameters to generic.prm. See IBM Z/VM configuration file for more details.
+Another way to configure storage and network devices is by using a CMS configuration file. In such a case, add the CMSDASD= and CMSCONFFILE= parameters to generic.prm. See IBM z/VM configuration file for more details.
 Finally, execute the REXX script redhat.exec to boot the installation program:
 redhat
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

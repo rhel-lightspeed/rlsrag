@@ -10,14 +10,20 @@ Procedure
 From the Installation Summary window, click Network and Host Name.
 From the list in the left-hand pane, select an interface. The details are displayed in the right-hand pane.
 Toggle the ON/OFF switch to enable or disable the selected interface.
+You cannot add or remove interfaces manually.
 Click + to add a virtual network interface, which can be either: Team (deprecated), Bond, Bridge, or VLAN.
 Click - to remove a virtual interface.
 Click Configure to change settings such as IP addresses, DNS servers, or routing configuration for an existing interface (both virtual and physical).
 Type a host name for your system in the Host Name field.
+The host name can either be a fully qualified domain name (FQDN) in the format hostname.domainname, or a short host name without the domain. Many networks have a Dynamic Host Configuration Protocol (DHCP) service that automatically supplies connected systems with a domain name. To allow the DHCP service to assign the domain name to this system, specify only the short host name.
+Host names can only contain alphanumeric characters and - or .. Host name should be equal to or less than 64 characters. Host names cannot start or end with - and .. To be compliant with DNS, each part of a FQDN should be equal to or less than 63 characters and the FQDN total length, including dots, should not exceed 255 characters.
+The value localhost means that no specific static host name for the target system is configured, and the actual host name of the installed system is configured during the processing of the network configuration, for example, by NetworkManager using DHCP or DNS.
+When using static IP and host name configuration, it depends on the planned system use case whether to use a short name or FQDN. Red Hat Identity Management configures FQDN during provisioning but some 3rd party software products may require a short name. In either case, to ensure availability of both forms in all situations, add an entry for the host in /etc/hosts in the format IP FQDN short-alias.
 Click Apply to apply the host name to the installer environment.
 Alternatively, in the Network and Hostname window, you can choose the Wireless option. Click Select network in the right-hand pane to select your wifi connection, enter the password if required, and click Done.
 Additional resources
 Automatically installing RHEL
+For more information about network device naming standards, see Configuring and managing networking.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 1.2. Configuring an Ethernet connection by using nmcli
 If you connect a host to the network over Ethernet, you can manage the connection’s settings on the command line by using the nmcli utility.
@@ -89,7 +95,7 @@ Check whether the link failure exists only on this host or also on other hosts c
 Verify that the network cable and the network interface are working as expected. Perform hardware diagnosis steps and replace defect cables and network interface cards.
 If the configuration on the disk does not match the configuration on the device, starting or restarting NetworkManager creates an in-memory connection that reflects the configuration of the device. For further details and how to avoid this problem, see the NetworkManager duplicates a connection after restart of NetworkManager service solution.
 Additional resources
-nm-settings(5) man page
+nm-settings(5) man page on your system
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 1.3. Configuring an Ethernet connection by using nmtui
 If you connect a host to the network over Ethernet, you can manage the connection’s settings in a text-based user interface by using the nmtui application. Use nmtui to create new profiles and to update existing ones on a host without a graphical interface.
@@ -321,7 +327,7 @@ Attach the report to your support case.
 See the How can I attach a file to a Red Hat support case? Red Hat Knowledgebase article for more information.
 Note that when attaching the report, you are prompted to enter the number of the relevant support case.
 Additional resources
-What is an sosreport and how to create one in Red Hat Enterprise Linux?
+What is an sosreport and how to create one in Red Hat Enterprise Linux? (Red Hat Knowledgebase)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Chapter 4. Changing basic environment settings
 Configuration of basic environment settings is a part of the installation process. The following sections guide you when you change them later. The basic configuration of the environment includes:
@@ -368,7 +374,7 @@ Click Change.
 Verification
 Check the system time displayed in the System tab.
 Additional resources
-Using the Chrony suite to configure NTP.
+Using the Chrony suite to configure NTP
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 4.3. Configuring the system locale
 System-wide locale settings are stored in the /etc/locale.conf file that is read at early boot by the systemd daemon. Every service or user inherits the locale settings configured in /etc/locale.conf, unless individual programs or individual users override them.
@@ -556,7 +562,7 @@ Additional resources
 p11-kit(8), opensc.conf(5), pcscd(8), ssh(1), and ssh-keygen(1) man pages on your system
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 5.5. Additional resources
-sshd(8), ssh(1), scp(1), sftp(1), ssh-keygen(1), ssh-copy-id(1), ssh_config(5), sshd_config(5), update-crypto-policies(8), and crypto-policies(7) man pages.
+sshd(8), ssh(1), scp(1), sftp(1), ssh-keygen(1), ssh-copy-id(1), ssh_config(5), sshd_config(5), update-crypto-policies(8), and crypto-policies(7) man pages on your system
 Configuring SELinux for applications and services with non-standard configurations
 Controlling network traffic using firewalld
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -811,7 +817,7 @@ To verify the new user is added, use the id utility.
 The output returns:
 uid=5000(sarah) gid=5000(sarah) groups=5000(sarah)
 Additional resources
-useradd man page
+useradd man page on your system
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 9.3.2. Adding a new group from the command line
 You can use the groupadd utility to add a new group.
@@ -830,7 +836,7 @@ To verify the new group is added, use the tail utility.
 The output returns:
 sysadmins:x:5000:
 Additional resources
-groupadd man page
+groupadd man page on your system
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 9.3.3. Adding a user to a supplementary group from the command line
 You can add a user to a supplementary group to manage permissions or enable access to certain files or devices.
@@ -895,7 +901,7 @@ Remove additional user metadata:
 # rm -rf /var/lib/AccountsService/users/user-name
 This directory stores information that the system needs about the user before the home directory is available. Depending on the system configuration, the home directory might not be available until the user authenticates at the login screen.
 Additional resources
-The userdel(8) man page.
+userdel(8) man page on your system
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 9.4. Managing user accounts in the web console
 The RHEL web console provides a graphical interface for adding, editing, and removing system user accounts.
@@ -1121,7 +1127,7 @@ To preserve the rules during system updates and for easier fixing of errors, ent
 #includedir /etc/sudoers.d
 Note that the number sign (#) at the beginning of this line is part of the syntax and does not mean the line is a comment. The names of files in that directory must not contain a period and must not end with a tilde (~).
 Additional resources
-sudo(8) and sudoers(5) man pages
+sudo(8) and sudoers(5) man pages on your system
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 10.2. Granting sudo access to a user
 System administrators can allow non-root users to execute administrative commands by granting them sudo access. The sudo command provides users with administrative access without using the password of the root user.
@@ -1150,7 +1156,7 @@ Verify that the user is in the administrative wheel group:
 # id <username>
 uid=5000(<username>) gid=5000(<username>) groups=5000(<username>),10(wheel)
 Additional resources
-sudo(8), visudo(8), and sudoers(5) man pages
+sudo(8), visudo(8), and sudoers(5) man pages on your system
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 10.3. Enabling unprivileged users to run certain commands
 As an administrator, you can allow unprivileged users to enter certain commands on specific workstations by configuring a policy in the /etc/sudoers.d/ directory. This is more secure than granting full sudo access to a user or giving someone the root password for the following reasons:
@@ -1192,7 +1198,46 @@ If the system returns the error message <username> is not in the sudoers file. T
 If the system returns the error message <username> is not allowed to run sudo on <host.example.com>, the configuration was not completed correctly. Ensure that you are logged in as root and that the configuration was performed correctly.
 If the system returns the error message Sorry, user <username> is not allowed to execute '<path/to/command>' as root on <host.example.com>., the command is not correctly defined in the rule for the user.
 Additional resources
-sudo(8), visudo(8), and sudoers(5) man pages
+sudo(8), visudo(8), and sudoers(5) man pages on your system
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10.4. Applying custom sudoers configuration by using RHEL system roles
+You can use the sudo RHEL system role to apply custom sudoers configuration on your managed nodes. That way, you can define which users can run which commands on which hosts, with better configuration efficiency and more granular control.
+Prerequisites
+You have prepared the control node and the managed nodes
+You are logged in to the control node as a user who can run playbooks on the managed nodes.
+The account you use to connect to the managed nodes has sudo permissions on them.
+Procedure
+Create a playbook file, for example ~/playbook.yml, with the following content:
+---
+- name: "Configure sudo"
+  hosts: managed-node-01.example.com
+  tasks:
+    - name: "Apply custom /etc/sudoers configuration"
+      ansible.builtin.include_role:
+        name: rhel-system-roles.sudo
+      vars:
+        sudo_sudoers_files:
+          - path: "/etc/sudoers"
+            user_specifications:
+              - users:
+                  - <user_name>
+                hosts:
+                  - <host_name>
+                commands:
+                  - <path_to_command_binary>
+The settings specified in the playbook include the following:
+Validate the playbook syntax:
+$ ansible-playbook --syntax-check ~/playbook.yml
+Note that this command only validates the syntax and does not protect against a wrong but valid configuration.
+Run the playbook:
+$ ansible-playbook ~/playbook.yml
+Verification
+On the managed node, verify that the playbook applied the new rules.
+# cat /etc/sudoers | tail -n1
+<user_name> <host_name>= <path_to_command_binary>
+Additional resources
+/usr/share/ansible/roles/rhel-system-roles.sudo/README.md file
+/usr/share/doc/rhel-system-roles.sudo/sudo/ directory
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Chapter 11. Managing file system permissions
 File system permissions control the ability of user and group accounts to read, modify, and execute the contents of the files and to enter directories. Set permissions carefully to protect your data against unauthorized access.
@@ -1328,7 +1373,7 @@ root access.
 Procedure
 To set the ACL for a file or directory, use:
 # setfacl -m u:username:symbolic_value file-name
-Replace username with the name of the user, symbolic_value with a symbolic value, and file-name with the name of the file or directory. For more information see the setfacl man page.
+Replace username with the name of the user, symbolic_value with a symbolic value, and file-name with the name of the file or directory. For more information see the setfacl man page on your system.
 Example 11.7. Modifying permissions for a group project
 The following example describes how to modify permissions for the group-project file owned by the root user that belongs to the root group so that this file is:
 Not executable by anyone.
@@ -1603,7 +1648,7 @@ Start a system service in the current session:
 # systemctl start <name>.service
 Replace <name> with the name of the service unit you want to start (for example, httpd.service).
 Additional resources
-systemctl(1) man page
+systemctl(1) man page on your system
 Enabling a system service to start at boot
 Displaying system service status
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1616,7 +1661,7 @@ Stop a system service:
 # systemctl stop <name>.service
 Replace <name> with the name of the service unit you want to stop (for example, bluetooth).
 Additional resources
-systemctl(1) man page
+systemctl(1) man page on your system
 Disabling a system service to start at boot
 Displaying system service status
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1636,7 +1681,7 @@ Optional: Restart a service unit only if the corresponding service is already ru
 Optional: Reload the configuration without interrupting service execution:
 # systemctl reload <name>.service
 Additional resources
-systemctl man page
+systemctl man page on your system
 Displaying system service status
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 12.2.6. Enabling a system service to start at boot
@@ -1652,7 +1697,7 @@ Replace <name> with the name of the service unit you want to enable (for example
 Optional: You can also enable and start a service by using a single command:
 # systemctl enable --now <name>.service
 Additional resources
-systemctl (1) man page
+systemctl (1) man page on your system
 Displaying system service status
 Starting a system service
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1668,7 +1713,7 @@ Optional: If you want to make a service permanently unusable, mask the service:
 # systemctl mask <name>.service
 This command replaces the /etc/systemd/system/name.service file with a symbolic link to /dev/null, rendering the actual unit file inaccessible to systemd.
 Additional resources
-systemctl (1) man page
+systemctl (1) man page on your system
 Displaying system service status
 Stopping a system service
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1682,8 +1727,7 @@ The graphical.target unit for starting a graphical session, starts system servic
 Similarly, the multi-user.target unit starts other essential system services such as NetworkManager (NetworkManager.service) or D-Bus (dbus.service) and activates another target unit named basic.target.
 You can set the following systemd targets as default or current targets:
 Additional resources
-systemd.special(7) man page
-systemd.target(5) man page
+systemd.special(7) and systemd.target(5) man pages on your system
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 12.3.2. Changing the default target to boot into
 When a system starts, systemd activates the default.target symbolic link, which points to the true target unit. You can find the currently selected default target unit in the /etc/systemd/system/default.target file. Each target represents a certain level of functionality and is used for grouping other units. Additionally, target units serve as synchronization points during boot. You can change the default target your system boots into. When you set a default target unit, the current target remains unchanged until the next reboot.
@@ -1708,9 +1752,7 @@ multi-user.target
 Apply the changes by rebooting:
 # reboot
 Additional resources
-systemctl(1) man page
-systemd.special(7) man page
-bootup(7) man page
+systemctl(1), systemd.special(7), and bootup(7) man pages on your system
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 12.3.3. Changing the current target
 On a running system, you can change the target unit in the current boot without reboot. If you switch to a different target, systemd starts all services and their dependencies that this target requires, and stops all services that the new target does not enable. Isolating a different target affects only the current boot.
@@ -1727,7 +1769,7 @@ Example:
 # systemctl isolate multi-user.target
 This command starts the target unit named multi-user and all dependent units, and immediately stops all other unit.
 Additional resources
-systemctl(1) man page
+systemctl(1) man page on your system
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 12.3.4. Booting to rescue mode
 You can boot to the rescue mode that provides a single-user environment for troubleshooting or repair if the system cannot get to a later target, and the regular booting process fails. In rescue mode, the system attempts to mount all local file systems and start certain important system services, but it does not activate network interfaces.
@@ -1954,7 +1996,7 @@ Name/IP Address            NP  NR  Span  Frequency  Freq Skew  Offset  Std Dev
 abc.def.ghi                11   5   46m     -0.001      0.045      1us    25us
 The optional argument -v can be specified, meaning verbose. In this case, extra caption lines are shown as a reminder of the meanings of the columns.
 Additional resources
-chronyc(1) man page
+chronyc(1) man page on your system
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 13.2.3. Manually adjusting the System Clock
 The following procedure describes how to manually adjust the System Clock.
@@ -1988,7 +2030,7 @@ initstepslew 10 client1 client3 client6
 local stratum 8
 manual
 allow 192.0.2.0/24
-Where 192.0.2.0/24 is the network or subnet address from which the clients are allowed to connect. For more details, see chrony.conf(7) man page
+Where 192.0.2.0/24 is the network or subnet address from which the clients are allowed to connect. For more details, see chrony.conf(7) man page on your system
 On the systems selected to be direct clients of the server, using a text editor running as root, edit the /etc/chrony.conf as follows:
 server ntp1.example.net
 driftfile /var/lib/chrony/drift
@@ -2036,7 +2078,7 @@ Optionally, you can open port 323 permanently using the --permanent option:
 If you opened port 323 permanently, reload the firewall configuration:
 # firewall-cmd --reload
 Additional resources
-chrony.conf(5) man page
+chrony.conf(5) man page on your system
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 13.2.7. Managing time synchronization using RHEL system roles
 You can manage time synchronization on multiple target machines using the timesync role. The timesync role installs and configures an NTP or PTP implementation to operate as an NTP or PTP client to synchronize the system clock.
@@ -2056,8 +2098,7 @@ Additional resources
 Preparing a control node and managed nodes to use RHEL system roles
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 13.2.8. Additional resources
-chronyc(1) man page
-chronyd(8) man page
+chronyc(1) and chronyd(8) man pages on your system
 Frequently Asked Questions
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 13.3. Chrony with HW timestamping
@@ -2216,7 +2257,7 @@ nts.sth1.ntp.se    1        6   377    44   +237us[ +237us] +/-   23ms
 nts.sth2.ntp.se    1        6   377    44   -170us[ -170us] +/-   22ms
 The Reach column should have a non-zero value; ideally 377. If the value rarely gets 377 or never gets to 377, it indicates that NTP requests or responses are getting lost in the network.
 Additional resources
-chrony.conf(5) man page
+chrony.conf(5) man page on your system
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 13.4.2. Enabling Network Time Security (NTS) on the server
 If you run your own Network Time Protocol (NTP) server, you can enable the server Network Time Security (NTS) support to facilitate its clients to synchronize securely.
