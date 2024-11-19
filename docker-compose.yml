@@ -14,8 +14,6 @@ services:
       GENERATE_RAG_DB: 1
       WATSONX_PROJECT_ID: ABC123
       WATSONX_APIKEY: ABC123
-    volumes:
-      - ./plaintext:/plaintext:ro,Z
     restart: always
 
   db:
