@@ -41,7 +41,7 @@ def get_embedding_model() -> WatsonxEmbeddings:
 
 
 def get_retriever(
-    top_k: int = 20, score_threshold: float = 0.85
+    top_k: int = 20, score_threshold: float = 0.80
 ) -> VectorStoreRetriever:
     """Get a vector store for retrieval.
 

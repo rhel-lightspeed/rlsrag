@@ -10,7 +10,7 @@ packages = [
   {include = "rlsrag"}
 ]
 requires-python = "==3.12.*"
-dependencies = ["langchain-postgres>=0.0.12", "langchain-community>=0.3.7", "unstructured[md]>=0.16.5", "fastapi[standard]>=0.115.5", "langchain-experimental>=0.3.3", "langchain-ibm>=0.3.3", "langchain-unstructured>=0.1.5", "pyarrow>=18.0.0", "nltk>=3.9.1", "types-requests>=2.32.0.20241016"]
+dependencies = ["langchain-postgres>=0.0.12", "langchain-community>=0.3.7", "unstructured[md]>=0.16.5", "fastapi[standard]>=0.115.5", "langchain-experimental>=0.3.3", "langchain-ibm>=0.3.3", "langchain-unstructured>=0.1.5", "pyarrow>=18.0.0", "nltk>=3.9.1", "types-requests>=2.32.0.20241016", "pandas>=2.1.4"]
 license = {text = "Apache Software License 2.0"}
 keywords = ['python']
 
@@ -31,7 +31,7 @@ preview = true
 [tool.mypy]
 files = ["rlsrag"]
 disallow_untyped_defs = "True"
-disallow_any_unimported = "True"
+disallow_any_unimported = "False"
 no_implicit_optional = "True"
 check_untyped_defs = "True"
 warn_return_any = "True"

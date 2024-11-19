@@ -2,19 +2,19 @@ name: rls
 
 services:
 
-  rlsrag:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - 8000:8000
-    environment:
-      POSTGRES_HOST: db
-      PLAINTEXT_DIR: /plaintext
-      GENERATE_RAG_DB: 1
-      WATSONX_PROJECT_ID: ${WATSONX_PROJECT_ID:?}
-      WATSONX_APIKEY: ${WATSONX_APIKEY:?}
-    restart: always
+  # rlsrag:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - 8000:8000
+  #   environment:
+  #     POSTGRES_HOST: db
+  #     PLAINTEXT_DIR: /plaintext
+  #     GENERATE_RAG_DB: 1
+  #     WATSONX_PROJECT_ID: ${WATSONX_PROJECT_ID:?}
+  #     WATSONX_APIKEY: ${WATSONX_APIKEY:?}
+  #   restart: always
 
   db:
     image: docker.io/pgvector/pgvector:pg17
